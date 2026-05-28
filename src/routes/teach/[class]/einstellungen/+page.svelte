@@ -114,7 +114,7 @@
 				<Button
 					variant="secondary"
 					size="md"
-					class="!text-err"
+					class="!text-err whitespace-nowrap shrink-0"
 					style="border-color: oklch(0.55 0.18 25 / 0.3);"
 				>
 					Klasse löschen…
