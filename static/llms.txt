@@ -1,0 +1,42 @@
+# SbSQLTT
+
+> SbSQLTT (Server based SQL Teaching Tool) is a free, open-source, browser-based
+> SQL trainer designed for German computer-science classrooms (Gymnasium, university
+> intro courses). Students learn SQL by writing real queries against an
+> in-browser Postgres engine (PGlite WASM, planned; mock engine in current alpha).
+> All SQL execution stays on the student's device — no queries are sent to a
+> server. Optional teacher dashboard for class management, student progress, and
+> assignment scheduling.
+
+Hosted at https://sbsqltt.jmestudio.de. Source: https://github.com/WarumSindNamenSoSchwer/SbSQLTT (AGPL-3.0). Status: Pre-MVP / public alpha (v0.4).
+
+## Project pages
+
+- [Landing page](https://sbsqltt.jmestudio.de/): pitch, current lesson preview, contact for teachers.
+- [Lesson catalog](https://sbsqltt.jmestudio.de/learn): three tracks (Anfänger, Fortgeschritten, Profi), 14 planned lessons.
+- [Sample lesson: Mit WHERE filtern](https://sbsqltt.jmestudio.de/learn/beginner/where-filters): the one fleshed-out lesson in v0.4 — narrative + interactive query editor.
+- [SQL reference (stub)](https://sbsqltt.jmestudio.de/docs): planned topic outline; content fills in over time.
+- [Hinweise für Lehrkräfte](https://sbsqltt.jmestudio.de/fuer-lehrkraefte): teacher-facing notes on classroom use, data protection, technical requirements.
+
+## Legal
+
+- [Impressum (TMG §5)](https://sbsqltt.jmestudio.de/impressum)
+- [Datenschutzerklärung (DSGVO)](https://sbsqltt.jmestudio.de/datenschutz)
+
+## Repository
+
+- [GitHub](https://github.com/WarumSindNamenSoSchwer/SbSQLTT)
+- [Latest release notes](https://github.com/WarumSindNamenSoSchwer/SbSQLTT/releases/tag/v0.4.0-alpha)
+- [Wiki — Getting Started, Architecture](https://github.com/WarumSindNamenSoSchwer/SbSQLTT/wiki)
+
+## Stack
+
+SvelteKit 5 (TypeScript) + Tailwind v4. Postgres-WASM via PGlite (planned).
+Auth + storage via Supabase EU region (planned). Hosting on Vercel (Frankfurt
+region). Self-hosted Inter + JetBrains Mono fonts (no Google CDN).
+
+## Contact
+
+- Teachers: murat.meric@jmestudio.de
+- Issues: https://github.com/WarumSindNamenSoSchwer/SbSQLTT/issues
+- Project owner: Murat-Can Meric (jmestudio GbR, Berlin, Germany)
