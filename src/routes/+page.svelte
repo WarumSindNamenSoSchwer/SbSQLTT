@@ -72,7 +72,7 @@
 					style="text-wrap: balance"
 				>
 					SQL lernen, indem du es schreibst.
-					<span class="text-ink-700">Kostenlos, Open Source,</span>
+					<span class="text-accent/70">Kostenlos, Open Source,</span>
 					<br class="hidden md:block" /> ohne Anmeldung.
 				</h1>
 
