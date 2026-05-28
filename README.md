@@ -40,10 +40,10 @@ Feature-Branches.
 
 | Phase | Ziel |
 |---|---|
-| **P1 — Lerner-MVP** | Anonyme Nutzer schließen eine SQL-Lektion auf dem Smartphone ab |
-| **P2 — DB-Design** | Nutzer entwerfen eigene Schemata und fragen sie ab |
-| **P3 — Lehrer-Dashboard** | Klassenraum-Sicht mit Schüler-Fortschritt und "hängt fest"-Anzeige |
-| **P4 — Community** | Lektions-Beiträge, Self-Hosting-Doku |
+| **P1: Lerner-MVP** | Anonyme Nutzer schließen eine SQL-Lektion auf dem Smartphone ab |
+| **P2: DB-Design** | Nutzer entwerfen eigene Schemata und fragen sie ab |
+| **P3: Lehrer-Dashboard** | Klassenraum-Sicht mit Schüler-Fortschritt und "hängt fest"-Anzeige |
+| **P4: Community** | Lektions-Beiträge, Self-Hosting-Doku |
 
 ### Aktuell oben auf der Liste
 
@@ -114,10 +114,10 @@ branches.
 
 | Phase | Goal |
 |---|---|
-| **P1 — Learner MVP** | Anonymous learner can finish a SQL lesson on their phone |
-| **P2 — DB-design mode** | Learners can build their own schemas and query them |
-| **P3 — Teacher dashboard** | Classroom view: per-student progress, "stuck on" indicator |
-| **P4 — Community** | Lesson contributions, self-host docs |
+| **P1: Learner MVP** | Anonymous learner can finish a SQL lesson on their phone |
+| **P2: DB-design mode** | Learners can build their own schemas and query them |
+| **P3: Teacher dashboard** | Classroom view: per-student progress, "stuck on" indicator |
+| **P4: Community** | Lesson contributions, self-host docs |
 
 ### Currently at the top of the list
 
