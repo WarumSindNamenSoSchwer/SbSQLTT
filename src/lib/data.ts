@@ -95,7 +95,7 @@ export const CURRENT_LESSON: Lesson = {
 			kind: 'read',
 			title: 'Why filter?',
 			body: `Most real tables have far more rows than you want. A WHERE clause keeps
-only the rows that match a condition — everything else is dropped before the
+only the rows that match a condition; everything else is dropped before the
 result reaches you.`
 		},
 		{
@@ -113,7 +113,7 @@ WHERE  year >= 2000;`
 			title: 'Combining conditions',
 			body: `AND requires both sides to be true. OR requires at least one. Wrap mixed
 expressions in parentheses to make precedence obvious to the next person reading
-your query — usually you.`
+your query (usually you).`
 		},
 		{
 			kind: 'check',

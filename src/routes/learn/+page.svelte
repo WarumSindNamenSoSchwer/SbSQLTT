@@ -38,7 +38,7 @@
 			</h1>
 			<p class="mt-2 text-[15px] text-ink-700 max-w-[60ch]">
 				Drei Tracks, vierzehn Lektionen. Jede Lektion ist eine kleine, fokussierte
-				Übung — die meisten dauern unter fünfzehn Minuten.
+				Übung, die meisten dauern unter fünfzehn Minuten.
 			</p>
 		</div>
 		<div class="hidden md:flex items-center gap-2">

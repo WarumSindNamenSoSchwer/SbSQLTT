@@ -10,7 +10,7 @@
 		{
 			icon: 'db' as const,
 			title: 'Interaktives Postgres im Browser',
-			body: 'Jede Abfrage läuft gegen eine echte Postgres-kompatible Engine, kompiliert nach WebAssembly. Keine Konten, keine Server — dein Laptop ist die Datenbank.'
+			body: 'Jede Abfrage läuft gegen eine echte Postgres-kompatible Engine, kompiliert nach WebAssembly. Keine Konten, keine Server. Dein Laptop ist die Datenbank.'
 		},
 		{
 			icon: 'layers' as const,
@@ -72,8 +72,8 @@
 					class="mt-5 text-[40px] md:text-[56px] leading-[1.05] tracking-[-0.02em] font-semibold text-ink-900"
 					style="text-wrap: balance"
 				>
-					Lerne SQL beim Tun —
-					<span class="text-ink-700">kostenlos, Open Source,</span>
+					SQL lernen, indem du es schreibst.
+					<span class="text-ink-700">Kostenlos, Open Source,</span>
 					<br class="hidden md:block" /> ohne Anmeldung.
 				</h1>
 
@@ -84,7 +84,7 @@
 					Ein moderner, fokussierter Weg, SQL im Browser zu üben. Echtes Postgres, echte
 					Datensätze und Lektionen, die von
 					<span class="font-mono text-ink-800">SELECT</span> bis zu Window Functions
-					aufeinander aufbauen — in deinem eigenen Tempo.
+					aufeinander aufbauen, in deinem eigenen Tempo.
 				</p>
 
 				<div class="mt-7 flex items-center gap-3">
@@ -276,7 +276,7 @@
 					class="mt-3 text-[28px] md:text-[34px] leading-[1.15] tracking-tight font-semibold text-ink-900"
 					style="text-wrap: balance"
 				>
-					Entwickelt mit Lehrkräften — damit es zu Ihrem Unterricht passt.
+					Entwickelt mit Lehrkräften, damit es zu Ihrem Unterricht passt.
 				</h2>
 				<p
 					class="mt-4 text-[15px] leading-relaxed text-ink-700 max-w-[55ch]"
@@ -286,8 +286,8 @@
 					Tempo und Schwerpunkte wirklich zu dem passen, was Schülerinnen und Schüler im
 					Kurs brauchen. Es läuft offline, speichert keine Schülerdaten auf einem fremden
 					Server, und der gesamte Quellcode ist einsehbar. Wenn Sie mitgestalten,
-					Aufgaben vorschlagen oder einen Klassensatz testen möchten — schreiben Sie
-					kurz, wir nehmen Feedback ernst.
+					Aufgaben vorschlagen oder einen Klassensatz testen möchten, schreiben Sie kurz.
+					Wir nehmen Feedback ernst.
 				</p>
 				<div class="mt-6 flex items-center gap-3">
 					<Button

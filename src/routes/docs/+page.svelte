@@ -72,7 +72,7 @@
 </script>
 
 <svelte:head>
-	<title>SQL-Referenz — SbSQLTT</title>
+	<title>SQL-Referenz · SbSQLTT</title>
 </svelte:head>
 
 <main class="max-w-[960px] mx-auto px-6 pt-16 pb-24">
@@ -88,7 +88,7 @@
 			SQL-Referenz
 		</h1>
 		<p class="mt-4 text-[15px] leading-relaxed text-ink-700 max-w-[60ch]">
-			Kompakte Erklärungen zu allen SQL-Befehlen, die in den Lektionen vorkommen — mit
+			Kompakte Erklärungen zu allen SQL-Befehlen, die in den Lektionen vorkommen, mit
 			Beispielen, häufigen Fehlern und Querverweisen auf die passenden Übungen. Diese Seite
 			wächst parallel zu den Lektionen.
 		</p>

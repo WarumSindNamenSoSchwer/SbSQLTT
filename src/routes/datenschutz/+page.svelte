@@ -72,7 +72,7 @@
 					Falls du dich anmeldest, speichern wir deine E-Mail-Adresse und deinen
 					Lernfortschritt bei der Supabase Inc. (970 Toa Payoh North #07-04, Singapore
 					318992) in einer Datenbank in der EU (Region Frankfurt). Anmeldung erfolgt
-					per „Magic Link" — wir setzen keine Passwörter. Rechtsgrundlage: Art. 6 Abs.
+					per „Magic Link", wir setzen keine Passwörter. Rechtsgrundlage: Art. 6 Abs.
 					1 lit. b DSGVO. Du kannst dein Konto jederzeit per E-Mail löschen lassen.
 				</p>
 			</section>

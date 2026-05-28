@@ -469,7 +469,7 @@
 												colspan={result.columns.length + 1}
 												class="py-8 text-center text-ink-600 italic"
 											>
-												keine Zeilen — die Abfrage lief, aber nichts passte
+												keine Zeilen. Die Abfrage lief, aber nichts passte.
 											</td>
 										</tr>
 									{/if}

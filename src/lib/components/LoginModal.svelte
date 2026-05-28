@@ -89,8 +89,7 @@
 						>{email}</span
 					> geschickt. Öffne ihn auf diesem Gerät, um die Anmeldung abzuschließen.
 				{:else}
-					Wir verwenden einen Magic Link — du musst dir kein Passwort merken. Du kannst
-					SbSQLTT auch ohne Konto weiter nutzen.
+					Wir verwenden einen Magic Link. Du musst dir also kein Passwort merken und kannst SbSQLTT auch ohne Konto weiter nutzen.
 				{/if}
 			</p>
 
@@ -142,8 +141,7 @@
 
 					<p class="mt-4 text-[11.5px] leading-relaxed text-ink-600">
 						Wir speichern nur die E-Mail, mit der du dich anmeldest, und einen
-						anonymen Fortschrittseintrag. Kein Tracking, keine Drittanbieter-Analyse,
-						keine Werbe-Mails — niemals.
+						anonymen Fortschrittseintrag. Kein Tracking, keine Drittanbieter-Analyse, keine Werbe-Mails. Niemals.
 					</p>
 				</form>
 			{/if}
