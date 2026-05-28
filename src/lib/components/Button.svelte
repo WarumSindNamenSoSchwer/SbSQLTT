@@ -45,7 +45,7 @@
 
 <button
 	{type}
-	class={'inline-flex items-center justify-center rounded-md ring-accent transition-colors ' +
+	class={'inline-flex items-center justify-center rounded-md ring-accent transition-colors whitespace-nowrap ' +
 		sizeClasses[size] +
 		' ' +
 		variantClasses[variant] +

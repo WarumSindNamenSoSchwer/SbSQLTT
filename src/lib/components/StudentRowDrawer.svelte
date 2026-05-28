@@ -53,7 +53,7 @@
 
 {#if open && stu}
 	<div
-		class="fixed inset-0 z-40 flex justify-end fade-in"
+		class="drawer-shell fade-in"
 		role="dialog"
 		aria-modal="true"
 	>
@@ -62,9 +62,8 @@
 			class="absolute inset-0 bg-black/40 backdrop cursor-default"
 			onclick={onClose}
 		></button>
-		<div
-			class="relative w-full max-w-[640px] h-full bg-ink-0 border-l border-ink-200 shadow-pop overflow-y-auto"
-		>
+		<div class="drawer-card relative w-full">
+			<span class="ms-handle"></span>
 			<div
 				class="sticky top-0 z-10 bg-ink-50/95 backdrop border-b border-ink-200 px-6 py-4 flex items-start justify-between gap-4"
 			>
@@ -89,7 +88,7 @@
 				</div>
 				<button
 					onclick={onClose}
-					class="w-8 h-8 grid place-items-center rounded-md text-ink-600 hover:text-ink-900 hover:bg-ink-100"
+					class="tap w-10 h-10 md:w-8 md:h-8 grid place-items-center rounded-md text-ink-600 hover:text-ink-900 hover:bg-ink-100"
 					aria-label="Schließen"
 				>
 					<Icon name="close" size={16} />
@@ -207,11 +206,13 @@
 				</Surface>
 
 				<div
-					class="flex items-center justify-between pt-6 border-t border-ink-200"
+					class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-6 border-t border-ink-200"
 				>
-					<Button variant="secondary" size="md">Daten exportieren (CSV)</Button>
+					<Button variant="secondary" size="md" class="tap w-full sm:w-auto"
+						>Daten exportieren (CSV)</Button
+					>
 					<button
-						class="text-[13px] text-err hover:underline underline-offset-4"
+						class="tap text-[13px] text-err hover:underline underline-offset-4 py-2 sm:py-0 text-left sm:text-right"
 					>
 						Schüler:in aus Klasse entfernen
 					</button>

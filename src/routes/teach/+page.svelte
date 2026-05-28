@@ -30,8 +30,10 @@
 
 <TeacherNav />
 
-<div class="max-w-[1280px] mx-auto px-6 py-10 md:py-12">
-	<div class="flex items-end justify-between gap-6 mb-8">
+<div class="max-w-[1280px] mx-auto px-4 md:px-6 py-8 md:py-12">
+	<div
+		class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 md:gap-6 mb-8"
+	>
 		<div>
 			<div
 				class="text-[12px] font-mono uppercase tracking-[0.16em] text-accent"
@@ -39,7 +41,7 @@
 				Lehrkraft · Übersicht
 			</div>
 			<h1
-				class="mt-2 text-[32px] md:text-[36px] leading-tight tracking-[-0.02em] font-semibold"
+				class="mt-2 text-[28px] md:text-[36px] leading-tight tracking-[-0.02em] font-semibold"
 			>
 				Willkommen zurück, {TEACHER.greetingName}.
 			</h1>
@@ -47,15 +49,20 @@
 				Letzte Anmeldung: {lastStr}
 			</p>
 		</div>
-		<div class="hidden md:flex items-center gap-3">
+		<div class="flex items-center gap-3 flex-wrap">
 			<button
 				onclick={() => (hasClasses = !hasClasses)}
-				class="text-[12px] font-mono text-ink-600 hover:text-ink-900 border border-dashed border-ink-300 rounded-md px-2.5 h-7"
+				class="hidden md:inline-flex text-[12px] font-mono text-ink-600 hover:text-ink-900 border border-dashed border-ink-300 rounded-md px-2.5 h-7 items-center"
 				title="Demo: leeren Zustand zeigen"
 			>
 				demo: {hasClasses ? 'leere Liste zeigen' : 'Klassen anzeigen'}
 			</button>
-			<Button variant="primary" size="md" onclick={() => goto('/teach/new')}>
+			<Button
+				variant="primary"
+				size="md"
+				onclick={() => goto('/teach/new')}
+				class="tap w-full sm:w-auto"
+			>
 				{#snippet leading()}
 					<svg
 						width="14"

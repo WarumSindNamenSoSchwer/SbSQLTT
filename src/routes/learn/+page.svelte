@@ -23,8 +23,10 @@
 	}
 </script>
 
-<div class="max-w-[1280px] mx-auto px-6 py-12 md:py-16">
-	<div class="flex items-end justify-between gap-6 mb-10">
+<div class="max-w-[1280px] mx-auto px-4 md:px-6 py-10 md:py-16">
+	<div
+		class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 md:gap-6 mb-8 md:mb-10"
+	>
 		<div>
 			<div
 				class="text-[12px] font-mono uppercase tracking-[0.16em] text-accent"
@@ -32,7 +34,7 @@
 				Katalog
 			</div>
 			<h1
-				class="mt-2 text-[36px] md:text-[44px] leading-tight tracking-[-0.02em] font-semibold"
+				class="mt-2 text-[32px] md:text-[44px] leading-tight tracking-[-0.02em] font-semibold"
 			>
 				Lektionen
 			</h1>
@@ -41,16 +43,18 @@
 				Übung, die meisten dauern unter fünfzehn Minuten.
 			</p>
 		</div>
-		<div class="hidden md:flex items-center gap-2">
-			<div class="relative">
-				<span class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-600">
+		<div class="flex items-center gap-2 w-full md:w-auto">
+			<div class="relative w-full md:w-auto">
+				<span
+					class="absolute left-3 top-1/2 -translate-y-1/2 text-ink-600 pointer-events-none"
+				>
 					<Icon name="search" size={13} />
 				</span>
 				<input
 					type="text"
 					bind:value={query}
 					placeholder="Lektionen durchsuchen…"
-					class="h-9 w-64 pl-9 pr-3 rounded-md bg-ink-50 border border-ink-200 text-[13px]
+					class="h-10 md:h-9 w-full md:w-64 pl-9 pr-3 rounded-md bg-ink-50 border border-ink-200 text-[13px]
                          placeholder-ink-600 ring-accent focus:border-[oklch(0.72_0.15_195_/_0.4)]"
 				/>
 			</div>

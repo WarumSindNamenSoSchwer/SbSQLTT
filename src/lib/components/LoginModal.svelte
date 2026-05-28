@@ -51,7 +51,7 @@
 
 {#if open}
 	<div
-		class="fixed inset-0 z-40 grid place-items-center px-4 fade-in"
+		class="ms-overlay fade-in"
 		onclick={onClose}
 		onkeydown={(e) => {
 			if (e.key === 'Escape') onClose();
@@ -68,12 +68,14 @@
 			onkeydown={(e) => e.stopPropagation()}
 			role="document"
 			tabindex="-1"
-			class="relative w-full max-w-[440px] rounded-xl bg-ink-50 border border-ink-200 shadow-pop p-7"
+			class="ms-card ms-w-sm"
 		>
+			<span class="ms-handle"></span>
+			<div class="p-7 pt-5 relative">
 			<button
 				aria-label="Schließen"
 				onclick={onClose}
-				class="absolute top-3 right-3 w-7 h-7 grid place-items-center rounded-md text-ink-600 hover:text-ink-900 hover:bg-ink-100"
+				class="tap absolute top-3 right-3 w-9 h-9 md:w-7 md:h-7 grid place-items-center rounded-md text-ink-600 hover:text-ink-900 hover:bg-ink-100"
 			>
 				<Icon name="close" size={14} />
 			</button>
@@ -220,6 +222,7 @@
 					<Button variant="secondary" size="md" onclick={onClose}>Schließen</Button>
 				</div>
 			{/if}
+			</div>
 		</div>
 	</div>
 {/if}

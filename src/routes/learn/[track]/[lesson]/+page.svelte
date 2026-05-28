@@ -177,13 +177,15 @@
 		</div>
 	</div>
 
-	<!-- Mobile tabs -->
-	<div class="md:hidden border-b border-ink-200 px-3">
+	<!-- Mobile tabs (sticky under nav) -->
+	<div
+		class="md:hidden border-b border-ink-200 px-3 sticky top-14 z-20 bg-ink-50/80 backdrop"
+	>
 		<div class="flex gap-1">
 			{#each [['lesson', 'Lektion'], ['editor', 'Editor'], ['result', 'Ergebnis']] as const as [t, label] (t)}
 				<button
 					onclick={() => (tab = t)}
-					class={'h-10 px-3 text-[13px] font-medium border-b-2 -mb-px ' +
+					class={'tap h-11 px-3 text-[13px] font-medium border-b-2 -mb-px ' +
 						(tab === t
 							? 'text-ink-900 border-accent'
 							: 'text-ink-700 border-transparent hover:text-ink-900')}
@@ -481,4 +483,20 @@
 			</div>
 		</section>
 	</div>
+
+	<!-- Mobile bottom-fixed Run bar -->
+	<div class="bottom-bar md:hidden">
+		<div class="flex items-center gap-2">
+			<Button
+				variant="primary"
+				size="lg"
+				onclick={run}
+				class="tap w-full !h-12 !text-[15px]"
+			>
+				{#snippet leading()}<Icon name="play" size={12} />{/snippet}
+				Ausführen
+			</Button>
+		</div>
+	</div>
+	<div class="bottom-bar-spacer" aria-hidden="true"></div>
 </div>

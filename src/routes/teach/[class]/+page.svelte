@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { getContext } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import { CLASSES, getStuckStudents, initials } from '$lib/teacher-data';
 	import Surface from '$lib/components/Surface.svelte';
 	import Badge from '$lib/components/Badge.svelte';
@@ -18,6 +18,12 @@
 
 	let filter = $state<'all' | 'active' | 'stuck' | 'done'>('all');
 	let shareMenuOpen = $state(false);
+
+	// view switcher — cards default on mobile, matrix default on desktop
+	let view = $state<'cards' | 'matrix'>('matrix');
+	onMount(() => {
+		if (window.matchMedia('(max-width: 767px)').matches) view = 'cards';
+	});
 
 	let stuck = $derived(getStuckStudents(cls));
 	let isEmpty = $derived(cls.students.length === 0);
@@ -164,7 +170,7 @@
 		</div>
 
 		{#if !isEmpty}
-			<div class="flex items-center gap-2">
+			<div class="flex items-center gap-2 flex-wrap">
 				<div
 					class="inline-flex items-center bg-ink-100 border border-ink-200 rounded-md p-0.5"
 				>
@@ -172,7 +178,7 @@
 						{@const active = it.id === filter}
 						<button
 							onclick={() => (filter = it.id)}
-							class={'h-7 px-3 rounded-[5px] text-[12.5px] font-medium inline-flex items-center gap-1.5 transition-colors ' +
+							class={'tap h-7 px-3 rounded-[5px] text-[12.5px] font-medium inline-flex items-center gap-1.5 transition-colors ' +
 								(active
 									? 'bg-ink-50 text-ink-900 shadow-soft border border-ink-200'
 									: 'text-ink-700 hover:text-ink-900')}
@@ -188,6 +194,51 @@
 									{it.count}
 								</span>
 							{/if}
+						</button>
+					{/each}
+				</div>
+
+				<!-- View switcher: cards (default on mobile) vs. matrix -->
+				<div
+					class="inline-flex p-0.5 bg-ink-100 border border-ink-200 rounded-md"
+				>
+					{#each [['cards', 'Karten'], ['matrix', 'Matrix']] as const as [id, label] (id)}
+						{@const active = view === id}
+						<button
+							onclick={() => (view = id)}
+							class={'tap h-7 px-2.5 rounded-[5px] text-[12.5px] font-medium inline-flex items-center gap-1.5 transition-colors ' +
+								(active
+									? 'bg-ink-50 text-ink-900 shadow-soft border border-ink-200'
+									: 'text-ink-700 hover:text-ink-900')}
+						>
+							{#if id === 'cards'}
+								<svg
+									width="12"
+									height="12"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.8"
+								>
+									<rect x="3" y="4" width="18" height="6" rx="1.5" />
+									<rect x="3" y="14" width="18" height="6" rx="1.5" />
+								</svg>
+							{:else}
+								<svg
+									width="12"
+									height="12"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.8"
+								>
+									<rect x="3" y="3" width="7" height="7" rx="1" />
+									<rect x="14" y="3" width="7" height="7" rx="1" />
+									<rect x="3" y="14" width="7" height="7" rx="1" />
+									<rect x="14" y="14" width="7" height="7" rx="1" />
+								</svg>
+							{/if}
+							<span class="hidden sm:inline">{label}</span>
 						</button>
 					{/each}
 				</div>
@@ -337,37 +388,133 @@
 			</div>
 		{/if}
 
-		<Surface class="overflow-hidden">
-			<div
-				class="flex items-center justify-between px-4 py-3 border-b border-ink-200 bg-ink-50/40"
-			>
+		{#if view === 'matrix'}
+			<Surface class="overflow-hidden">
 				<div
-					class="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-600"
+					class="flex items-center justify-between gap-3 px-4 py-3 border-b border-ink-200 bg-ink-50/40 flex-wrap"
 				>
-					Fortschritts-Matrix · {cls.students.length} × {cls.lessons.length}
+					<div
+						class="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-600"
+					>
+						Fortschritts-Matrix · {cls.students.length} × {cls.lessons.length}
+					</div>
+					<div
+						class="flex items-center gap-3 md:gap-5 text-[11.5px] text-ink-700 flex-wrap"
+					>
+						<span class="inline-flex items-center gap-1.5">
+							<MatrixCell state="todo" size={14} /> Nicht begonnen
+						</span>
+						<span class="inline-flex items-center gap-1.5">
+							<MatrixCell state="progress" percent={0.4} size={14} /> Begonnen
+						</span>
+						<span class="inline-flex items-center gap-1.5">
+							<MatrixCell state="done" size={14} /> Abgeschlossen
+						</span>
+						<span class="inline-flex items-center gap-1.5">
+							<MatrixCell state="progress" percent={0.6} stuck size={14} /> Hängt fest
+						</span>
+					</div>
 				</div>
-				<div class="flex items-center gap-5 text-[11.5px] text-ink-700">
-					<span class="inline-flex items-center gap-1.5">
-						<MatrixCell state="todo" size={14} /> Nicht begonnen
-					</span>
-					<span class="inline-flex items-center gap-1.5">
-						<MatrixCell state="progress" percent={0.4} size={14} /> Begonnen
-					</span>
-					<span class="inline-flex items-center gap-1.5">
-						<MatrixCell state="done" size={14} /> Abgeschlossen
-					</span>
-					<span class="inline-flex items-center gap-1.5">
-						<MatrixCell state="progress" percent={0.6} stuck size={14} /> Hängt fest
-					</span>
+				<ProgressMatrix
+					{cls}
+					students={filtered}
+					lessons={cls.lessons}
+					onOpenStudent={(sid) => openStudent(sid)}
+				/>
+			</Surface>
+		{:else}
+			<Surface class="overflow-hidden">
+				<div
+					class="flex items-center justify-between px-4 py-3 border-b border-ink-200 bg-ink-50/40"
+				>
+					<div
+						class="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-600"
+					>
+						Karten · {filtered.length} Schüler:innen
+					</div>
 				</div>
-			</div>
-			<ProgressMatrix
-				{cls}
-				students={filtered}
-				lessons={cls.lessons}
-				onOpenStudent={(sid) => openStudent(sid)}
-			/>
-		</Surface>
+				<ul class="divide-y divide-ink-200">
+					{#each filtered as stu (stu.id)}
+						{@const cells = cls.lessons.map((l) => cls.progress[stu.id][l.id])}
+						{@const done = cells.filter((p) => p.state === 'done').length}
+						{@const stuckRow = cells.some((p) => p.stuck)}
+						{@const activeIdx = cells.findIndex((p) => p.state === 'progress')}
+						{@const activeLesson = activeIdx >= 0 ? cls.lessons[activeIdx] : null}
+						<li class="px-4 py-4 hover:bg-ink-100/40 transition-colors">
+							<button
+								onclick={() => openStudent(stu.id, activeLesson?.id)}
+								class="tap w-full text-left flex items-start gap-3"
+							>
+								<span
+									class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-ink-100 text-[12px] font-mono text-ink-800 shrink-0"
+								>
+									{initials(stu.name)}
+								</span>
+								<div class="flex-1 min-w-0">
+									<div class="flex items-center justify-between gap-2">
+										<span
+											class="text-[14.5px] font-semibold text-ink-900 truncate"
+										>
+											{stu.name}
+										</span>
+										{#if stuckRow}
+											<span
+												class="inline-flex items-center gap-1 text-[10.5px] font-mono px-1.5 h-5 rounded-full"
+												style="color: oklch(0.45 0.14 70); background: oklch(0.62 0.16 70 / 0.18);"
+											>
+												<span
+													style="width: 6px; height: 6px; border-radius: 999px; background: oklch(0.62 0.16 70); display: inline-block;"
+												></span>
+												hängt fest
+											</span>
+										{/if}
+									</div>
+									<div class="mt-0.5 text-[12px] font-mono text-ink-700">
+										{#if activeLesson}
+											aktiv in {activeLesson.code} · {activeLesson.short}
+										{:else if done === cls.lessons.length}
+											alle Lektionen abgeschlossen
+										{:else}
+											wartet auf Start
+										{/if}
+									</div>
+									<div class="mt-2 flex items-center gap-2">
+										<div
+											class="flex-1 h-1.5 rounded-full bg-ink-200 overflow-hidden"
+										>
+											<div
+												class="h-full bg-accent"
+												style={`width: ${(done / cls.lessons.length) * 100}%`}
+											></div>
+										</div>
+										<span
+											class="text-[11px] font-mono text-ink-700 tabular-num shrink-0"
+										>
+											{done}/{cls.lessons.length}
+										</span>
+									</div>
+									<div class="mt-2.5 flex flex-wrap items-center gap-1">
+										{#each cls.lessons as l, i (l.id)}
+											<span
+												title={`${l.code} · ${l.short}`}
+												class="inline-flex items-center justify-center"
+											>
+												<MatrixCell
+													state={cells[i].state}
+													percent={cells[i].percent}
+													stuck={cells[i].stuck}
+													size={14}
+												/>
+											</span>
+										{/each}
+									</div>
+								</div>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			</Surface>
+		{/if}
 
 		<p class="mt-3 text-[11.5px] text-ink-600 font-mono">
 			Sie sehen nur Lernfortschritt im Schulkontext. Persönliche Konto-Daten der Schüler:innen werden nicht angezeigt.

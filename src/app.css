@@ -285,3 +285,188 @@ html:not(.light) .text-warn {
 html:not(.light) .text-ok {
 	color: oklch(0.80 0.13 150);
 }
+
+/* horizontal scroll without visible scrollbar (mobile tab/subnav rows) */
+.no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
+/* =================================================================
+   MOBILE PASS — patterns reused across many surfaces
+   ================================================================= */
+
+/* Touch-target floor: any element with .tap stays >= 44 px tall on touch. */
+@media (hover: none) and (pointer: coarse) {
+	.tap {
+		min-height: 44px;
+	}
+}
+
+/* iOS safe area helpers */
+.pb-safe {
+	padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+.pb-safe-0 {
+	padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* modal-sheet: full-bleed bottom sheet on mobile, centered card on desktop */
+.ms-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	display: grid;
+	place-items: end center;
+}
+@media (min-width: 768px) {
+	.ms-overlay {
+		place-items: center;
+		padding: 32px 16px;
+	}
+}
+.ms-card {
+	position: relative;
+	width: 100%;
+	max-height: 90vh;
+	overflow-y: auto;
+	background: rgb(var(--ink-50));
+	border: 1px solid rgb(var(--ink-200));
+	box-shadow:
+		0 20px 60px -20px rgba(0, 0, 0, 0.6),
+		0 0 0 1px rgba(255, 255, 255, 0.04);
+	border-top-left-radius: 16px;
+	border-top-right-radius: 16px;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+	padding-bottom: env(safe-area-inset-bottom, 0px);
+	animation: msSlideUp 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (min-width: 768px) {
+	.ms-card {
+		max-height: calc(100vh - 64px);
+		border-radius: 12px;
+		max-width: var(--ms-max, 480px);
+		animation: msFadeIn 180ms ease-out both;
+		padding-bottom: 0;
+	}
+}
+.ms-w-sm {
+	--ms-max: 420px;
+}
+.ms-w-md {
+	--ms-max: 480px;
+}
+.ms-w-lg {
+	--ms-max: 640px;
+}
+.ms-w-xl {
+	--ms-max: 720px;
+}
+
+/* Visual drag handle at the top of bottom sheets on mobile */
+.ms-handle {
+	display: block;
+	width: 36px;
+	height: 4px;
+	border-radius: 999px;
+	background: rgb(var(--ink-300));
+	margin: 8px auto 0;
+}
+@media (min-width: 768px) {
+	.ms-handle {
+		display: none;
+	}
+}
+
+@keyframes msSlideUp {
+	from {
+		transform: translateY(24px);
+		opacity: 0;
+	}
+	to {
+		transform: none;
+		opacity: 1;
+	}
+}
+@keyframes msFadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* Right-side drawer that becomes a bottom sheet on mobile */
+.drawer-shell {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	display: flex;
+	justify-content: stretch;
+	align-items: flex-end;
+}
+@media (min-width: 768px) {
+	.drawer-shell {
+		justify-content: flex-end;
+		align-items: stretch;
+	}
+}
+.drawer-card {
+	position: relative;
+	width: 100%;
+	max-height: 92vh;
+	overflow-y: auto;
+	background: rgb(var(--ink-0));
+	border-top: 1px solid rgb(var(--ink-200));
+	box-shadow: 0 -20px 60px -20px rgba(0, 0, 0, 0.45);
+	border-top-left-radius: 18px;
+	border-top-right-radius: 18px;
+	padding-bottom: env(safe-area-inset-bottom, 0px);
+	animation: msSlideUp 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (min-width: 768px) {
+	.drawer-card {
+		max-height: none;
+		height: 100%;
+		max-width: 640px;
+		border-top: 0;
+		border-left: 1px solid rgb(var(--ink-200));
+		border-top-left-radius: 0;
+		border-top-right-radius: 0;
+		animation: msFadeIn 200ms ease-out both;
+	}
+}
+
+/* Mobile-only fixed-bottom action bar (lesson page) */
+.bottom-bar {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 30;
+	background: rgb(var(--ink-0) / 0.86);
+	border-top: 1px solid rgb(var(--ink-200));
+	padding: 10px 12px env(safe-area-inset-bottom, 0px);
+	backdrop-filter: blur(10px) saturate(120%);
+	-webkit-backdrop-filter: blur(10px) saturate(120%);
+}
+@media (min-width: 768px) {
+	.bottom-bar {
+		display: none;
+	}
+}
+.bottom-bar-spacer {
+	height: calc(60px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+	.bottom-bar-spacer {
+		display: none;
+	}
+}

@@ -161,7 +161,7 @@
 		</div>
 	{:else}
 		<div
-			class="fixed inset-0 z-40 overflow-y-auto fade-in"
+			class="ms-overlay fade-in"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="qr-title"
@@ -171,10 +171,9 @@
 				class="absolute inset-0 bg-black/55 backdrop cursor-default"
 				onclick={onClose}
 			></button>
-			<div class="min-h-full grid place-items-center px-4 py-8 relative">
-				<div
-					class="relative w-full max-w-[640px] rounded-xl bg-ink-50 border border-ink-200 shadow-pop my-auto"
-				>
+			<div class="ms-card ms-w-lg">
+				<span class="ms-handle"></span>
+				<div>
 					<div
 						class="flex items-start justify-between p-6 border-b border-ink-200"
 					>

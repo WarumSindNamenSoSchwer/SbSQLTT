@@ -65,7 +65,7 @@ Frau Hartmann`;
 
 {#if open}
 	<div
-		class="fixed inset-0 z-40 overflow-y-auto fade-in"
+		class="ms-overlay fade-in"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="share-email-title"
@@ -75,10 +75,9 @@ Frau Hartmann`;
 			class="absolute inset-0 bg-black/55 backdrop cursor-default"
 			onclick={onClose}
 		></button>
-		<div class="min-h-full grid place-items-center px-4 py-8 relative">
-			<div
-				class="relative w-full max-w-[480px] rounded-xl bg-ink-50 border border-ink-200 shadow-pop my-auto"
-			>
+		<div class="ms-card ms-w-md">
+			<span class="ms-handle"></span>
+			<div>
 				<div class="flex items-start justify-between p-6 border-b border-ink-200">
 					<div>
 						<div
@@ -227,15 +226,16 @@ Frau Hartmann`;
 					</div>
 
 					<div
-						class="p-5 border-t border-ink-200 flex items-center justify-between gap-3"
+						class="p-5 border-t border-ink-200 flex items-center justify-between gap-3 flex-wrap"
 					>
-						<Button variant="ghost" size="md" onclick={onClose}>Abbrechen</Button>
+						<Button variant="ghost" size="md" onclick={onClose} class="tap">Abbrechen</Button>
 						{#if canSend}
 							<Button
 								variant="primary"
 								size="md"
 								onclick={send}
 								disabled={sent === 'sending'}
+								class="tap"
 							>
 								{sent === 'sending'
 									? 'Senden…'

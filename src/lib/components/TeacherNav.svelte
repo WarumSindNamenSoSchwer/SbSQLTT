@@ -43,13 +43,13 @@
 </script>
 
 <div class="border-b border-ink-200 bg-ink-50/40">
-	<div class="max-w-[1280px] mx-auto px-6 flex items-center">
-		<div class="flex items-center gap-1">
+	<div class="max-w-[1280px] mx-auto px-4 md:px-6 flex items-center">
+		<div class="flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar">
 			{#each items as it (it.href)}
 				{@const active = it.match(pathname)}
 				<a
 					href={it.href}
-					class={'relative h-11 px-3.5 inline-flex items-center text-[13.5px] font-medium transition-colors ' +
+					class={'relative h-11 px-3 md:px-3.5 inline-flex items-center text-[13.5px] font-medium transition-colors whitespace-nowrap shrink-0 ' +
 						(active ? 'text-ink-900' : 'text-ink-700 hover:text-ink-900')}
 				>
 					{it.label}
