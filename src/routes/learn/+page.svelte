@@ -29,16 +29,16 @@
 			<div
 				class="text-[12px] font-mono uppercase tracking-[0.16em] text-accent"
 			>
-				Catalog
+				Katalog
 			</div>
 			<h1
 				class="mt-2 text-[36px] md:text-[44px] leading-tight tracking-[-0.02em] font-semibold"
 			>
-				Lessons
+				Lektionen
 			</h1>
 			<p class="mt-2 text-[15px] text-ink-700 max-w-[60ch]">
-				Three tracks, fourteen lessons. Each lesson is a small, focused exercise — most
-				take under fifteen minutes.
+				Drei Tracks, vierzehn Lektionen. Jede Lektion ist eine kleine, fokussierte
+				Übung — die meisten dauern unter fünfzehn Minuten.
 			</p>
 		</div>
 		<div class="hidden md:flex items-center gap-2">
@@ -49,7 +49,7 @@
 				<input
 					type="text"
 					bind:value={query}
-					placeholder="Search lessons…"
+					placeholder="Lektionen durchsuchen…"
 					class="h-9 w-64 pl-9 pr-3 rounded-md bg-ink-50 border border-ink-200 text-[13px]
                          placeholder-ink-600 ring-accent focus:border-[oklch(0.72_0.15_195_/_0.4)]"
 				/>
@@ -74,7 +74,7 @@
 						</div>
 					</div>
 					<div class="text-[12px] font-mono text-ink-600 tabular-num">
-						{done} / {total} complete
+						{done} / {total} abgeschlossen
 					</div>
 				</div>
 
@@ -110,15 +110,15 @@
 											{l.title}
 										</div>
 										<div class="text-[12px] font-mono text-ink-600 mt-0.5">
-											{l.minutes} min · {track.label.toLowerCase()}
+											{l.minutes} Min · {track.label.toLowerCase()}
 										</div>
 									</div>
 								</div>
 								{#if isActive}
-									<Badge tone="accent" class="!h-5 !text-[10px]">In progress</Badge>
+									<Badge tone="accent" class="!h-5 !text-[10px]">In Bearbeitung</Badge>
 								{/if}
 								{#if isDone && !isActive}
-									<span class="text-[11px] text-ink-600 font-mono">done</span>
+									<span class="text-[11px] text-ink-600 font-mono">erledigt</span>
 								{/if}
 							</div>
 							<span
@@ -136,19 +136,13 @@
 	<!-- contributor link -->
 	<div class="mt-16 border-t border-ink-200 pt-8 flex items-center justify-between">
 		<div class="text-[13px] text-ink-700">
-			Building on top of SbSQLTT? See the
+			Du baust auf SbSQLTT auf? Schau in den Quellcode auf
 			<a
-				href="https://github.com/muri/sbsqltt"
-				class="text-accent hover:underline underline-offset-4 font-medium"
-				>design tokens</a
-			>
-			reference.
+				href="https://github.com/WarumSindNamenSoSchwer/SbSQLTT"
+				target="_blank"
+				rel="noreferrer"
+				class="text-accent hover:underline underline-offset-4 font-medium">GitHub</a
+			>.
 		</div>
-		<a
-			href="#"
-			class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1"
-		>
-			Read the contributor guide <Icon name="external" size={12} />
-		</a>
 	</div>
 </div>

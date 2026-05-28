@@ -9,23 +9,39 @@
 	>
 		<div class="flex items-center gap-5">
 			<Logo size={13} />
-			<span class="text-[12px] text-ink-600 font-mono">© 2026 · made by Muri</span>
+			<span class="text-[12px] text-ink-600 font-mono">© 2026 · gebaut von Muri</span>
 		</div>
-		<div class="flex items-center gap-5 text-[12.5px] text-ink-700">
+		<div
+			class="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px] text-ink-700"
+		>
 			<a
-				href="https://github.com"
+				href="https://github.com/WarumSindNamenSoSchwer/SbSQLTT"
+				target="_blank"
+				rel="noreferrer"
 				class="inline-flex items-center gap-1.5 hover:text-ink-900"
 			>
-				<Icon name="github" size={13} /> github.com/muri/sbsqltt
+				<Icon name="github" size={13} /> github.com/WarumSindNamenSoSchwer/SbSQLTT
 			</a>
-			<a href="#" class="inline-flex items-center gap-1.5 hover:text-ink-900">
+			<a
+				href="https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/LICENSE"
+				target="_blank"
+				rel="noreferrer"
+				class="inline-flex items-center gap-1.5 hover:text-ink-900"
+			>
 				<span
 					class="font-mono px-1.5 h-5 inline-flex items-center rounded border border-ink-300 text-[10.5px] text-ink-700"
 					>AGPL-3.0</span
 				>
-				license
+				Lizenz
 			</a>
-			<a href="https://jmestudio.de" class="hover:text-ink-900">jmestudio.de</a>
+			<a href="/impressum" class="hover:text-ink-900">Impressum</a>
+			<a href="/datenschutz" class="hover:text-ink-900">Datenschutz</a>
+			<a
+				href="https://jmestudio.de"
+				target="_blank"
+				rel="noreferrer"
+				class="hover:text-ink-900">jmestudio.de</a
+			>
 		</div>
 	</div>
 </footer>

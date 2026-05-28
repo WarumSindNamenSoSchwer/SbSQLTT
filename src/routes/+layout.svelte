@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import LoginModal from '$lib/components/LoginModal.svelte';
+	import ConsentBanner from '$lib/components/ConsentBanner.svelte';
 
 	let { children } = $props();
 
@@ -17,4 +18,5 @@
 	<Navbar onOpenLogin={() => (loginOpen = true)} />
 	{@render children()}
 	<LoginModal open={loginOpen} onClose={() => (loginOpen = false)} />
+	<ConsentBanner />
 </div>

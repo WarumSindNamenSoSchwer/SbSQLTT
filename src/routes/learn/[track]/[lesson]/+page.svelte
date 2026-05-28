@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { CURRENT_LESSON, runSQL, highlightSQL, type CheckStep, type Row } from '$lib/data';
+	import {
+		CURRENT_LESSON,
+		TRACKS,
+		runSQL,
+		highlightSQL,
+		type CheckStep,
+		type Row
+	} from '$lib/data';
 	import Button from '$lib/components/Button.svelte';
 	import Badge from '$lib/components/Badge.svelte';
 	import Kbd from '$lib/components/Kbd.svelte';
@@ -9,6 +16,16 @@
 
 	// TODO: look up lesson by [track]/[lesson] params; for now uses CURRENT_LESSON from data.ts
 	const L = CURRENT_LESSON;
+
+	// Prev / next lookup based on the current lesson's track + id.
+	const track = TRACKS.find((t) => t.id === L.track);
+	const lessonIdx = track ? track.lessons.findIndex((l) => l.id === L.id) : -1;
+	const prevLesson =
+		track && lessonIdx > 0 ? track.lessons[lessonIdx - 1] : null;
+	const nextLesson =
+		track && lessonIdx >= 0 && lessonIdx < track.lessons.length - 1
+			? track.lessons[lessonIdx + 1]
+			: null;
 	const checkStepIdx = L.steps.findIndex((s) => s.kind === 'check');
 	const checkStep = L.steps[checkStepIdx] as CheckStep;
 	const initialSql = checkStep.starter;
@@ -82,7 +99,7 @@
 
 	function formatCell(v: string | number | boolean | null | undefined): string {
 		if (v === null || v === undefined) return 'NULL';
-		if (typeof v === 'number') return v.toLocaleString('en-US');
+		if (typeof v === 'number') return v.toLocaleString('de-DE');
 		return String(v);
 	}
 </script>
@@ -97,12 +114,12 @@
 					class="text-[12px] text-ink-700 hover:text-ink-900 font-mono inline-flex items-center gap-1"
 				>
 					<Icon name="arrow" size={12} class="rotate-180" />
-					<span class="hidden sm:inline">All lessons</span>
+					<span class="hidden sm:inline">Alle Lektionen</span>
 				</button>
 				<span class="text-ink-300">·</span>
 				<div class="min-w-0">
 					<div class="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-600">
-						Beginner · Lesson 2/5
+						Anfänger · Lektion 2/5
 					</div>
 					<div class="text-[14px] font-semibold tracking-tight text-ink-900 truncate">
 						{L.title}
@@ -140,15 +157,22 @@
 				</div>
 
 				<span class="hidden md:inline text-[12px] font-mono text-ink-700 tabular-num">
-					Step {activeStep + 1} of {total}
+					Schritt {activeStep + 1} von {total}
 				</span>
 				<span class="hidden md:inline text-[12px] font-mono text-ink-600 tabular-num">
-					· {Math.round(pct * 100)}% complete
+					· {Math.round(pct * 100)} % erledigt
 				</span>
-				<Button variant="ghost" size="sm" class="!h-7">
-					Next lesson
-					{#snippet trailing()}<Icon name="arrow" size={12} />{/snippet}
-				</Button>
+				{#if nextLesson}
+					<Button
+						variant="ghost"
+						size="sm"
+						class="!h-7"
+						onclick={() => goto(`/learn/${L.track}/${nextLesson.id}`)}
+					>
+						Nächste Lektion
+						{#snippet trailing()}<Icon name="arrow" size={12} />{/snippet}
+					</Button>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -156,7 +180,7 @@
 	<!-- Mobile tabs -->
 	<div class="md:hidden border-b border-ink-200 px-3">
 		<div class="flex gap-1">
-			{#each ['lesson', 'editor', 'result'] as const as t (t)}
+			{#each [['lesson', 'Lektion'], ['editor', 'Editor'], ['result', 'Ergebnis']] as const as [t, label] (t)}
 				<button
 					onclick={() => (tab = t)}
 					class={'h-10 px-3 text-[13px] font-medium border-b-2 -mb-px ' +
@@ -164,7 +188,7 @@
 							? 'text-ink-900 border-accent'
 							: 'text-ink-700 border-transparent hover:text-ink-900')}
 				>
-					{t[0].toUpperCase() + t.slice(1)}
+					{label}
 					{#if t === 'result' && result.kind === 'ok'}
 						<span class="ml-2 text-[11px] font-mono text-ink-600">{result.rows.length}</span>
 					{/if}
@@ -188,7 +212,7 @@
 				<div
 					class="text-[11px] font-mono uppercase tracking-[0.14em] text-accent"
 				>
-					Lesson
+					Lektion
 				</div>
 				<h1
 					class="mt-2 text-[22px] md:text-[24px] font-semibold tracking-tight text-ink-900"
@@ -235,7 +259,7 @@
 									{step.title}
 								</h3>
 								{#if isCheck}
-									<Badge tone="accent" class="!h-5 !text-[10px]">Hands-on</Badge>
+									<Badge tone="accent" class="!h-5 !text-[10px]">Übung</Badge>
 								{/if}
 							</div>
 							<p
@@ -259,14 +283,14 @@
 											tab = 'editor';
 										}}
 									>
-										Open in editor
+										Im Editor öffnen
 										{#snippet trailing()}<Icon name="arrow" size={12} />{/snippet}
 									</Button>
 									{#if isDone}
 										<span
 											class="inline-flex items-center gap-1.5 text-[12px] text-accent font-mono"
 										>
-											<Icon name="check" size={12} sw={2.4} /> check passed
+											<Icon name="check" size={12} sw={2.4} /> Prüfung bestanden
 										</span>
 									{/if}
 								</div>
@@ -276,20 +300,26 @@
 				</div>
 
 				<div
-					class="mt-10 pt-6 border-t border-ink-200 flex items-center justify-between"
+					class="mt-10 pt-6 border-t border-ink-200 flex items-center justify-between gap-4"
 				>
-					<a
-						href="#"
-						class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1.5"
-					>
-						<Icon name="arrow" size={12} class="rotate-180" /> Previous · SELECT basics
-					</a>
-					<a
-						href="#"
-						class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1.5"
-					>
-						Next · ORDER BY &amp; LIMIT <Icon name="arrow" size={12} />
-					</a>
+					{#if prevLesson}
+						<a
+							href={`/learn/${L.track}/${prevLesson.id}`}
+							class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1.5"
+						>
+							<Icon name="arrow" size={12} class="rotate-180" /> Zurück · {prevLesson.title}
+						</a>
+					{:else}
+						<span></span>
+					{/if}
+					{#if nextLesson}
+						<a
+							href={`/learn/${L.track}/${nextLesson.id}`}
+							class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1.5"
+						>
+							Weiter · {nextLesson.title} <Icon name="arrow" size={12} />
+						</a>
+					{/if}
 				</div>
 			</div>
 		</aside>
@@ -314,7 +344,7 @@
 								<Icon name="db" size={12} /> library.books
 							</span>
 							<span class="text-ink-500">·</span>
-							<span>9 rows</span>
+							<span>9 Zeilen</span>
 						</div>
 						<div class="flex items-center gap-2">
 							<span
@@ -324,7 +354,7 @@
 							</span>
 							<Button variant="primary" size="sm" onclick={run}>
 								{#snippet leading()}<Icon name="play" size={10} />{/snippet}
-								Run query
+								Ausführen
 							</Button>
 						</div>
 					</div>
@@ -354,18 +384,18 @@
 												? '#f0b48a'
 												: '#3a3a47')}
 							></span>
-							<span>result</span>
+							<span>Ergebnis</span>
 						</div>
 						<div class="text-[11px] text-ink-700 font-mono tabular-num">
 							{#if result.kind === 'ok'}
-								{result.rows.length} row{result.rows.length === 1 ? '' : 's'} · {result.ms}
+								{result.rows.length} Zeile{result.rows.length === 1 ? '' : 'n'} · {result.ms}
 								ms
 							{:else if result.kind === 'running'}
-								running…
+								läuft…
 							{:else if result.kind === 'error'}
-								error
+								Fehler
 							{:else}
-								press <Kbd>⌘</Kbd> <Kbd>↵</Kbd> to run
+								<Kbd>⌘</Kbd> <Kbd>↵</Kbd> zum Ausführen drücken
 							{/if}
 						</div>
 					</div>
@@ -375,24 +405,24 @@
 							<div
 								class="h-full grid place-items-center text-ink-600 text-[13px] font-mono px-6 text-center"
 							>
-								Run a query to see results here.
+								Führe eine Abfrage aus, um Ergebnisse zu sehen.
 							</div>
 						{:else if result.kind === 'running'}
 							<div
 								class="h-full grid place-items-center text-ink-700 text-[13px]"
 							>
-								Executing query…
+								Abfrage wird ausgeführt…
 							</div>
 						{:else if result.kind === 'error'}
 							<div class="p-4 font-mono text-[12px] leading-relaxed">
-								<div class="text-err mb-1">ERROR</div>
+								<div class="text-err mb-1">FEHLER</div>
 								<div class="text-ink-800 whitespace-pre-wrap">{result.error}</div>
 								<div class="text-ink-600 mt-3">
-									Tip: this lesson only needs
+									Tipp: für diese Lektion brauchst du nur
 									<span class="tok-kw">SELECT</span>,
 									<span class="tok-kw">FROM</span>,
 									<span class="tok-kw">WHERE</span>,
-									<span class="tok-kw">ORDER BY</span>, and
+									<span class="tok-kw">ORDER BY</span> und
 									<span class="tok-kw">LIMIT</span>.
 								</div>
 							</div>
@@ -439,7 +469,7 @@
 												colspan={result.columns.length + 1}
 												class="py-8 text-center text-ink-600 italic"
 											>
-												no rows — the query ran but matched nothing
+												keine Zeilen — die Abfrage lief, aber nichts passte
 											</td>
 										</tr>
 									{/if}

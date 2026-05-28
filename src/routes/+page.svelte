@@ -9,36 +9,36 @@
 	const features = [
 		{
 			icon: 'db' as const,
-			title: 'Interactive Postgres in your browser',
-			body: 'Every query runs against a real Postgres-compatible engine compiled to WebAssembly. No accounts, no servers — your laptop is the database.'
+			title: 'Interaktives Postgres im Browser',
+			body: 'Jede Abfrage läuft gegen eine echte Postgres-kompatible Engine, kompiliert nach WebAssembly. Keine Konten, keine Server — dein Laptop ist die Datenbank.'
 		},
 		{
 			icon: 'layers' as const,
-			title: 'Lesson tracks: Beginner → Advanced',
-			body: 'A deliberate progression from SELECT and WHERE through joins, subqueries, and window functions. Each step is a small, focused exercise.'
+			title: 'Lerntracks: Anfänger → Fortgeschritten',
+			body: 'Ein klar aufgebauter Weg von SELECT und WHERE über Joins, Subqueries bis zu Window Functions. Jeder Schritt ist eine kleine, fokussierte Übung.'
 		},
 		{
 			icon: 'spark' as const,
-			title: 'Bring your own schema',
-			body: 'Paste a CREATE TABLE script or upload a .sql dump and explore your own data with the same editor and result panel.'
+			title: 'Eigenes Schema mitbringen',
+			body: 'Füge ein CREATE-TABLE-Skript ein oder lade einen .sql-Dump hoch und erkunde deine eigenen Daten mit demselben Editor und Ergebnis-Panel.'
 		}
 	];
 
 	const quickFacts: [string, string][] = [
-		['License', 'AGPL-3.0'],
-		['Hosting', 'self-hostable or hosted free'],
-		['Account required', 'no'],
-		['Languages', 'English · Deutsch'],
-		['Backend', 'postgres-wasm in browser'],
-		['Source', 'github.com/muri/sbsqltt']
+		['Lizenz', 'AGPL-3.0'],
+		['Betrieb', 'selbst hostbar oder kostenlos gehostet'],
+		['Konto erforderlich', 'nein'],
+		['Sprachen', 'Deutsch (Englisch folgt)'],
+		['Backend', 'postgres-wasm im Browser'],
+		['Quellcode', 'github.com/WarumSindNamenSoSchwer/SbSQLTT']
 	];
 
 	const stepLabels = [
-		'Why filter?',
-		'Anatomy of WHERE',
-		'Combining conditions',
-		'Try it: books after 2010',
-		'Recap'
+		'Warum filtern?',
+		'Aufbau von WHERE',
+		'Bedingungen kombinieren',
+		'Probier es: Bücher nach 2010',
+		'Rückblick'
 	];
 
 	const previewRows: [number, string, number][] = [
@@ -47,6 +47,9 @@
 		[3, 'Seven Databases in Seven Weeks', 2018],
 		[4, 'Database Internals', 2019]
 	];
+
+	// Quick facts row labels we still want to render in the SQL accent color
+	// (no behavioural change — purely label text).
 
 	function openLesson() {
 		goto('/learn/beginner/where-filters');
@@ -69,28 +72,28 @@
 					class="mt-5 text-[40px] md:text-[56px] leading-[1.05] tracking-[-0.02em] font-semibold text-ink-900"
 					style="text-wrap: balance"
 				>
-					Learn SQL by doing —
-					<span class="text-ink-700">free, open source,</span>
-					<br class="hidden md:block" /> no signup required.
+					Lerne SQL beim Tun —
+					<span class="text-ink-700">kostenlos, Open Source,</span>
+					<br class="hidden md:block" /> ohne Anmeldung.
 				</h1>
 
 				<p
 					class="mt-5 text-[16px] md:text-[17px] leading-relaxed text-ink-700 max-w-[560px]"
 					style="text-wrap: pretty"
 				>
-					A modern, focused way to practice SQL in your browser. Real Postgres, real
-					datasets, and lessons that build from
-					<span class="font-mono text-ink-800">SELECT</span> to window functions — at your
-					own pace.
+					Ein moderner, fokussierter Weg, SQL im Browser zu üben. Echtes Postgres, echte
+					Datensätze und Lektionen, die von
+					<span class="font-mono text-ink-800">SELECT</span> bis zu Window Functions
+					aufeinander aufbauen — in deinem eigenen Tempo.
 				</p>
 
 				<div class="mt-7 flex items-center gap-3">
 					<Button variant="primary" size="lg" onclick={openLesson}>
 						{#snippet trailing()}<Icon name="arrow" size={14} />{/snippet}
-						Try the first lesson
+						Erste Lektion starten
 					</Button>
 					<Button variant="ghost" size="lg" onclick={() => goto('/learn')}>
-						Browse all tracks
+						Alle Tracks ansehen
 					</Button>
 				</div>
 
@@ -98,10 +101,10 @@
 					class="mt-5 text-[12.5px] text-ink-600 flex items-center gap-4 font-mono"
 				>
 					<span class="inline-flex items-center gap-1.5">
-						<Icon name="check" size={12} /> 100% open source
+						<Icon name="check" size={12} /> 100 % Open Source
 					</span>
 					<span class="inline-flex items-center gap-1.5">
-						<Icon name="check" size={12} /> Runs in your browser
+						<Icon name="check" size={12} /> Läuft im Browser
 					</span>
 					<span class="inline-flex items-center gap-1.5">
 						<Icon name="check" size={12} /> AGPL-3.0
@@ -130,9 +133,9 @@
 							<span class="dot" style="background:#3a3a47"></span>
 						</div>
 						<div class="font-mono text-[11px] text-ink-600">
-							beginner / where-filters · step 4 of 5
+							beginner / where-filters · Schritt 4 von 5
 						</div>
-						<div class="font-mono text-[11px] text-ink-600">⌘↵ run</div>
+						<div class="font-mono text-[11px] text-ink-600">⌘↵ ausführen</div>
 					</div>
 					<!-- body -->
 					<div class="grid grid-cols-1 md:grid-cols-[1fr_1.6fr]">
@@ -141,16 +144,15 @@
 							<div
 								class="text-[11px] font-mono uppercase tracking-[0.14em] text-accent"
 							>
-								Step 4 / 5
+								Schritt 4 / 5
 							</div>
 							<div class="mt-2 text-[18px] font-semibold tracking-tight text-ink-900">
-								Books published after 2010
+								Bücher, die nach 2010 erschienen sind
 							</div>
 							<p class="mt-3 text-[13px] leading-relaxed text-ink-700">
-								Filter the <span class="font-mono">books</span> table to only include
-								rows whose
-								<span class="font-mono">year</span> is strictly greater than 2010. Sort
-								by year ascending.
+								Filtere die Tabelle <span class="font-mono">books</span> so, dass nur
+								Zeilen erscheinen, deren <span class="font-mono">year</span> echt größer
+								als 2010 ist. Sortiere aufsteigend nach Jahr.
 							</p>
 							<ol class="mt-5 space-y-2 text-[12.5px] text-ink-700">
 								{#each stepLabels as s, i (i)}
@@ -174,7 +176,7 @@
 						<div class="grid grid-rows-[1fr_auto]">
 							<pre
 								class="m-0 p-5 font-mono text-[13px] leading-[20px] whitespace-pre overflow-x-auto bg-ink-50"><span
-									class="tok-com">{`-- filter & order books published after the year 2010\n`}</span><span
+									class="tok-com">{`-- Bücher nach dem Jahr 2010 filtern & sortieren\n`}</span><span
 									class="tok-kw">SELECT</span><span class="tok-pun">{' '}</span><span
 									class="tok-id">title</span><span class="tok-pun">,</span><span
 									class="tok-pun">{' '}</span><span class="tok-id">year</span>{`\n`}<span
@@ -193,7 +195,7 @@
 								<div
 									class="px-4 h-8 flex items-center justify-between text-[11px] font-mono text-ink-700"
 								>
-									<span>4 rows · 1.2 ms</span>
+									<span>4 Zeilen · 1.2 ms</span>
 									<span class="text-accent">● ok</span>
 								</div>
 								<div class="overflow-hidden">
@@ -224,7 +226,7 @@
 					<div
 						class="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition pointer-events-none"
 					>
-						<Badge tone="accent">Open this lesson →</Badge>
+						<Badge tone="accent">Diese Lektion öffnen →</Badge>
 					</div>
 				</div>
 			</div>
@@ -260,7 +262,7 @@
 	</section>
 
 	<!-- FOR TEACHERS -->
-	<section class="border-t border-ink-200">
+	<section id="teachers" class="border-t border-ink-200 scroll-mt-20">
 		<div
 			class="max-w-[1280px] mx-auto px-6 py-20 md:py-24 grid md:grid-cols-[1.1fr_1fr] gap-12 md:gap-20 items-start"
 		>
@@ -268,22 +270,24 @@
 				<div
 					class="text-[12px] font-mono uppercase tracking-[0.16em] text-accent"
 				>
-					For teachers
+					Für Lehrkräfte
 				</div>
 				<h2
 					class="mt-3 text-[28px] md:text-[34px] leading-[1.15] tracking-tight font-semibold text-ink-900"
 					style="text-wrap: balance"
 				>
-					A serious tool you can recommend with a straight face.
+					Ein Werkzeug, das Sie Schülerinnen und Schülern guten Gewissens empfehlen
+					können.
 				</h2>
 				<p
 					class="mt-4 text-[15px] leading-relaxed text-ink-700 max-w-[55ch]"
 					style="text-wrap: pretty"
 				>
-					SbSQLTT is used in computer science courses at several German Gymnasien. It
-					works offline, keeps no student data on a server, and the entire codebase is
-					auditable. If you'd like a class set up, a custom schema, or just a chat about
-					how it could fit your curriculum — send a short email.
+					SbSQLTT wird im Informatikunterricht an mehreren deutschen Gymnasien
+					eingesetzt. Es läuft offline, speichert keine Schülerdaten auf einem Server,
+					und der gesamte Quellcode ist einsehbar. Wenn Sie einen Klassensatz aufsetzen
+					möchten, ein eigenes Schema benötigen oder einfach darüber sprechen wollen,
+					wie es in Ihren Lehrplan passt — schreiben Sie uns kurz.
 				</p>
 				<div class="mt-6 flex items-center gap-3">
 					<Button
@@ -294,26 +298,19 @@
 						{#snippet leading()}<Icon name="mail" size={14} />{/snippet}
 						teachers@jmestudio.de
 					</Button>
-					<a
-						href="#"
-						class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1"
-					>
-						Read the educator notes
-						<Icon name="external" size={12} />
-					</a>
 				</div>
 			</div>
 			<Surface class="p-6">
 				<div
 					class="font-mono text-[11px] uppercase tracking-[0.14em] text-ink-600"
 				>
-					Quick facts
+					Kurzinfo
 				</div>
 				<dl class="mt-4 divide-y divide-ink-200 text-[13.5px]">
 					{#each quickFacts as [k, v] (k)}
-						<div class="flex items-center justify-between py-2.5">
+						<div class="flex items-center justify-between py-2.5 gap-4">
 							<dt class="text-ink-700">{k}</dt>
-							<dd class="text-ink-900 font-mono">{v}</dd>
+							<dd class="text-ink-900 font-mono text-right">{v}</dd>
 						</div>
 					{/each}
 				</dl>

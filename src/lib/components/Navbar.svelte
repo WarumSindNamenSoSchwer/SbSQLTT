@@ -27,22 +27,12 @@
 					class={'px-2.5 h-8 rounded-md flex items-center hover:text-ink-900 hover:bg-ink-100 ' +
 						(isCatalog ? 'text-ink-900' : '')}
 				>
-					Lessons
+					Lektionen
 				</a>
 				<a
-					href="#"
+					href="/#teachers"
 					class="px-2.5 h-8 rounded-md flex items-center hover:text-ink-900 hover:bg-ink-100"
-					>Docs</a
-				>
-				<a
-					href="#"
-					class="px-2.5 h-8 rounded-md flex items-center hover:text-ink-900 hover:bg-ink-100"
-					>Teachers</a
-				>
-				<a
-					href="#"
-					class="px-2.5 h-8 rounded-md flex items-center hover:text-ink-900 hover:bg-ink-100"
-					>Changelog</a
+					>Für Lehrkräfte</a
 				>
 			</nav>
 		</div>
@@ -50,7 +40,7 @@
 		<div class="flex items-center gap-1.5">
 			<ThemeToggle />
 			<a
-				href="https://github.com"
+				href="https://github.com/WarumSindNamenSoSchwer/SbSQLTT"
 				target="_blank"
 				rel="noreferrer"
 				class="inline-flex items-center justify-center h-7 w-7 rounded-md text-ink-700 hover:text-ink-900 hover:bg-ink-100 ring-accent"
@@ -59,13 +49,13 @@
 				<Icon name="github" size={16} />
 			</a>
 			<span class="w-px h-4 bg-ink-300 mx-1.5"></span>
-			<Button variant="ghost" size="sm" onclick={() => onOpenLogin?.()}>Sign in</Button>
+			<Button variant="ghost" size="sm" onclick={() => onOpenLogin?.()}>Anmelden</Button>
 			<Button
 				variant="primary"
 				size="sm"
 				onclick={() => goto('/learn/beginner/where-filters')}
 			>
-				Try a lesson
+				Lektion ausprobieren
 			</Button>
 		</div>
 	</div>

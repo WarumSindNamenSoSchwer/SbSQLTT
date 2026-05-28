@@ -61,7 +61,7 @@
 			class="relative w-full max-w-[420px] rounded-xl bg-ink-50 border border-ink-200 shadow-pop p-7"
 		>
 			<button
-				aria-label="Close"
+				aria-label="Schließen"
 				onclick={onClose}
 				class="absolute top-3 right-3 w-7 h-7 grid place-items-center rounded-md text-ink-600 hover:text-ink-900 hover:bg-ink-100"
 			>
@@ -76,18 +76,21 @@
 				id="login-title"
 				class="mt-5 text-[20px] font-semibold tracking-tight text-ink-900"
 			>
-				{status === 'sent' ? 'Check your email.' : 'Sign in to save your progress.'}
+				{status === 'sent'
+					? 'Bitte E-Mail prüfen.'
+					: 'Anmelden, um deinen Fortschritt zu sichern.'}
 			</h2>
 			<p
 				class="mt-2 text-[13.5px] leading-relaxed text-ink-700"
 				style="text-wrap: pretty"
 			>
 				{#if status === 'sent'}
-					We sent a magic link to <span class="font-mono text-ink-900">{email}</span>. Open
-					it on this device to finish signing in.
+					Wir haben einen Magic Link an <span class="font-mono text-ink-900"
+						>{email}</span
+					> geschickt. Öffne ihn auf diesem Gerät, um die Anmeldung abzuschließen.
 				{:else}
-					We use a magic link — no password to remember. You can keep using SbSQLTT
-					without an account too.
+					Wir verwenden einen Magic Link — du musst dir kein Passwort merken. Du kannst
+					SbSQLTT auch ohne Konto weiter nutzen.
 				{/if}
 			</p>
 
@@ -97,7 +100,7 @@
 						for="email"
 						class="block text-[12px] font-mono uppercase tracking-[0.14em] text-ink-700"
 					>
-						Email
+						E-Mail
 					</label>
 					<div class="mt-2 relative">
 						<input
@@ -107,7 +110,7 @@
 							autocomplete="email"
 							bind:value={email}
 							onblur={() => (touched = true)}
-							placeholder="you@school.edu"
+							placeholder="du@schule.de"
 							class={'w-full h-10 pl-10 pr-3 rounded-md bg-ink-100/40 text-[14px] ' +
 								'placeholder-ink-600 ring-accent ' +
 								(touched && !valid
@@ -120,7 +123,7 @@
 					</div>
 					{#if touched && !valid}
 						<div class="mt-2 text-[12px] text-err font-mono">
-							Enter a valid email address.
+							Bitte eine gültige E-Mail-Adresse eingeben.
 						</div>
 					{/if}
 
@@ -134,12 +137,13 @@
 						{#snippet trailing()}
 							{#if status !== 'sending'}<Icon name="arrow" size={14} />{/if}
 						{/snippet}
-						{status === 'sending' ? 'Sending link…' : 'Send me a magic link'}
+						{status === 'sending' ? 'Link wird gesendet…' : 'Magic Link senden'}
 					</Button>
 
 					<p class="mt-4 text-[11.5px] leading-relaxed text-ink-600">
-						We only store the email you sign in with and an opaque progress record. No
-						tracking, no third-party analytics, no marketing emails — ever.
+						Wir speichern nur die E-Mail, mit der du dich anmeldest, und einen
+						anonymen Fortschrittseintrag. Kein Tracking, keine Drittanbieter-Analyse,
+						keine Werbe-Mails — niemals.
 					</p>
 				</form>
 			{/if}
@@ -147,9 +151,9 @@
 			{#if status === 'sent'}
 				<div class="mt-6 flex items-center justify-between">
 					<Button variant="ghost" size="md" onclick={() => (status = 'idle')}>
-						Use a different email
+						Andere E-Mail verwenden
 					</Button>
-					<Button variant="secondary" size="md" onclick={onClose}>Close</Button>
+					<Button variant="secondary" size="md" onclick={onClose}>Schließen</Button>
 				</div>
 			{/if}
 		</div>
