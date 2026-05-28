@@ -61,7 +61,7 @@
 	<section class="relative">
 		<div class="absolute inset-0 grid-bg pointer-events-none"></div>
 
-		<div class="relative max-w-[1280px] mx-auto px-6 pt-20 pb-16 md:pt-28 md:pb-24 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,460px)] md:gap-10 md:items-center">
+		<div class="relative max-w-[1280px] mx-auto px-6 pt-20 pb-16 md:pt-28 md:pb-24 lg:grid lg:grid-cols-[680px_1fr] lg:gap-6 lg:items-center">
 			<div class="max-w-[680px]">
 				<Badge tone="accent" class="!h-6 !px-2.5">
 					<span class="font-mono text-[10.5px] tracking-wide">v0.4 · public alpha</span>
@@ -112,7 +112,7 @@
 			</div>
 
 			<!-- desktop-only hero illustration -->
-			<div class="hidden md:block">
+			<div class="hidden lg:block">
 				<img
 					src="/images/hero-illustration.png"
 					alt=""
@@ -124,7 +124,7 @@
 			</div>
 
 			<!-- inline editor screenshot -->
-			<div class="mt-14 md:mt-20 md:col-span-2">
+			<div class="mt-14 md:mt-20 lg:col-span-2">
 				<div
 					role="button"
 					tabindex="0"
