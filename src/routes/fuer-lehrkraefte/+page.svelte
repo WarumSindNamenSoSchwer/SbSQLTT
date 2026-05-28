@@ -6,7 +6,7 @@
 </script>
 
 <svelte:head>
-	<title>Hinweise für Lehrkräfte · SbSQLTT</title>
+	<title>SbSQLTT</title>
 	<meta
 		name="description"
 		content="Wie SbSQLTT in den Informatikunterricht passt: Lernziele, Datenschutz, technische Voraussetzungen und Best Practices."

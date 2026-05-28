@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>Lehrer-Übersicht · SbSQLTT</title>
+	<title>SbSQLTT</title>
 </svelte:head>
 
 <TeacherNav />

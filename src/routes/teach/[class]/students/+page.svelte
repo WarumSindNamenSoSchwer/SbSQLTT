@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Schüler:innen · {cls.name} · SbSQLTT</title>
+	<title>SbSQLTT</title>
 </svelte:head>
 
 <div class="max-w-[1280px] mx-auto px-6 py-8 md:py-10">

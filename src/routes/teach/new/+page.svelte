@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>Neue Klasse anlegen · Lehrer · SbSQLTT</title>
+	<title>SbSQLTT</title>
 </svelte:head>
 
 <TeacherNav />

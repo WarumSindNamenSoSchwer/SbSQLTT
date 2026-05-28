@@ -94,7 +94,7 @@
 </script>
 
 <svelte:head>
-	<title>Aufgaben · {cls.name} · SbSQLTT</title>
+	<title>SbSQLTT</title>
 </svelte:head>
 
 <div class="max-w-[1280px] mx-auto px-6 py-8 md:py-10 pb-24">

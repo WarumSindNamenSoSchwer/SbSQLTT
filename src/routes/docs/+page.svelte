@@ -72,7 +72,7 @@
 </script>
 
 <svelte:head>
-	<title>SQL-Referenz · SbSQLTT</title>
+	<title>SbSQLTT</title>
 </svelte:head>
 
 <main class="max-w-[960px] mx-auto px-6 pt-16 pb-24">

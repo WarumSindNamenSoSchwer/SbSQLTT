@@ -24,7 +24,7 @@
 </script>
 
 <svelte:head>
-	<title>Einstellungen · Lehrer · SbSQLTT</title>
+	<title>SbSQLTT</title>
 </svelte:head>
 
 <TeacherNav />
