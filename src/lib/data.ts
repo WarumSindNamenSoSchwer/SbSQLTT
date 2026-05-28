@@ -49,80 +49,81 @@ export type Lesson = {
 export const TRACKS: Track[] = [
 	{
 		id: 'beginner',
-		label: 'Beginner',
-		blurb: 'Get comfortable reading and writing SELECT queries.',
+		label: 'Anfänger',
+		blurb: 'SELECT-Abfragen lesen und schreiben, sicher werden bei den Grundlagen.',
 		lessons: [
-			{ id: 'select-basics', title: 'SELECT basics', minutes: 6, status: 'done' },
-			{ id: 'where-filters', title: 'Filtering with WHERE', minutes: 8, status: 'active' },
-			{ id: 'order-limit', title: 'ORDER BY & LIMIT', minutes: 5, status: 'todo' },
-			{ id: 'distinct', title: 'DISTINCT values', minutes: 4, status: 'todo' },
-			{ id: 'null-handling', title: 'Working with NULL', minutes: 7, status: 'todo' }
+			{ id: 'select-basics', title: 'SELECT-Grundlagen', minutes: 6, status: 'done' },
+			{ id: 'where-filters', title: 'Mit WHERE filtern', minutes: 8, status: 'active' },
+			{ id: 'order-limit', title: 'ORDER BY und LIMIT', minutes: 5, status: 'todo' },
+			{ id: 'distinct', title: 'DISTINCT-Werte', minutes: 4, status: 'todo' },
+			{ id: 'null-handling', title: 'Umgang mit NULL', minutes: 7, status: 'todo' }
 		]
 	},
 	{
 		id: 'intermediate',
-		label: 'Intermediate',
-		blurb: 'Aggregations, grouping, and joining multiple tables.',
+		label: 'Fortgeschritten',
+		blurb: 'Aggregationen, Gruppierung und das Verknüpfen mehrerer Tabellen.',
 		lessons: [
 			{ id: 'aggregates', title: 'COUNT, SUM, AVG', minutes: 9, status: 'todo' },
-			{ id: 'group-by', title: 'GROUP BY & HAVING', minutes: 11, status: 'todo' },
+			{ id: 'group-by', title: 'GROUP BY und HAVING', minutes: 11, status: 'todo' },
 			{ id: 'inner-join', title: 'INNER JOIN', minutes: 12, status: 'todo' },
-			{ id: 'outer-joins', title: 'LEFT / RIGHT JOIN', minutes: 14, status: 'todo' }
+			{ id: 'outer-joins', title: 'LEFT- und RIGHT-JOIN', minutes: 14, status: 'todo' }
 		]
 	},
 	{
 		id: 'advanced',
-		label: 'Advanced',
-		blurb: 'Subqueries, window functions, and writing real-world queries.',
+		label: 'Profi',
+		blurb: 'Subqueries, Window Functions und Abfragen, die du wirklich brauchst.',
 		lessons: [
 			{ id: 'subqueries', title: 'Subqueries', minutes: 13, status: 'todo' },
-			{ id: 'ctes', title: 'Common table expressions', minutes: 15, status: 'todo' },
-			{ id: 'window-fn', title: 'Window functions', minutes: 18, status: 'todo' },
-			{ id: 'indexes', title: 'Indexes & EXPLAIN', minutes: 16, status: 'todo' }
+			{ id: 'ctes', title: 'Common Table Expressions', minutes: 15, status: 'todo' },
+			{ id: 'window-fn', title: 'Window Functions', minutes: 18, status: 'todo' },
+			{ id: 'indexes', title: 'Indizes und EXPLAIN', minutes: 16, status: 'todo' }
 		]
 	}
 ];
 
-// Current lesson: WHERE filters. Lesson narrative is a list of steps; the last
-// step is a check whose `expected` is matched against the query result.
+// Aktuelle Lektion: Mit WHERE filtern. Die Lektion besteht aus Schritten; der
+// letzte Schritt ist eine Übung, deren `expected` gegen das Abfrageergebnis
+// geprüft wird.
 export const CURRENT_LESSON: Lesson = {
 	track: 'beginner',
 	id: 'where-filters',
-	title: 'Filtering with WHERE',
-	subtitle: 'Restrict the rows a query returns using a condition.',
+	title: 'Mit WHERE filtern',
+	subtitle: 'Zeilen mit einer Bedingung gezielt aus dem Ergebnis ausschließen.',
 	steps: [
 		{
 			kind: 'read',
-			title: 'Why filter?',
-			body: `Most real tables have far more rows than you want. A WHERE clause keeps
-only the rows that match a condition; everything else is dropped before the
-result reaches you.`
+			title: 'Warum filtern?',
+			body: `Die meisten Tabellen enthalten viel mehr Zeilen, als du brauchst. Eine
+WHERE-Klausel behält nur die Zeilen, die zu einer Bedingung passen; alles andere
+wird verworfen, bevor das Ergebnis bei dir ankommt.`
 		},
 		{
 			kind: 'read',
-			title: 'Anatomy of WHERE',
-			body: `Place WHERE after the FROM clause. The condition is any expression that
-returns true or false: comparisons (=, <, >=, <>), logical operators (AND, OR,
-NOT), and pattern matching (LIKE).`,
+			title: 'Aufbau von WHERE',
+			body: `WHERE steht direkt nach der FROM-Klausel. Die Bedingung ist ein beliebiger
+Ausdruck, der wahr oder falsch ergibt: Vergleiche (=, <, >=, <>), logische
+Operatoren (AND, OR, NOT) und Mustervergleiche (LIKE).`,
 			code: `SELECT title, year
 FROM   books
 WHERE  year >= 2000;`
 		},
 		{
 			kind: 'read',
-			title: 'Combining conditions',
-			body: `AND requires both sides to be true. OR requires at least one. Wrap mixed
-expressions in parentheses to make precedence obvious to the next person reading
-your query (usually you).`
+			title: 'Bedingungen kombinieren',
+			body: `AND verlangt, dass beide Seiten wahr sind. OR genügt es, wenn eine Seite
+wahr ist. Klammere gemischte Ausdrücke, damit die Auswertungsreihenfolge für die
+nächste Person, die deine Abfrage liest, klar ist (in der Regel bist du das selbst).`
 		},
 		{
 			kind: 'check',
-			title: 'Try it: books published after 2010',
-			body: `Write a query that returns the title and year of every book published
-strictly after the year 2010, ordered by year ascending.`,
-			starter: `SELECT title, year\nFROM   books\nWHERE  -- your condition here\nORDER BY year ASC;`,
+			title: 'Übung: Bücher nach 2010',
+			body: `Schreibe eine Abfrage, die Titel und Erscheinungsjahr aller Bücher liefert,
+die strikt nach 2010 erschienen sind, sortiert nach Jahr aufsteigend.`,
+			starter: `SELECT title, year\nFROM   books\nWHERE  -- deine Bedingung hier\nORDER BY year ASC;`,
 			expected: {
-				// we check this by inspecting result columns + rows from the mock engine
+				// Wir prüfen Spalten und Zeilen, die die Mock-Engine zurückliefert.
 				columns: ['title', 'year'],
 				rowsMatch: (rows: Row[]) =>
 					rows.length > 0 &&
@@ -135,10 +136,10 @@ strictly after the year 2010, ordered by year ascending.`,
 		},
 		{
 			kind: 'read',
-			title: 'Recap',
-			body: `WHERE happens before ORDER BY and LIMIT. The database evaluates the
-condition row-by-row, keeps the matches, and only then sorts and trims. Up next:
-ORDER BY and LIMIT in more detail.`
+			title: 'Zusammenfassung',
+			body: `WHERE wird vor ORDER BY und LIMIT angewendet. Die Datenbank prüft die
+Bedingung Zeile für Zeile, behält die Treffer und sortiert oder begrenzt erst
+danach. Als Nächstes: ORDER BY und LIMIT im Detail.`
 		}
 	]
 };
