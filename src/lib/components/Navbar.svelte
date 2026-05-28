@@ -10,6 +10,7 @@
 
 	let pathname = $derived(page.url.pathname);
 	let isCatalog = $derived(pathname === '/learn' || pathname.startsWith('/learn'));
+	let isDocs = $derived(pathname.startsWith('/docs'));
 </script>
 
 <header
@@ -30,10 +31,25 @@
 					Lektionen
 				</a>
 				<a
+					href="/docs"
+					class={'px-2.5 h-8 rounded-md flex items-center hover:text-ink-900 hover:bg-ink-100 ' +
+						(isDocs ? 'text-ink-900' : '')}
+				>
+					Docs
+				</a>
+				<a
 					href="/#teachers"
 					class="px-2.5 h-8 rounded-md flex items-center hover:text-ink-900 hover:bg-ink-100"
 					>Für Lehrkräfte</a
 				>
+				<a
+					href="https://github.com/WarumSindNamenSoSchwer/SbSQLTT/releases"
+					target="_blank"
+					rel="noreferrer"
+					class="px-2.5 h-8 rounded-md flex items-center hover:text-ink-900 hover:bg-ink-100"
+				>
+					Changelog
+				</a>
 			</nav>
 		</div>
 
