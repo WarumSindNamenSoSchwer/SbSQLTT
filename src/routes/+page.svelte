@@ -111,7 +111,7 @@
 				</div>
 			</div>
 
-			<!-- desktop-only hero illustration -->
+			<!-- desktop-only hero illustration (theme-aware) -->
 			<div class="hidden lg:block">
 				<img
 					src="/images/hero-illustration.png"
@@ -119,7 +119,15 @@
 					aria-hidden="true"
 					width="1200"
 					height="1200"
-					class="w-full h-auto select-none pointer-events-none"
+					class="hero-light w-full h-auto select-none pointer-events-none"
+				/>
+				<img
+					src="/images/hero-illustration-dark.png"
+					alt=""
+					aria-hidden="true"
+					width="1200"
+					height="1200"
+					class="hero-dark w-full h-auto select-none pointer-events-none"
 				/>
 			</div>
 

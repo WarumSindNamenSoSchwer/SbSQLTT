@@ -130,6 +130,12 @@ html.light *::-webkit-scrollbar-thumb {
 	background: radial-gradient(60% 50% at 50% 0%, var(--hero-glow), transparent 70%);
 }
 
+/* theme-aware hero illustration swap */
+.hero-light { display: block; }
+.hero-dark { display: none; }
+html:not(.light) .hero-light { display: none; }
+html:not(.light) .hero-dark { display: block; }
+
 /* mono ligature niceness */
 .font-mono {
 	font-feature-settings: 'ss01', 'ss02', 'calt', 'liga';
