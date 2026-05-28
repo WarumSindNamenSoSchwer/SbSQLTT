@@ -61,7 +61,7 @@
 	<section class="relative">
 		<div class="absolute inset-0 grid-bg pointer-events-none"></div>
 
-		<div class="relative max-w-[1280px] mx-auto px-6 pt-20 pb-16 md:pt-28 md:pb-24 lg:grid lg:grid-cols-[680px_1fr] lg:gap-6 lg:items-center">
+		<div class="relative max-w-[1280px] mx-auto px-4 md:px-6 pt-20 pb-16 md:pt-28 md:pb-24 lg:grid lg:grid-cols-[680px_1fr] lg:gap-6 lg:items-center">
 			<div class="max-w-[680px]">
 				<Badge tone="accent" class="!h-6 !px-2.5">
 					<span class="font-mono text-[10.5px] tracking-wide">v0.4 · public alpha</span>
@@ -246,7 +246,7 @@
 
 	<!-- 3-FEATURE ROW -->
 	<section class="border-t border-ink-200">
-		<div class="max-w-[1280px] mx-auto px-6 py-20 md:py-24">
+		<div class="max-w-[1280px] mx-auto px-4 md:px-6 py-20 md:py-24">
 			<div class="grid md:grid-cols-3 gap-px bg-ink-200">
 				{#each features as f (f.title)}
 					<div class="bg-ink-0 p-7 md:p-8">
@@ -275,7 +275,7 @@
 	<!-- FOR TEACHERS -->
 	<section id="teachers" class="border-t border-ink-200 scroll-mt-20">
 		<div
-			class="max-w-[1280px] mx-auto px-6 py-20 md:py-24 grid md:grid-cols-[1.1fr_1fr] gap-12 md:gap-20 items-start"
+			class="max-w-[1280px] mx-auto px-4 md:px-6 py-20 md:py-24 grid md:grid-cols-[1.1fr_1fr] gap-12 md:gap-20 items-start"
 		>
 			<div>
 				<div
