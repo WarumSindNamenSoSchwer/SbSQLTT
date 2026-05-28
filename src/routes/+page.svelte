@@ -97,7 +97,7 @@
 				</div>
 
 				<div
-					class="mt-5 text-[12.5px] text-ink-600 flex items-center gap-4 font-mono"
+					class="mt-5 text-[12.5px] text-ink-600 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono"
 				>
 					<span class="inline-flex items-center gap-1.5">
 						<Icon name="check" size={12} /> 100 % Open Source
@@ -334,9 +334,13 @@
 				</div>
 				<dl class="mt-4 divide-y divide-ink-200 text-[13.5px]">
 					{#each quickFacts as [k, v] (k)}
-						<div class="flex items-center justify-between py-2.5 gap-4">
-							<dt class="text-ink-700">{k}</dt>
-							<dd class="text-ink-900 font-mono text-right">{v}</dd>
+						<div
+							class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2.5 gap-1 sm:gap-4"
+						>
+							<dt class="text-ink-700 shrink-0">{k}</dt>
+							<dd
+								class="text-ink-900 font-mono sm:text-right min-w-0 break-words"
+							>{v}</dd>
 						</div>
 					{/each}
 				</dl>

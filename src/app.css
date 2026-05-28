@@ -85,7 +85,6 @@ html,
 body {
 	background: rgb(var(--ink-0));
 	color: rgb(var(--ink-900));
-	overflow-x: hidden;
 }
 
 /* selection */
