@@ -183,7 +183,7 @@
 					class="tap !h-9 !px-3"
 					onclick={() => goto('/learn/beginner/where-filters')}
 				>
-					Try
+					Lektion
 				</Button>
 			{/if}
 			<button
