@@ -276,7 +276,7 @@
 					class="mt-3 text-[28px] md:text-[34px] leading-[1.15] tracking-tight font-semibold text-ink-900"
 					style="text-wrap: balance"
 				>
-					Gemeinsam mit Lehrkräften gebaut — für echten Unterricht, nicht für die Marketing-Folie.
+					Entwickelt mit Lehrkräften — damit es zu Ihrem Unterricht passt.
 				</h2>
 				<p
 					class="mt-4 text-[15px] leading-relaxed text-ink-700 max-w-[55ch]"
