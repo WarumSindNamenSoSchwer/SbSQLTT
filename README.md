@@ -32,6 +32,10 @@ Feature-Branches.
 | **P3 — Lehrer-Dashboard** | Klassenraum-Sicht mit Schüler-Fortschritt und "hängt fest"-Anzeige |
 | **P4 — Community** | Lektions-Beiträge, Self-Hosting-Doku |
 
+### Aktuell oben auf der Liste
+
+- **Mobile-Optimierung** (Lektion + Lehrer-Bereich auf Smartphone und Tablet sauber bedienbar)
+
 ### Stack
 
 - **Frontend:** SvelteKit + Tailwind CSS + shadcn-svelte
@@ -88,6 +92,10 @@ branches.
 | **P2 — DB-design mode** | Learners can build their own schemas and query them |
 | **P3 — Teacher dashboard** | Classroom view: per-student progress, "stuck on" indicator |
 | **P4 — Community** | Lesson contributions, self-host docs |
+
+### Currently at the top of the list
+
+- **Mobile optimization** (lesson runner and teacher area should feel right on phone and tablet)
 
 ### Stack
 
