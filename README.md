@@ -17,6 +17,19 @@ Postgres im Browser (via PGlite WASM), Lektionen in Markdown verfasst,
 optionales Cloud-Login zum Speichern des Fortschritts und ein Lehrer-Dashboard
 fürs Klassenzimmer.
 
+### Was schon läuft
+
+- ✅ **Komplette zweisprachige UI** (DE/EN) — Landing, Lern-Bereich, Lehrer-Dashboard, Rechtliches.
+- ✅ **Lern-Ansicht:** Lektions-Tracks, Lektions-Runner mit Lese-/Aufgaben-Schritten, Ergebnis-Tabellen, Editor-Oberfläche (CodeMirror-Layout).
+- ✅ **Lehrer-Dashboard:** Klassen anlegen, Schülerliste, Fortschritts-Matrix, „hängt fest"-Anzeige, Aufgaben- und Einstellungs-Seiten, QR-/E-Mail-Beitritt.
+- ✅ **Polish:** Dark/Light-Theme, responsives Layout, Impressum + Datenschutz.
+- 🚧 **Mock-Daten:** alles oben läuft aktuell auf In-Memory-Beispieldaten (`src/lib/data.ts`).
+
+### Als Nächstes verdrahtet
+
+- 🔜 **SQL-Sandbox** echt machen — PGlite (Postgres in WASM) an den Editor anbinden, damit Abfragen wirklich laufen.
+- 🔜 **Persistenz & Login** — Supabase für optionales Speichern des Fortschritts und Klassen-Daten.
+
 ### Status
 
 🚧 **Pre-MVP, Breaking Changes erwartet.** Das Repository ist von Tag 1 an
@@ -77,6 +90,19 @@ möchten, schreiben Sie kurz an
 Inspired by [sqlbolt.com](https://sqlbolt.com), but built in 2026: Postgres in
 the browser (via PGlite WASM), markdown-authored lessons, optional cloud
 sign-in to save progress, and a teacher view for classrooms.
+
+### What already works
+
+- ✅ **Complete bilingual UI** (DE/EN) — landing, learn area, teacher dashboard, legal pages.
+- ✅ **Learn view:** lesson tracks, a lesson runner with read/task steps, result tables, editor surface (CodeMirror layout).
+- ✅ **Teacher dashboard:** create classes, student list, progress matrix, "stuck on" indicator, task and settings pages, QR/email join.
+- ✅ **Polish:** dark/light theme, responsive layout, Impressum + privacy page.
+- 🚧 **Mock data:** everything above currently runs on in-memory sample data (`src/lib/data.ts`).
+
+### Wiring up next
+
+- 🔜 **Real SQL sandbox** — connect PGlite (Postgres in WASM) to the editor so queries actually run.
+- 🔜 **Persistence & sign-in** — Supabase for optional progress saving and class data.
 
 ### Status
 
