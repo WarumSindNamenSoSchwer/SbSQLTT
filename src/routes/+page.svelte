@@ -276,18 +276,18 @@
 					class="mt-3 text-[28px] md:text-[34px] leading-[1.15] tracking-tight font-semibold text-ink-900"
 					style="text-wrap: balance"
 				>
-					Ein Werkzeug, das Sie Schülerinnen und Schülern guten Gewissens empfehlen
-					können.
+					Gemeinsam mit Lehrkräften gebaut — für echten Unterricht, nicht für die Marketing-Folie.
 				</h2>
 				<p
 					class="mt-4 text-[15px] leading-relaxed text-ink-700 max-w-[55ch]"
 					style="text-wrap: pretty"
 				>
-					SbSQLTT wird im Informatikunterricht an mehreren deutschen Gymnasien
-					eingesetzt. Es läuft offline, speichert keine Schülerdaten auf einem Server,
-					und der gesamte Quellcode ist einsehbar. Wenn Sie einen Klassensatz aufsetzen
-					möchten, ein eigenes Schema benötigen oder einfach darüber sprechen wollen,
-					wie es in Ihren Lehrplan passt — schreiben Sie uns kurz.
+					SbSQLTT entsteht in enger Abstimmung mit Informatiklehrkräften, damit Aufgaben,
+					Tempo und Schwerpunkte wirklich zu dem passen, was Schülerinnen und Schüler im
+					Kurs brauchen. Es läuft offline, speichert keine Schülerdaten auf einem fremden
+					Server, und der gesamte Quellcode ist einsehbar. Wenn Sie mitgestalten,
+					Aufgaben vorschlagen oder einen Klassensatz testen möchten — schreiben Sie
+					kurz, wir nehmen Feedback ernst.
 				</p>
 				<div class="mt-6 flex items-center gap-3">
 					<Button
