@@ -75,6 +75,39 @@
 					per „Magic Link", wir setzen keine Passwörter. Rechtsgrundlage: Art. 6 Abs.
 					1 lit. b DSGVO. Du kannst dein Konto jederzeit per E-Mail löschen lassen.
 				</p>
+				<p
+					class="text-[14px] leading-relaxed text-ink-700"
+					style="text-wrap: pretty"
+				>
+					<strong>Hinweis zur aktuellen Alpha:</strong> Der Lehrer-Bereich
+					(<code class="font-mono text-[13px]">/teach</code>) läuft in dieser Version
+					ausschließlich mit Demo-Daten im Browser. Es werden keine echten Klassen-,
+					Schüler- oder Fortschrittsdaten an einen Server übertragen oder dort
+					gespeichert. Die echte Anbindung an Supabase erfolgt erst mit der nächsten
+					Version; bis dahin gibt es kein Login und keine personenbezogene
+					Verarbeitung in diesem Bereich.
+				</p>
+			</section>
+
+			<section class="mt-8 space-y-2">
+				<h2 class="text-base font-semibold text-ink-900">
+					5a. Lehrer-Bereich (geplant, noch nicht aktiv)
+				</h2>
+				<p
+					class="text-[14px] leading-relaxed text-ink-700"
+					style="text-wrap: pretty"
+				>
+					Sobald der Lehrer-Bereich produktiv ist, werden für angemeldete Lehrkräfte
+					folgende Daten verarbeitet: E-Mail-Adresse, optional anzeigbarer Name und
+					Schule, die von der Lehrkraft angelegten Klassen, ein zufällig generierter
+					Beitritts-Code pro Klasse sowie die Liste der über diesen Code beigetretenen
+					Schülerinnen und Schüler. Für eingeladene Schülerinnen und Schüler werden
+					Pseudonym, Klassen-Zugehörigkeit und Lernfortschritt pro Lektion erfasst,
+					jedoch keine SQL-Eingaben (siehe Punkt 6). Rechtsgrundlage: Art. 6 Abs. 1
+					lit. b DSGVO (Vertragserfüllung) sowie Art. 6 Abs. 1 lit. f DSGVO
+					(berechtigtes Interesse am Klassen-Betrieb). Eine Mustervereinbarung zur
+					Auftragsverarbeitung nach Art. 28 DSGVO ist auf Anfrage erhältlich.
+				</p>
 			</section>
 
 			<section class="mt-8 space-y-2">

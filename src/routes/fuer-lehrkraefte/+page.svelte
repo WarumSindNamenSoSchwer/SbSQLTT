@@ -143,12 +143,24 @@
 					</div>
 					<p class="text-ink-700">
 						Sie geben einen Track frei (z. B. Anfänger), die Klasse arbeitet im eigenen
-						Tempo. Sie wandern durch den Raum, das Lehrer-Dashboard (in Vorbereitung)
-						zeigt Ihnen später, wer wo hängt.
+						Tempo. Sie wandern durch den Raum, das
+						<a href="/teach" class="text-accent hover:underline">Lehrer-Dashboard</a>
+						zeigt parallel, wer wo hängt — markiert mit einem Warnhinweis, sobald jemand
+						länger als ein paar Minuten am gleichen Schritt scheitert.
 					</p>
 				</Surface>
 				<Surface class="p-5">
-					<div class="font-semibold text-ink-900 mb-1">3. Hausaufgabe</div>
+					<div class="font-semibold text-ink-900 mb-1">
+						3. Klasse einladen (E-Mail oder QR-Code)
+					</div>
+					<p class="text-ink-700">
+						Im Lehrer-Bereich legen Sie eine Klasse an und teilen den Beitritts-Code
+						entweder per E-Mail oder als großen QR-Code für die Tafel. Schülerinnen
+						und Schüler müssen kein Konto anlegen, um beizutreten.
+					</p>
+				</Surface>
+				<Surface class="p-5">
+					<div class="font-semibold text-ink-900 mb-1">4. Hausaufgabe</div>
 					<p class="text-ink-700">
 						Geben Sie einen direkten Lektions-Link mit, z. B.
 						<code class="font-mono text-[13px] text-accent"
@@ -157,7 +169,7 @@
 					</p>
 				</Surface>
 				<Surface class="p-5">
-					<div class="font-semibold text-ink-900 mb-1">4. Klausurvorbereitung</div>
+					<div class="font-semibold text-ink-900 mb-1">5. Klausurvorbereitung</div>
 					<p class="text-ink-700">
 						Schülerinnen und Schüler können beliebig oft Aufgaben wiederholen, eigene
 						Schemata anlegen und realistische Abfragen üben.
@@ -168,16 +180,49 @@
 
 		<section>
 			<h2 class="text-[20px] font-semibold tracking-tight text-ink-900 mb-3">
-				Was es noch nicht gibt
+				Was es schon gibt
+			</h2>
+			<ul class="space-y-2 list-disc pl-5 text-ink-700">
+				<li>
+					<a href="/teach" class="text-accent hover:underline">Lehrer-Bereich</a>
+					mit Klassen-Übersicht, Schüler-Matrix, „hängen jetzt fest"-Anzeige,
+					Schüler-Detailansicht, Aufgaben-Freischaltung und Klassen-Einstellungen.
+				</li>
+				<li>
+					Beitritts-Code pro Klasse, teilbar per E-Mail oder als QR-Code im Vollbild für
+					die Tafel.
+				</li>
+				<li>
+					Eine ausgearbeitete Beispiel-Lektion (<em>Mit WHERE filtern</em>) plus
+					Vorschauen für vierzehn weitere Lektionen über drei Tracks.
+				</li>
+				<li>Light- und Dark-Mode mit Theme-Wahl pro Konto.</li>
+				<li>Volle Datenschutz-Dokumentation und Impressum.</li>
+			</ul>
+		</section>
+
+		<section>
+			<h2 class="text-[20px] font-semibold tracking-tight text-ink-900 mb-3">
+				Was noch fehlt
 			</h2>
 			<p class="mb-3 text-ink-700">
-				Ehrlich gesagt: Einiges. Pre-MVP heißt Pre-MVP.
+				Ehrlich gesagt: einiges. Pre-MVP heißt Pre-MVP.
 			</p>
 			<ul class="space-y-2 list-disc pl-5 text-ink-700">
-				<li>Lehrer-Dashboard mit Schüler-Fortschritt (Phase 3, in Arbeit).</li>
-				<li>Notenvergabe oder Punktesystem (nicht geplant).</li>
-				<li>Vollständige Lektions-Bibliothek (aktuell eine Beispiel-Lektion).</li>
+				<li>
+					Echter Schüler-Login mit gespeichertem Fortschritt (Magic-Link-Auth ist in
+					Vorbereitung, aktuell sind die Lehrer-Bereichs-Daten Demo-Daten).
+				</li>
+				<li>
+					Vollständige Lektions-Bibliothek (aktuell eine ausgearbeitete Beispiel-Lektion,
+					der Rest folgt).
+				</li>
+				<li>
+					„Eigenes Schema mitbringen"-Modus, in dem Schülerinnen und Schüler eigene
+					CREATE-TABLE-Skripte hochladen.
+				</li>
 				<li>Englische Übersetzung der Lektions-Inhalte (folgt).</li>
+				<li>Notenvergabe oder Punktesystem (bewusst nicht geplant).</li>
 			</ul>
 		</section>
 
