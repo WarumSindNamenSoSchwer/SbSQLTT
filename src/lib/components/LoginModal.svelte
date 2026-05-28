@@ -1,16 +1,21 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import Logo from './Logo.svelte';
 	import Button from './Button.svelte';
 	import Icon from './Icon.svelte';
 
 	let { open, onClose }: { open: boolean; onClose: () => void } = $props();
 
+	type Role = 'student' | 'teacher';
+
+	let role = $state<Role>('student');
 	let email = $state('');
 	let status = $state<'idle' | 'sending' | 'sent'>('idle');
 	let touched = $state(false);
 	let inputRef = $state<HTMLInputElement>();
 
 	let valid = $derived(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+	let isTeacher = $derived(role === 'teacher');
 
 	$effect(() => {
 		if (open) {
@@ -37,6 +42,11 @@
 		status = 'sending';
 		setTimeout(() => (status = 'sent'), 900);
 	}
+
+	function enterTeacherPreview() {
+		onClose();
+		goto('/teach');
+	}
 </script>
 
 {#if open}
@@ -58,7 +68,7 @@
 			onkeydown={(e) => e.stopPropagation()}
 			role="document"
 			tabindex="-1"
-			class="relative w-full max-w-[420px] rounded-xl bg-ink-50 border border-ink-200 shadow-pop p-7"
+			class="relative w-full max-w-[440px] rounded-xl bg-ink-50 border border-ink-200 shadow-pop p-7"
 		>
 			<button
 				aria-label="Schließen"
@@ -72,24 +82,63 @@
 				<Logo size={12} />
 			</div>
 
+			<!-- role switch -->
+			{#if status !== 'sent'}
+				<div
+					role="tablist"
+					aria-label="Rolle auswählen"
+					class="mt-5 inline-flex items-center bg-ink-100 border border-ink-200 rounded-md p-0.5 text-[12.5px]"
+				>
+					<button
+						role="tab"
+						aria-selected={role === 'student'}
+						onclick={() => (role = 'student')}
+						class={'px-3 h-7 rounded-[5px] ' +
+							(role === 'student'
+								? 'bg-ink-50 text-ink-900 shadow-soft border border-ink-200'
+								: 'text-ink-700 hover:text-ink-900')}
+					>
+						Schüler:in
+					</button>
+					<button
+						role="tab"
+						aria-selected={role === 'teacher'}
+						onclick={() => (role = 'teacher')}
+						class={'px-3 h-7 rounded-[5px] ' +
+							(role === 'teacher'
+								? 'bg-ink-50 text-ink-900 shadow-soft border border-ink-200'
+								: 'text-ink-700 hover:text-ink-900')}
+					>
+						Lehrkraft
+					</button>
+				</div>
+			{/if}
+
 			<h2
 				id="login-title"
 				class="mt-5 text-[20px] font-semibold tracking-tight text-ink-900"
 			>
-				{status === 'sent'
-					? 'Bitte E-Mail prüfen.'
-					: 'Anmelden, um deinen Fortschritt zu sichern.'}
+				{#if status === 'sent'}
+					Bitte E-Mail prüfen.
+				{:else if isTeacher}
+					Als Lehrkraft anmelden.
+				{:else}
+					Anmelden, um deinen Fortschritt zu sichern.
+				{/if}
 			</h2>
 			<p
 				class="mt-2 text-[13.5px] leading-relaxed text-ink-700"
 				style="text-wrap: pretty"
 			>
 				{#if status === 'sent'}
-					Wir haben einen Magic Link an <span class="font-mono text-ink-900"
-						>{email}</span
-					> geschickt. Öffne ihn auf diesem Gerät, um die Anmeldung abzuschließen.
+					Wir haben einen Magic Link an <span class="font-mono text-ink-900">{email}</span>
+					geschickt. Öffnen Sie ihn auf diesem Gerät, um die Anmeldung abzuschließen.
+				{:else if isTeacher}
+					Mit Ihrer dienstlichen E-Mail anmelden. Wir verwenden einen Magic Link, kein
+					Passwort.
 				{:else}
-					Wir verwenden einen Magic Link. Du musst dir also kein Passwort merken und kannst SbSQLTT auch ohne Konto weiter nutzen.
+					Wir verwenden einen Magic Link. Du musst dir also kein Passwort merken und kannst
+					SbSQLTT auch ohne Konto weiter nutzen.
 				{/if}
 			</p>
 
@@ -109,7 +158,7 @@
 							autocomplete="email"
 							bind:value={email}
 							onblur={() => (touched = true)}
-							placeholder="du@schule.de"
+							placeholder={isTeacher ? 'sie@schule.de' : 'du@schule.de'}
 							class={'w-full h-10 pl-10 pr-3 rounded-md bg-ink-100/40 text-[14px] ' +
 								'placeholder-ink-600 ring-accent ' +
 								(touched && !valid
@@ -139,9 +188,26 @@
 						{status === 'sending' ? 'Link wird gesendet…' : 'Magic Link senden'}
 					</Button>
 
+					{#if isTeacher}
+						<button
+							type="button"
+							onclick={enterTeacherPreview}
+							class="mt-3 w-full h-9 inline-flex items-center justify-center gap-1.5 text-[13px] text-ink-700 hover:text-ink-900 ring-accent rounded-md"
+						>
+							Während der Alpha ohne Anmeldung in den Lehrer-Bereich
+							<Icon name="arrow" size={12} />
+						</button>
+					{/if}
+
 					<p class="mt-4 text-[11.5px] leading-relaxed text-ink-600">
-						Wir speichern nur die E-Mail, mit der du dich anmeldest, und einen
-						anonymen Fortschrittseintrag. Kein Tracking, keine Drittanbieter-Analyse, keine Werbe-Mails. Niemals.
+						{#if isTeacher}
+							Wir speichern nur die E-Mail Ihres Lehrer-Kontos und die Daten der von
+							Ihnen angelegten Klassen. Kein Tracking, keine Drittanbieter-Analyse.
+						{:else}
+							Wir speichern nur die E-Mail, mit der du dich anmeldest, und einen
+							anonymen Fortschrittseintrag. Kein Tracking, keine
+							Drittanbieter-Analyse, keine Werbe-Mails. Niemals.
+						{/if}
 					</p>
 				</form>
 			{/if}

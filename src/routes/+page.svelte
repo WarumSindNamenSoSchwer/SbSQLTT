@@ -300,7 +300,11 @@
 					Aufgaben vorschlagen oder einen Klassensatz testen möchten, schreiben Sie kurz.
 					Wir nehmen Feedback ernst.
 				</p>
-				<div class="mt-6 flex items-center gap-3">
+				<div class="mt-6 flex flex-wrap items-center gap-3">
+					<Button variant="primary" size="md" onclick={() => goto('/teach')}>
+						{#snippet trailing()}<Icon name="arrow" size={14} />{/snippet}
+						Lehrer-Bereich öffnen
+					</Button>
 					<Button
 						variant="secondary"
 						size="md"
@@ -317,6 +321,10 @@
 						<Icon name="external" size={12} />
 					</a>
 				</div>
+				<p class="mt-3 text-[12px] text-ink-600">
+					Während der öffentlichen Alpha kommen Sie ohne Anmeldung in den Bereich, um ihn
+					zu testen. Echte Konten folgen mit der nächsten Version.
+				</p>
 			</div>
 			<Surface class="p-6">
 				<div
