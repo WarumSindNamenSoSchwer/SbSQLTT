@@ -309,6 +309,13 @@
 						{#snippet leading()}<Icon name="mail" size={14} />{/snippet}
 						teachers@jmestudio.de
 					</Button>
+					<a
+						href="/fuer-lehrkraefte"
+						class="text-[13px] text-ink-700 hover:text-ink-900 inline-flex items-center gap-1"
+					>
+						Hinweise für Lehrkräfte lesen
+						<Icon name="external" size={12} />
+					</a>
 				</div>
 			</div>
 			<Surface class="p-6">
