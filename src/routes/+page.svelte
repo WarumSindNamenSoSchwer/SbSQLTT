@@ -60,7 +60,6 @@
 	<!-- HERO -->
 	<section class="relative">
 		<div class="absolute inset-0 grid-bg pointer-events-none"></div>
-		<div class="absolute inset-0 hero-glow pointer-events-none"></div>
 
 		<div class="relative max-w-[1280px] mx-auto px-6 pt-20 pb-16 md:pt-28 md:pb-24">
 			<div class="max-w-[680px]">
