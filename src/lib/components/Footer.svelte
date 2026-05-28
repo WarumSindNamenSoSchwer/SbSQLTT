@@ -9,7 +9,7 @@
 	>
 		<div class="flex items-center gap-5">
 			<Logo size={13} />
-			<span class="text-[12px] text-ink-600 font-mono">© 2026 · gebaut von Muri</span>
+			<span class="text-[12px] text-ink-600 font-mono">© 2026 · gebaut von Murat-Can</span>
 		</div>
 		<div
 			class="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12.5px] text-ink-700"
