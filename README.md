@@ -19,7 +19,7 @@ fürs Klassenzimmer.
 
 ### Was schon läuft
 
-- ✅ **Komplette zweisprachige UI** (DE/EN) — Landing, Lern-Bereich, Lehrer-Dashboard, Rechtliches.
+- ✅ **Komplette zweisprachige UI** (DE/EN): Landing, Lern-Bereich, Lehrer-Dashboard, Rechtliches.
 - ✅ **Lern-Ansicht:** Lektions-Tracks, Lektions-Runner mit Lese-/Aufgaben-Schritten, Ergebnis-Tabellen, Editor-Oberfläche (CodeMirror-Layout).
 - ✅ **Lehrer-Dashboard:** Klassen anlegen, Schülerliste, Fortschritts-Matrix, „hängt fest"-Anzeige, Aufgaben- und Einstellungs-Seiten, QR-/E-Mail-Beitritt.
 - ✅ **Polish:** Dark/Light-Theme, responsives Layout, Impressum + Datenschutz.
@@ -27,8 +27,8 @@ fürs Klassenzimmer.
 
 ### Als Nächstes verdrahtet
 
-- 🔜 **SQL-Sandbox** echt machen — PGlite (Postgres in WASM) an den Editor anbinden, damit Abfragen wirklich laufen.
-- 🔜 **Persistenz & Login** — Supabase für optionales Speichern des Fortschritts und Klassen-Daten.
+- 🔜 **SQL-Sandbox** echt machen: PGlite (Postgres in WASM) an den Editor anbinden, damit Abfragen wirklich laufen.
+- 🔜 **Persistenz & Login:** Supabase für optionales Speichern des Fortschritts und Klassen-Daten.
 
 ### Status
 
@@ -93,7 +93,7 @@ sign-in to save progress, and a teacher view for classrooms.
 
 ### What already works
 
-- ✅ **Complete bilingual UI** (DE/EN) — landing, learn area, teacher dashboard, legal pages.
+- ✅ **Complete bilingual UI** (DE/EN): landing, learn area, teacher dashboard, legal pages.
 - ✅ **Learn view:** lesson tracks, a lesson runner with read/task steps, result tables, editor surface (CodeMirror layout).
 - ✅ **Teacher dashboard:** create classes, student list, progress matrix, "stuck on" indicator, task and settings pages, QR/email join.
 - ✅ **Polish:** dark/light theme, responsive layout, Impressum + privacy page.
@@ -101,8 +101,8 @@ sign-in to save progress, and a teacher view for classrooms.
 
 ### Wiring up next
 
-- 🔜 **Real SQL sandbox** — connect PGlite (Postgres in WASM) to the editor so queries actually run.
-- 🔜 **Persistence & sign-in** — Supabase for optional progress saving and class data.
+- 🔜 **Real SQL sandbox:** connect PGlite (Postgres in WASM) to the editor so queries actually run.
+- 🔜 **Persistence & sign-in:** Supabase for optional progress saving and class data.
 
 ### Status
 
