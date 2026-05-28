@@ -96,19 +96,17 @@
 				</button>
 			</div>
 
-			<div class="p-6 space-y-6">
-				<div
-					class="grid grid-cols-3 gap-px bg-ink-200 border border-ink-200 rounded-lg overflow-hidden"
-				>
+			<div class="px-6 py-8 space-y-10">
+				<div class="grid grid-cols-3 gap-3">
 					{#each [['Abgeschlossen', counts.done, 'accent'], ['In Arbeit', counts.prog, ''], ['Offen', counts.todo, '']] as [label, value, tone] (label)}
-						<div class="bg-ink-50 px-4 py-3">
+						<div class="bg-ink-50 border border-ink-200 rounded-lg px-4 py-4">
 							<div
 								class="text-[10.5px] font-mono uppercase tracking-[0.14em] text-ink-600"
 							>
 								{label}
 							</div>
 							<div
-								class={'mt-1 text-[22px] font-semibold font-mono tabular-num ' +
+								class={'mt-2 text-[24px] font-semibold font-mono tabular-num leading-none ' +
 									(tone === 'accent' ? 'text-accent' : 'text-ink-900')}
 							>
 								{value}
@@ -119,12 +117,12 @@
 
 				<div>
 					<h3
-						class="text-[13px] font-mono uppercase tracking-[0.14em] text-ink-700 mb-3"
+						class="text-[13px] font-mono uppercase tracking-[0.14em] text-ink-700 mb-5"
 					>
 						Lektionen
 					</h3>
 					<ol
-						class="relative space-y-3 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-ink-200"
+						class="relative space-y-5 before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-ink-200"
 					>
 						{#each cls.lessons as les (les.id)}
 							{@const p = cls.progress[stu.id][les.id]}
@@ -187,7 +185,7 @@
 					</ol>
 				</div>
 
-				<Surface class="p-4 !bg-ink-100/40">
+				<Surface class="p-5 !bg-ink-100/40">
 					<div class="flex items-start gap-3">
 						<svg
 							width="18"
@@ -209,7 +207,7 @@
 				</Surface>
 
 				<div
-					class="flex items-center justify-between pt-2 border-t border-ink-200"
+					class="flex items-center justify-between pt-6 border-t border-ink-200"
 				>
 					<Button variant="secondary" size="md">Daten exportieren (CSV)</Button>
 					<button
