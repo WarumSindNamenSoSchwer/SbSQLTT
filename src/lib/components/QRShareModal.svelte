@@ -1,0 +1,349 @@
+<script lang="ts">
+	import type { TeacherClass } from '$lib/teacher-data';
+	import Button from './Button.svelte';
+	import Icon from './Icon.svelte';
+
+	let {
+		open,
+		cls,
+		onClose
+	}: { open: boolean; cls: TeacherClass; onClose: () => void } = $props();
+
+	let fullscreen = $state(false);
+	let showName = $state(true);
+	let showUrl = $state(false);
+
+	$effect(() => {
+		if (!open) return;
+		fullscreen = false;
+		showName = true;
+		showUrl = false;
+	});
+
+	$effect(() => {
+		if (!open) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				if (fullscreen) fullscreen = false;
+				else onClose();
+			}
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	});
+
+	let url = $derived(`sbsqltt.de/k/${cls.joinCode}`);
+
+	const FULLSCREEN_QR = 620;
+	const MODAL_QR = 260;
+
+	function placeholderStripes(size: number, step: number) {
+		const out: number[] = [];
+		for (let y = 0; y < size; y += step) out.push(y);
+		return out;
+	}
+</script>
+
+{#if open}
+	{#if fullscreen}
+		<div
+			class="fixed inset-0 z-50 fade-in"
+			role="dialog"
+			aria-modal="true"
+			style="background: #0a0a0b; color: #f4f4f6;"
+		>
+			<div class="absolute top-4 right-4 z-10 flex items-center gap-2">
+				<button
+					onclick={() => (fullscreen = false)}
+					class="h-9 px-3 rounded-md text-[12px] font-mono inline-flex items-center gap-2"
+					style="background: rgba(255,255,255,0.06); color: #c5c5cc; border: 1px solid rgba(255,255,255,0.12);"
+				>
+					Vollbild verlassen <span class="opacity-70">ESC</span>
+				</button>
+				<button
+					onclick={onClose}
+					class="w-9 h-9 grid place-items-center rounded-md"
+					style="background: rgba(255,255,255,0.06); color: #c5c5cc; border: 1px solid rgba(255,255,255,0.12);"
+					aria-label="Schließen"
+				>
+					<Icon name="close" size={14} />
+				</button>
+			</div>
+
+			<div class="h-full grid place-items-center px-12">
+				<div class="text-center">
+					<div
+						class="font-mono text-[14px] tracking-[0.16em] uppercase opacity-60 mb-6"
+					>
+						SbSQLTT · Einer Klasse beitreten
+					</div>
+
+					<div class="grid place-items-center">
+						<div
+							style="background: #0f0f12; padding: 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);"
+						>
+							<svg width={FULLSCREEN_QR} height={FULLSCREEN_QR} viewBox="0 0 {FULLSCREEN_QR} {FULLSCREEN_QR}" class="block">
+								<rect width={FULLSCREEN_QR} height={FULLSCREEN_QR} fill="#15151a" />
+								{#each placeholderStripes(FULLSCREEN_QR, 16) as y (y)}
+									<line
+										x1="0"
+										y1={y + 0.5}
+										x2={FULLSCREEN_QR}
+										y2={y + 0.5}
+										stroke="rgba(255,255,255,0.06)"
+										stroke-width="1"
+									/>
+								{/each}
+								{#each [[20, 20], [FULLSCREEN_QR - 112, 20], [20, FULLSCREEN_QR - 112]] as [x, y] (x + '_' + y)}
+									<rect
+										{x}
+										{y}
+										width="92"
+										height="92"
+										rx="4"
+										fill="none"
+										stroke="#f4f4f6"
+										stroke-width="9"
+									/>
+									<rect
+										x={x + 30}
+										y={y + 30}
+										width="32"
+										height="32"
+										rx="1.5"
+										fill="#f4f4f6"
+									/>
+								{/each}
+								<rect
+									x={FULLSCREEN_QR / 2 - 110}
+									y={FULLSCREEN_QR / 2 - 24}
+									width="220"
+									height="48"
+									rx="8"
+									fill="#0a0a0b"
+									stroke="rgba(255,255,255,0.18)"
+								/>
+								<text
+									x={FULLSCREEN_QR / 2}
+									y={FULLSCREEN_QR / 2 + 6}
+									text-anchor="middle"
+									font-family="JetBrains Mono, monospace"
+									font-size="18"
+									fill="rgba(255,255,255,0.55)">QR-Code Platzhalter</text
+								>
+							</svg>
+						</div>
+					</div>
+
+					{#if showName}
+						<div
+							class="mt-10 text-[36px] font-semibold tracking-tight"
+							style="text-wrap: balance"
+						>
+							{cls.name}
+						</div>
+					{/if}
+					<div
+						class="mt-3 font-mono text-[72px] leading-none tracking-tight"
+						style="color: oklch(0.78 0.15 195);"
+					>
+						{cls.joinCode}
+					</div>
+					{#if showUrl}
+						<div class="mt-4 font-mono text-[20px] opacity-70">{url}</div>
+					{/if}
+
+					<div class="mt-10 font-mono text-[13px] opacity-60">
+						Schülergeräte müssen mit dem WLAN verbunden sein.
+					</div>
+				</div>
+			</div>
+		</div>
+	{:else}
+		<div
+			class="fixed inset-0 z-40 overflow-y-auto fade-in"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="qr-title"
+		>
+			<button
+				aria-label="Schließen"
+				class="absolute inset-0 bg-black/55 backdrop cursor-default"
+				onclick={onClose}
+			></button>
+			<div class="min-h-full grid place-items-center px-4 py-8 relative">
+				<div
+					class="relative w-full max-w-[640px] rounded-xl bg-ink-50 border border-ink-200 shadow-pop my-auto"
+				>
+					<div
+						class="flex items-start justify-between p-6 border-b border-ink-200"
+					>
+						<div>
+							<div
+								class="text-[11px] font-mono uppercase tracking-[0.14em] text-accent"
+							>
+								Beitritt
+							</div>
+							<h2
+								id="qr-title"
+								class="mt-1 text-[20px] font-semibold tracking-tight text-ink-900"
+							>
+								QR-Code für die Tafel
+							</h2>
+						</div>
+						<button
+							onclick={onClose}
+							class="w-8 h-8 grid place-items-center rounded-md text-ink-600 hover:text-ink-900 hover:bg-ink-100"
+							aria-label="Schließen"
+						>
+							<Icon name="close" size={14} />
+						</button>
+					</div>
+
+					<div class="p-6 grid sm:grid-cols-[auto_1fr] gap-6 items-center">
+						<div class="rounded-lg border border-ink-200 p-4 bg-ink-50">
+							<svg
+								width={MODAL_QR}
+								height={MODAL_QR}
+								viewBox="0 0 {MODAL_QR} {MODAL_QR}"
+								class="block"
+								role="img"
+								aria-label={'QR-Code Platzhalter für ' + cls.joinCode}
+							>
+								<rect width={MODAL_QR} height={MODAL_QR} fill="white" />
+								{#each placeholderStripes(MODAL_QR, 12) as y (y)}
+									<line
+										x1="0"
+										y1={y + 0.5}
+										x2={MODAL_QR}
+										y2={y + 0.5}
+										stroke="rgb(var(--ink-300))"
+										stroke-width="1"
+									/>
+								{/each}
+								{#each [[12, 12], [MODAL_QR - 68, 12], [12, MODAL_QR - 68]] as [x, y] (x + '_' + y)}
+									<rect
+										{x}
+										{y}
+										width="56"
+										height="56"
+										rx="3"
+										fill="none"
+										stroke="rgb(var(--ink-900))"
+										stroke-width="6"
+									/>
+									<rect
+										x={x + 18}
+										y={y + 18}
+										width="20"
+										height="20"
+										rx="1"
+										fill="rgb(var(--ink-900))"
+									/>
+								{/each}
+								<rect
+									x={MODAL_QR / 2 - 64}
+									y={MODAL_QR / 2 - 18}
+									width="128"
+									height="36"
+									rx="6"
+									fill="white"
+									stroke="rgb(var(--ink-300))"
+								/>
+								<text
+									x={MODAL_QR / 2}
+									y={MODAL_QR / 2 + 5}
+									text-anchor="middle"
+									font-family="JetBrains Mono, monospace"
+									font-size="13"
+									fill="rgb(var(--ink-700))">QR-Code</text
+								>
+							</svg>
+						</div>
+						<div>
+							<div
+								class="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-600"
+							>
+								Beitritts-Code
+							</div>
+							<div class="mt-1 font-mono text-[28px] tracking-tight text-ink-900">
+								{cls.joinCode}
+							</div>
+							<ol
+								class="mt-5 space-y-2 text-[13px] text-ink-700 list-decimal list-inside marker:text-ink-600 marker:font-mono"
+							>
+								<li>sbsqltt.de öffnen</li>
+								<li>„Einer Klasse beitreten" antippen</li>
+								<li>
+									Code <span class="font-mono text-ink-900">{cls.joinCode}</span> eingeben
+								</li>
+							</ol>
+						</div>
+					</div>
+
+					<div class="px-6 pb-6 space-y-2">
+						<div
+							class="text-[11px] font-mono uppercase tracking-[0.14em] text-ink-700"
+						>
+							Optionen
+						</div>
+						{#each [{ key: 'fullscreen', label: 'Vollbildmodus', hint: 'Modal füllt den ganzen Bildschirm — gut für den Beamer.' }, { key: 'showName', label: 'Klassenname zeigen', hint: `„${cls.name}" wird unter dem QR-Code groß angezeigt.` }, { key: 'showUrl', label: 'Beitritts-URL als Text zeigen', hint: `Zusätzlicher Textfallback: ${url}` }] as row (row.key)}
+							{@const v =
+								row.key === 'fullscreen'
+									? fullscreen
+									: row.key === 'showName'
+										? showName
+										: showUrl}
+							<button
+								type="button"
+								onclick={() => {
+									if (row.key === 'fullscreen') fullscreen = !fullscreen;
+									else if (row.key === 'showName') showName = !showName;
+									else showUrl = !showUrl;
+								}}
+								class="w-full flex items-start justify-between gap-4 text-left p-3 -mx-3 rounded-md hover:bg-ink-100/60"
+							>
+								<div class="min-w-0">
+									<div class="text-[13.5px] font-medium text-ink-900">
+										{row.label}
+									</div>
+									<div class="text-[12px] text-ink-700 mt-0.5">{row.hint}</div>
+								</div>
+								<span
+									class={'shrink-0 inline-flex items-center w-9 h-5 rounded-full transition-colors mt-1 ' +
+										(v ? 'bg-accent' : 'bg-ink-300')}
+								>
+									<span
+										class={'inline-block w-4 h-4 rounded-full bg-white transition-transform ' +
+											(v ? 'translate-x-[18px]' : 'translate-x-0.5')}
+										style="box-shadow: 0 1px 2px rgba(0,0,0,0.25);"
+									></span>
+								</span>
+							</button>
+						{/each}
+					</div>
+
+					<div class="px-6 pb-3 text-[11.5px] font-mono text-ink-600">
+						Die Schülergeräte müssen mit dem WLAN verbunden sein.
+					</div>
+
+					<div
+						class="p-5 border-t border-ink-200 flex items-center justify-between gap-3 flex-wrap"
+					>
+						<Button variant="ghost" size="md" onclick={onClose}>Schließen</Button>
+						<div class="flex items-center gap-2">
+							<Button variant="secondary" size="md">QR herunterladen (PNG)</Button>
+							<Button
+								variant="primary"
+								size="md"
+								onclick={() => (fullscreen = true)}
+							>
+								Vollbild starten →
+							</Button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
+{/if}
