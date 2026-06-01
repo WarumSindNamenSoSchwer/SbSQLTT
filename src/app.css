@@ -46,7 +46,7 @@
 /* dark (default) */
 :root {
 	color-scheme: dark;
-	--ink-0: 10 10 11;
+	--ink-0: 5 8 16;
 	--ink-50: 16 16 19;
 	--ink-100: 21 21 26;
 	--ink-200: 27 27 34;
@@ -65,7 +65,7 @@
 /* light — soft warm-neutral paper, deep ink text */
 html.light {
 	color-scheme: light;
-	--ink-0: 252 252 251;
+	--ink-0: 254 254 255;
 	--ink-50: 255 255 255;
 	--ink-100: 245 245 244;
 	--ink-200: 231 231 229;

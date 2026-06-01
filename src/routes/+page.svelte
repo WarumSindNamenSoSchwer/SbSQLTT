@@ -59,8 +59,6 @@
 <div>
 	<!-- HERO -->
 	<section class="relative">
-		<div class="absolute inset-0 grid-bg pointer-events-none"></div>
-
 		<div class="relative max-w-[1280px] mx-auto px-4 md:px-6 pt-20 pb-16 md:pt-28 md:pb-24 lg:grid lg:grid-cols-[680px_1fr] lg:gap-6 lg:items-center">
 			<div class="max-w-[680px]">
 				<Badge tone="accent" class="!h-6 !px-2.5">
