@@ -149,10 +149,12 @@
 							<span class="dot" style="background:#3a3a47"></span>
 							<span class="dot" style="background:#3a3a47"></span>
 						</div>
-						<div class="font-mono text-[11px] text-ink-600">
+						<div class="hidden sm:block font-mono text-[11px] text-ink-600 truncate">
 							beginner / where-filters · Schritt 4 von 5
 						</div>
-						<div class="font-mono text-[11px] text-ink-600">⌘↵ ausführen</div>
+						<div class="font-mono text-[11px] text-ink-600 whitespace-nowrap shrink-0">
+							<span class="hidden sm:inline">⌘↵ </span>ausführen
+						</div>
 					</div>
 					<!-- body -->
 					<div class="grid grid-cols-1 md:grid-cols-[1fr_1.6fr]">
