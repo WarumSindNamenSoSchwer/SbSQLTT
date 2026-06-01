@@ -241,7 +241,7 @@
 
 					<!-- hover hint -->
 					<div
-						class="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition pointer-events-none"
+						class="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition pointer-events-none"
 					>
 						<Badge tone="accent">Diese Lektion öffnen →</Badge>
 					</div>
