@@ -60,19 +60,26 @@
 				<Icon name="close" size={16} />
 			</button>
 
-			<div class="h-full grid place-items-center px-12 md:px-20 py-16 md:py-20">
-				<div class="text-center">
+			<div
+				class="h-full overflow-y-auto grid place-items-center px-12 md:px-20 py-12 md:py-16"
+			>
+				<div class="text-center max-w-full">
 					<div
-						class="font-mono text-[14px] tracking-[0.16em] uppercase text-ink-600 mb-10"
+						class="font-mono text-[clamp(11px,1.6vmin,14px)] tracking-[0.16em] uppercase text-ink-600 mb-[clamp(16px,3vmin,40px)]"
 					>
 						SbSQLTT · Einer Klasse beitreten
 					</div>
 
 					<div class="grid place-items-center">
 						<div
-							class="p-6 rounded-2xl border border-ink-200 bg-ink-50"
+							class="rounded-2xl border border-ink-200 bg-ink-50"
+							style="padding: clamp(12px, 2vmin, 24px)"
 						>
-							<svg width={FULLSCREEN_QR} height={FULLSCREEN_QR} viewBox="0 0 {FULLSCREEN_QR} {FULLSCREEN_QR}" class="block">
+							<svg
+								viewBox="0 0 {FULLSCREEN_QR} {FULLSCREEN_QR}"
+								class="block"
+								style="width: clamp(220px, 50vmin, {FULLSCREEN_QR}px); height: auto"
+							>
 								<rect width={FULLSCREEN_QR} height={FULLSCREEN_QR} fill="rgb(var(--ink-100))" />
 								{#each placeholderStripes(FULLSCREEN_QR, 16) as y (y)}
 									<line
@@ -127,22 +134,28 @@
 
 					{#if showName}
 						<div
-							class="mt-10 text-[36px] font-semibold tracking-tight text-ink-900"
+							class="mt-[clamp(16px,3vmin,40px)] text-[clamp(20px,4vmin,36px)] font-semibold tracking-tight text-ink-900"
 							style="text-wrap: balance"
 						>
 							{cls.name}
 						</div>
 					{/if}
 					<div
-						class="mt-3 font-mono text-[72px] leading-none tracking-tight text-accent"
+						class="mt-[clamp(8px,1.5vmin,16px)] font-mono text-[clamp(40px,8vmin,72px)] leading-none tracking-tight text-accent"
 					>
 						{cls.joinCode}
 					</div>
 					{#if showUrl}
-						<div class="mt-4 font-mono text-[20px] text-ink-700">{url}</div>
+						<div
+							class="mt-[clamp(8px,1.5vmin,18px)] font-mono text-[clamp(13px,2vmin,20px)] text-ink-700"
+						>
+							{url}
+						</div>
 					{/if}
 
-					<div class="mt-12 font-mono text-[13px] text-ink-600">
+					<div
+						class="mt-[clamp(16px,3vmin,48px)] font-mono text-[clamp(11px,1.5vmin,13px)] text-ink-600"
+					>
 						Schülergeräte müssen mit dem WLAN verbunden sein.
 					</div>
 				</div>
