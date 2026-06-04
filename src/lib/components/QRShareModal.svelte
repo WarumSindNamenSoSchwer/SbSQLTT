@@ -47,50 +47,40 @@
 {#if open}
 	{#if fullscreen}
 		<div
-			class="fixed inset-0 z-50 fade-in"
+			class="fixed inset-0 z-50 fade-in bg-ink-0 text-ink-900"
 			role="dialog"
 			aria-modal="true"
-			style="background: #0a0a0b; color: #f4f4f6;"
 		>
-			<div class="absolute top-4 right-4 z-10 flex items-center gap-2">
-				<button
-					onclick={() => (fullscreen = false)}
-					class="h-9 px-3 rounded-md text-[12px] font-mono inline-flex items-center gap-2"
-					style="background: rgba(255,255,255,0.06); color: #c5c5cc; border: 1px solid rgba(255,255,255,0.12);"
-				>
-					Vollbild verlassen <span class="opacity-70">ESC</span>
-				</button>
-				<button
-					onclick={onClose}
-					class="w-9 h-9 grid place-items-center rounded-md"
-					style="background: rgba(255,255,255,0.06); color: #c5c5cc; border: 1px solid rgba(255,255,255,0.12);"
-					aria-label="Schließen"
-				>
-					<Icon name="close" size={14} />
-				</button>
-			</div>
+			<button
+				onclick={() => (fullscreen = false)}
+				class="absolute top-6 right-6 md:top-8 md:right-8 z-10 w-10 h-10 grid place-items-center rounded-md text-ink-700 hover:text-ink-900 hover:bg-ink-100 border border-ink-200"
+				aria-label="Vollbild verlassen (ESC)"
+				title="Vollbild verlassen (ESC)"
+			>
+				<Icon name="close" size={16} />
+			</button>
 
-			<div class="h-full grid place-items-center px-12">
+			<div class="h-full grid place-items-center px-12 md:px-20 py-16 md:py-20">
 				<div class="text-center">
 					<div
-						class="font-mono text-[14px] tracking-[0.16em] uppercase opacity-60 mb-6"
+						class="font-mono text-[14px] tracking-[0.16em] uppercase text-ink-600 mb-10"
 					>
 						SbSQLTT · Einer Klasse beitreten
 					</div>
 
 					<div class="grid place-items-center">
 						<div
-							style="background: #0f0f12; padding: 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08);"
+							class="p-6 rounded-2xl border border-ink-200 bg-ink-50"
 						>
 							<svg width={FULLSCREEN_QR} height={FULLSCREEN_QR} viewBox="0 0 {FULLSCREEN_QR} {FULLSCREEN_QR}" class="block">
-								<rect width={FULLSCREEN_QR} height={FULLSCREEN_QR} fill="#15151a" />
+								<rect width={FULLSCREEN_QR} height={FULLSCREEN_QR} fill="rgb(var(--ink-100))" />
 								{#each placeholderStripes(FULLSCREEN_QR, 16) as y (y)}
 									<line
 										x1="0"
 										y1={y + 0.5}
 										x2={FULLSCREEN_QR}
 										y2={y + 0.5}
-										stroke="rgba(255,255,255,0.06)"
+										stroke="rgb(var(--ink-300))"
 										stroke-width="1"
 									/>
 								{/each}
@@ -102,7 +92,7 @@
 										height="92"
 										rx="4"
 										fill="none"
-										stroke="#f4f4f6"
+										stroke="rgb(var(--ink-900))"
 										stroke-width="9"
 									/>
 									<rect
@@ -111,7 +101,7 @@
 										width="32"
 										height="32"
 										rx="1.5"
-										fill="#f4f4f6"
+										fill="rgb(var(--ink-900))"
 									/>
 								{/each}
 								<rect
@@ -120,8 +110,8 @@
 									width="220"
 									height="48"
 									rx="8"
-									fill="#0a0a0b"
-									stroke="rgba(255,255,255,0.18)"
+									fill="rgb(var(--ink-50))"
+									stroke="rgb(var(--ink-300))"
 								/>
 								<text
 									x={FULLSCREEN_QR / 2}
@@ -129,7 +119,7 @@
 									text-anchor="middle"
 									font-family="JetBrains Mono, monospace"
 									font-size="18"
-									fill="rgba(255,255,255,0.55)">QR-Code Platzhalter</text
+									fill="rgb(var(--ink-700))">QR-Code Platzhalter</text
 								>
 							</svg>
 						</div>
@@ -137,23 +127,22 @@
 
 					{#if showName}
 						<div
-							class="mt-10 text-[36px] font-semibold tracking-tight"
+							class="mt-10 text-[36px] font-semibold tracking-tight text-ink-900"
 							style="text-wrap: balance"
 						>
 							{cls.name}
 						</div>
 					{/if}
 					<div
-						class="mt-3 font-mono text-[72px] leading-none tracking-tight"
-						style="color: oklch(0.78 0.15 195);"
+						class="mt-3 font-mono text-[72px] leading-none tracking-tight text-accent"
 					>
 						{cls.joinCode}
 					</div>
 					{#if showUrl}
-						<div class="mt-4 font-mono text-[20px] opacity-70">{url}</div>
+						<div class="mt-4 font-mono text-[20px] text-ink-700">{url}</div>
 					{/if}
 
-					<div class="mt-10 font-mono text-[13px] opacity-60">
+					<div class="mt-12 font-mono text-[13px] text-ink-600">
 						Schülergeräte müssen mit dem WLAN verbunden sein.
 					</div>
 				</div>
