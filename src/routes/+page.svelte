@@ -121,7 +121,7 @@
 				>
 					<img
 						src="/images/lesson-mockup.png"
-						alt="Vorschau der Lektion „Bücher, die nach 2010 erschienen sind" — Schritt 4 von 5"
+						alt="Vorschau der Lektion „Bücher, die nach 2010 erschienen sind“ – Schritt 4 von 5"
 						width="6000"
 						height="4171"
 						loading="lazy"
