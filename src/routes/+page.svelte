@@ -114,13 +114,13 @@
 			</div>
 
 			<!-- inline lesson mockup screenshot -->
-			<div class="mt-14 md:mt-20 lg:col-span-2">
+			<div class="mt-16 md:mt-24 lg:col-span-2">
 				<div class="relative max-w-[1080px] mx-auto">
 					<button
 						type="button"
 						onclick={openLesson}
 						aria-label="Diese Lektion öffnen"
-						class="group relative block w-full rounded-xl overflow-hidden cursor-pointer ring-accent"
+						class="group relative block w-full rounded-xl overflow-hidden cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-ink-0"
 						style="aspect-ratio: 5186 / 2874"
 					>
 						{#if !mockupLoaded}
@@ -210,88 +210,51 @@
 							height="2874"
 							loading="lazy"
 							onload={() => (mockupLoaded = true)}
-							class={'absolute inset-0 w-full h-full object-cover select-none transition-opacity duration-700 ' +
+							class={'absolute inset-0 w-full h-full object-contain select-none transition-opacity duration-700 ' +
 								(mockupLoaded ? 'opacity-100' : 'opacity-0')}
 						/>
-						<!-- hover hint (desktop only) -->
+						<!-- click affordance: always visible, intensifies on hover -->
 						<div
-							class="hidden md:block absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition pointer-events-none"
+							class="hidden md:flex absolute right-3 bottom-3 items-center gap-1.5 pointer-events-none px-3 h-8 rounded-full bg-ink-900/85 text-ink-0 text-[12px] font-medium shadow-pop ring-1 ring-ink-0/10 backdrop-blur opacity-80 group-hover:opacity-100 group-hover:bg-accent group-hover:text-[oklch(0.16_0.04_195)] transition"
 						>
-							<Badge tone="accent">Diese Lektion öffnen →</Badge>
+							Diese Lektion öffnen
+							<svg
+								width="12"
+								height="12"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M5 12h14M13 6l6 6-6 6" />
+							</svg>
 						</div>
 					</button>
 
-					<!-- feature annotations (desktop only, fade in after image loads) -->
-					{#if mockupLoaded}
-						<div
-							class="hidden lg:block pointer-events-none absolute inset-0 fade-in"
-							aria-hidden="true"
-						>
-							<!-- top-left callout: lesson narrative -->
-							<div class="absolute" style="top: 18%; left: -160px; width: 180px">
-								<div class="text-right text-[11px] font-mono uppercase tracking-[0.14em] text-accent">
-									Lektions-Schritte
-								</div>
-								<div class="text-right text-[12px] text-ink-700 mt-1 leading-snug">
-									Lesen, üben, prüfen — in deinem Tempo.
-								</div>
-								<svg
-									class="absolute top-1/2 right-[-32px] text-ink-400"
-									width="32"
-									height="12"
-									viewBox="0 0 32 12"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1"
+					<!-- feature captions: caption strip below mockup at every viewport -->
+					<div
+						class="mt-8 md:mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-[920px] mx-auto"
+					>
+						{#each [['Lektions-Schritte', 'Lesen, üben, prüfen, in deinem Tempo.'], ['Postgres im Browser', 'Echte Engine, keine Demo. Läuft per WebAssembly auf deinem Gerät.'], ['Sofort-Ergebnis', 'Jede Abfrage gibt direkt die passende Zeilen-Tabelle zurück.']] as [label, body] (label)}
+							<div class="text-center sm:text-left">
+								<div
+									class="inline-flex items-center gap-2 text-[10.5px] font-mono uppercase tracking-[0.16em] font-semibold"
+									style="color: oklch(0.45 0.13 195)"
 								>
-									<path d="M0 6h28" />
-									<path d="M2 6h2" stroke="oklch(0.62 0.13 195)" stroke-width="1.5" />
-								</svg>
+									<span
+										class="inline-block w-1 h-1 rounded-full"
+										style="background: oklch(0.62 0.13 195)"
+									></span>
+									{label}
+								</div>
+								<div class="mt-1.5 text-[13px] text-ink-700 leading-relaxed max-w-[28ch] mx-auto sm:mx-0">
+									{body}
+								</div>
 							</div>
-							<!-- top-right callout: editor -->
-							<div class="absolute" style="top: 14%; right: -200px; width: 200px">
-								<div class="text-[11px] font-mono uppercase tracking-[0.14em] text-accent">
-									Postgres im Browser
-								</div>
-								<div class="text-[12px] text-ink-700 mt-1 leading-snug">
-									Echte Engine, keine Demo. Läuft per WebAssembly auf deinem Gerät.
-								</div>
-								<svg
-									class="absolute top-1/2 left-[-32px] text-ink-400"
-									width="32"
-									height="12"
-									viewBox="0 0 32 12"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1"
-								>
-									<path d="M32 6H4" />
-									<path d="M28 6h2" stroke="oklch(0.62 0.13 195)" stroke-width="1.5" />
-								</svg>
-							</div>
-							<!-- bottom-right callout: result table -->
-							<div class="absolute" style="bottom: 12%; right: -200px; width: 200px">
-								<div class="text-[11px] font-mono uppercase tracking-[0.14em] text-accent">
-									Sofort-Ergebnis
-								</div>
-								<div class="text-[12px] text-ink-700 mt-1 leading-snug">
-									Jede Abfrage gibt direkt die passende Zeilen-Tabelle zurück.
-								</div>
-								<svg
-									class="absolute top-1/2 left-[-32px] text-ink-400"
-									width="32"
-									height="12"
-									viewBox="0 0 32 12"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="1"
-								>
-									<path d="M32 6H4" />
-									<path d="M28 6h2" stroke="oklch(0.62 0.13 195)" stroke-width="1.5" />
-								</svg>
-							</div>
-						</div>
-					{/if}
+						{/each}
+					</div>
 				</div>
 			</div>
 		</div>
