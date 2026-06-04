@@ -33,6 +33,8 @@
 		['Quellcode', 'github.com/WarumSindNamenSoSchwer/SbSQLTT']
 	];
 
+	let mockupLoaded = $state(false);
+
 	function openLesson() {
 		goto('/learn/beginner/where-filters');
 	}
@@ -118,14 +120,23 @@
 					onclick={openLesson}
 					aria-label="Diese Lektion öffnen"
 					class="group relative block w-full rounded-xl overflow-hidden cursor-pointer ring-accent"
+					style="aspect-ratio: 5186 / 2874"
 				>
+					{#if !mockupLoaded}
+						<div
+							aria-hidden="true"
+							class="absolute inset-0 skeleton-shimmer rounded-xl"
+						></div>
+					{/if}
 					<img
 						src="/images/lesson-mockup.png"
 						alt="Vorschau der Lektion „Bücher, die nach 2010 erschienen sind“ – Schritt 4 von 5"
-						width="6000"
-						height="4171"
+						width="5186"
+						height="2874"
 						loading="lazy"
-						class="w-full h-auto select-none"
+						onload={() => (mockupLoaded = true)}
+						class={'absolute inset-0 w-full h-full object-cover select-none transition-opacity duration-500 ' +
+							(mockupLoaded ? 'opacity-100' : 'opacity-0')}
 					/>
 					<!-- hover hint (desktop only) -->
 					<div
