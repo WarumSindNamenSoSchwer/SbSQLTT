@@ -115,36 +115,184 @@
 
 			<!-- inline lesson mockup screenshot -->
 			<div class="mt-14 md:mt-20 lg:col-span-2">
-				<button
-					type="button"
-					onclick={openLesson}
-					aria-label="Diese Lektion öffnen"
-					class="group relative block w-full rounded-xl overflow-hidden cursor-pointer ring-accent"
-					style="aspect-ratio: 5186 / 2874"
-				>
-					{#if !mockupLoaded}
-						<div
-							aria-hidden="true"
-							class="absolute inset-0 skeleton-shimmer rounded-xl"
-						></div>
-					{/if}
-					<img
-						src="/images/lesson-mockup.png"
-						alt="Vorschau der Lektion „Bücher, die nach 2010 erschienen sind“ – Schritt 4 von 5"
-						width="5186"
-						height="2874"
-						loading="lazy"
-						onload={() => (mockupLoaded = true)}
-						class={'absolute inset-0 w-full h-full object-cover select-none transition-opacity duration-500 ' +
-							(mockupLoaded ? 'opacity-100' : 'opacity-0')}
-					/>
-					<!-- hover hint (desktop only) -->
-					<div
-						class="hidden md:block absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition pointer-events-none"
+				<div class="relative max-w-[1080px] mx-auto">
+					<button
+						type="button"
+						onclick={openLesson}
+						aria-label="Diese Lektion öffnen"
+						class="group relative block w-full rounded-xl overflow-hidden cursor-pointer ring-accent"
+						style="aspect-ratio: 5186 / 2874"
 					>
-						<Badge tone="accent">Diese Lektion öffnen →</Badge>
-					</div>
-				</button>
+						{#if !mockupLoaded}
+							<!-- content-aware skeleton: mimics the lesson card layout -->
+							<div
+								aria-hidden="true"
+								class="absolute inset-0 bg-ink-50 border border-ink-200 rounded-xl overflow-hidden"
+							>
+								<!-- window chrome -->
+								<div
+									class="h-[7%] px-[1.5%] flex items-center gap-[0.6%] border-b border-ink-200 bg-ink-100/40"
+								>
+									<span class="w-[0.9%] aspect-square rounded-full skel-block"></span>
+									<span
+										class="w-[0.9%] aspect-square rounded-full skel-block skel-stagger-1"
+									></span>
+									<span
+										class="w-[0.9%] aspect-square rounded-full skel-block skel-stagger-2"
+									></span>
+								</div>
+								<!-- two-column body -->
+								<div class="absolute inset-x-0 top-[7%] bottom-0 flex">
+									<!-- left: lesson narrative -->
+									<div class="w-[34%] border-r border-ink-200 p-[3%] space-y-[6%]">
+										<div class="h-[6%] w-[40%] skel-block-strong"></div>
+										<div class="h-[10%] w-[88%] skel-block-strong skel-stagger-1"></div>
+										<div class="space-y-[3%]">
+											<div class="h-[4%] w-full skel-block"></div>
+											<div class="h-[4%] w-[92%] skel-block skel-stagger-1"></div>
+											<div class="h-[4%] w-[78%] skel-block skel-stagger-2"></div>
+										</div>
+										<div class="space-y-[4%] pt-[6%]">
+											{#each [0, 1, 2, 3, 4] as i (i)}
+												{@const w = [70, 80, 75, 65, 50][i]}
+												<div class="flex items-center gap-[5%]">
+													<span
+														class={'w-[6%] aspect-square rounded-full skel-block skel-stagger-' +
+															((i % 4) + 1)}
+													></span>
+													<div
+														class={'h-[5%] skel-block skel-stagger-' + ((i % 4) + 1)}
+														style="width: {w}%"
+													></div>
+												</div>
+											{/each}
+										</div>
+									</div>
+									<!-- right: code + result -->
+									<div class="flex-1 flex flex-col">
+										<!-- code pane -->
+										<div class="flex-1 p-[2.5%] space-y-[3%]">
+											<div class="h-[6%] w-[60%] skel-block"></div>
+											<div class="h-[7%] w-[45%] skel-block-strong skel-stagger-1"></div>
+											<div class="h-[7%] w-[35%] skel-block-strong skel-stagger-2"></div>
+											<div class="h-[7%] w-[55%] skel-block-strong skel-stagger-3"></div>
+											<div class="h-[7%] w-[40%] skel-block-strong skel-stagger-4"></div>
+										</div>
+										<!-- result pane -->
+										<div class="h-[45%] border-t border-ink-200 p-[2.5%] space-y-[3%]">
+											<div class="flex items-center justify-between">
+												<div class="h-[7%] w-[25%] skel-block"></div>
+												<div class="h-[7%] w-[10%] skel-block skel-stagger-2"></div>
+											</div>
+											{#each [0, 1, 2, 3] as i (i)}
+												<div class="flex items-center gap-[2%]">
+													<div
+														class={'h-[10%] w-[4%] skel-block skel-stagger-' + ((i % 4) + 1)}
+													></div>
+													<div
+														class={'h-[10%] flex-1 skel-block-strong skel-stagger-' +
+															((i % 4) + 1)}
+													></div>
+													<div
+														class={'h-[10%] w-[12%] skel-block skel-stagger-' + ((i % 4) + 1)}
+													></div>
+												</div>
+											{/each}
+										</div>
+									</div>
+								</div>
+							</div>
+						{/if}
+						<img
+							src="/images/lesson-mockup.png"
+							alt="Vorschau der Lektion „Bücher, die nach 2010 erschienen sind“ – Schritt 4 von 5"
+							width="5186"
+							height="2874"
+							loading="lazy"
+							onload={() => (mockupLoaded = true)}
+							class={'absolute inset-0 w-full h-full object-cover select-none transition-opacity duration-700 ' +
+								(mockupLoaded ? 'opacity-100' : 'opacity-0')}
+						/>
+						<!-- hover hint (desktop only) -->
+						<div
+							class="hidden md:block absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition pointer-events-none"
+						>
+							<Badge tone="accent">Diese Lektion öffnen →</Badge>
+						</div>
+					</button>
+
+					<!-- feature annotations (desktop only, fade in after image loads) -->
+					{#if mockupLoaded}
+						<div
+							class="hidden lg:block pointer-events-none absolute inset-0 fade-in"
+							aria-hidden="true"
+						>
+							<!-- top-left callout: lesson narrative -->
+							<div class="absolute" style="top: 18%; left: -160px; width: 180px">
+								<div class="text-right text-[11px] font-mono uppercase tracking-[0.14em] text-accent">
+									Lektions-Schritte
+								</div>
+								<div class="text-right text-[12px] text-ink-700 mt-1 leading-snug">
+									Lesen, üben, prüfen — in deinem Tempo.
+								</div>
+								<svg
+									class="absolute top-1/2 right-[-32px] text-ink-400"
+									width="32"
+									height="12"
+									viewBox="0 0 32 12"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1"
+								>
+									<path d="M0 6h28" />
+									<path d="M2 6h2" stroke="oklch(0.62 0.13 195)" stroke-width="1.5" />
+								</svg>
+							</div>
+							<!-- top-right callout: editor -->
+							<div class="absolute" style="top: 14%; right: -200px; width: 200px">
+								<div class="text-[11px] font-mono uppercase tracking-[0.14em] text-accent">
+									Postgres im Browser
+								</div>
+								<div class="text-[12px] text-ink-700 mt-1 leading-snug">
+									Echte Engine, keine Demo. Läuft per WebAssembly auf deinem Gerät.
+								</div>
+								<svg
+									class="absolute top-1/2 left-[-32px] text-ink-400"
+									width="32"
+									height="12"
+									viewBox="0 0 32 12"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1"
+								>
+									<path d="M32 6H4" />
+									<path d="M28 6h2" stroke="oklch(0.62 0.13 195)" stroke-width="1.5" />
+								</svg>
+							</div>
+							<!-- bottom-right callout: result table -->
+							<div class="absolute" style="bottom: 12%; right: -200px; width: 200px">
+								<div class="text-[11px] font-mono uppercase tracking-[0.14em] text-accent">
+									Sofort-Ergebnis
+								</div>
+								<div class="text-[12px] text-ink-700 mt-1 leading-snug">
+									Jede Abfrage gibt direkt die passende Zeilen-Tabelle zurück.
+								</div>
+								<svg
+									class="absolute top-1/2 left-[-32px] text-ink-400"
+									width="32"
+									height="12"
+									viewBox="0 0 32 12"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1"
+								>
+									<path d="M32 6H4" />
+									<path d="M28 6h2" stroke="oklch(0.62 0.13 195)" stroke-width="1.5" />
+								</svg>
+							</div>
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
 	</section>

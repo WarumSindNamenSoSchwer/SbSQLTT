@@ -238,24 +238,37 @@ html:not(.light) .tok-num {
 	animation: fadeIn 200ms ease-out both;
 }
 
-/* skeleton shimmer (used behind lazy-loaded images) */
-@keyframes shimmer {
-	from {
-		background-position: 200% 0;
+/* soft pulse — content-aware skeletons */
+@keyframes skel-pulse {
+	0%,
+	100% {
+		opacity: 0.55;
 	}
-	to {
-		background-position: -200% 0;
+	50% {
+		opacity: 0.9;
 	}
 }
-.skeleton-shimmer {
-	background-image: linear-gradient(
-		90deg,
-		rgb(var(--ink-100)) 0%,
-		rgb(var(--ink-200)) 50%,
-		rgb(var(--ink-100)) 100%
-	);
-	background-size: 200% 100%;
-	animation: shimmer 1.6s ease-in-out infinite;
+.skel-block {
+	background: rgb(var(--ink-200));
+	border-radius: 6px;
+	animation: skel-pulse 1.8s ease-in-out infinite;
+}
+.skel-block-strong {
+	background: rgb(var(--ink-300));
+	border-radius: 6px;
+	animation: skel-pulse 1.8s ease-in-out infinite;
+}
+.skel-stagger-1 {
+	animation-delay: 0.1s;
+}
+.skel-stagger-2 {
+	animation-delay: 0.2s;
+}
+.skel-stagger-3 {
+	animation-delay: 0.3s;
+}
+.skel-stagger-4 {
+	animation-delay: 0.4s;
 }
 
 .dot {
