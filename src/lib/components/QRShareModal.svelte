@@ -211,7 +211,7 @@
 								role="img"
 								aria-label={'QR-Code Platzhalter für ' + cls.joinCode}
 							>
-								<rect width={MODAL_QR} height={MODAL_QR} fill="white" />
+								<rect width={MODAL_QR} height={MODAL_QR} fill="rgb(var(--ink-100))" />
 								{#each placeholderStripes(MODAL_QR, 12) as y (y)}
 									<line
 										x1="0"
@@ -248,7 +248,7 @@
 									width="128"
 									height="36"
 									rx="6"
-									fill="white"
+									fill="rgb(var(--ink-50))"
 									stroke="rgb(var(--ink-300))"
 								/>
 								<text
@@ -288,18 +288,12 @@
 						>
 							Optionen
 						</div>
-						{#each [{ key: 'fullscreen', label: 'Vollbildmodus', hint: 'Modal füllt den ganzen Bildschirm — gut für den Beamer.' }, { key: 'showName', label: 'Klassenname zeigen', hint: `„${cls.name}" wird unter dem QR-Code groß angezeigt.` }, { key: 'showUrl', label: 'Beitritts-URL als Text zeigen', hint: `Zusätzlicher Textfallback: ${url}` }] as row (row.key)}
-							{@const v =
-								row.key === 'fullscreen'
-									? fullscreen
-									: row.key === 'showName'
-										? showName
-										: showUrl}
+						{#each [{ key: 'showName', label: 'Klassenname zeigen', hint: `„${cls.name}" wird unter dem QR-Code groß angezeigt.` }, { key: 'showUrl', label: 'Beitritts-URL als Text zeigen', hint: `Zusätzlicher Textfallback: ${url}` }] as row (row.key)}
+							{@const v = row.key === 'showName' ? showName : showUrl}
 							<button
 								type="button"
 								onclick={() => {
-									if (row.key === 'fullscreen') fullscreen = !fullscreen;
-									else if (row.key === 'showName') showName = !showName;
+									if (row.key === 'showName') showName = !showName;
 									else showUrl = !showUrl;
 								}}
 								class="w-full flex items-start justify-between gap-4 text-left p-3 -mx-3 rounded-md hover:bg-ink-100/60"
