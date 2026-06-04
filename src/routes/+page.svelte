@@ -33,24 +33,6 @@
 		['Quellcode', 'github.com/WarumSindNamenSoSchwer/SbSQLTT']
 	];
 
-	const stepLabels = [
-		'Warum filtern?',
-		'Aufbau von WHERE',
-		'Bedingungen kombinieren',
-		'Probier es: Bücher nach 2010',
-		'Rückblick'
-	];
-
-	const previewRows: [number, string, number][] = [
-		[1, 'Designing Data-Intensive Apps', 2017],
-		[2, 'Refactoring', 2018],
-		[3, 'Seven Databases in Seven Weeks', 2018],
-		[4, 'Database Internals', 2019]
-	];
-
-	// Quick facts row labels we still want to render in the SQL accent color
-	// (no behavioural change — purely label text).
-
 	function openLesson() {
 		goto('/learn/beginner/where-filters');
 	}
