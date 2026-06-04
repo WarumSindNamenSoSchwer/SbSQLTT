@@ -129,125 +129,29 @@
 				/>
 			</div>
 
-			<!-- inline editor screenshot -->
+			<!-- inline lesson mockup screenshot -->
 			<div class="mt-14 md:mt-20 lg:col-span-2">
-				<div
-					role="button"
-					tabindex="0"
+				<button
+					type="button"
 					onclick={openLesson}
-					onkeydown={(e) => {
-						if (e.key === 'Enter') openLesson();
-					}}
-					class="group relative rounded-xl border border-ink-200 bg-ink-50 shadow-pop overflow-hidden cursor-pointer ring-accent"
+					aria-label="Diese Lektion öffnen"
+					class="group relative block w-full rounded-xl overflow-hidden cursor-pointer ring-accent"
 				>
-					<!-- window chrome -->
-					<div
-						class="h-9 px-4 flex items-center justify-between border-b border-ink-200 bg-ink-100/40"
-					>
-						<div class="flex items-center gap-1.5">
-							<span class="dot" style="background:#3a3a47"></span>
-							<span class="dot" style="background:#3a3a47"></span>
-							<span class="dot" style="background:#3a3a47"></span>
-						</div>
-						<div class="hidden sm:block font-mono text-[11px] text-ink-600 truncate">
-							beginner / where-filters · Schritt 4 von 5
-						</div>
-						<div class="font-mono text-[11px] text-ink-600 whitespace-nowrap shrink-0">
-							<span class="hidden sm:inline">⌘↵ </span>ausführen
-						</div>
-					</div>
-					<!-- body -->
-					<div class="grid grid-cols-1 md:grid-cols-[1fr_1.6fr]">
-						<!-- lesson side -->
-						<div class="p-6 border-r border-ink-200 hidden md:block">
-							<div
-								class="text-[11px] font-mono uppercase tracking-[0.14em] text-accent"
-							>
-								Schritt 4 / 5
-							</div>
-							<div class="mt-2 text-[18px] font-semibold tracking-tight text-ink-900">
-								Bücher, die nach 2010 erschienen sind
-							</div>
-							<p class="mt-3 text-[13px] leading-relaxed text-ink-700">
-								Filtere die Tabelle <span class="font-mono">books</span> so, dass nur
-								Zeilen erscheinen, deren <span class="font-mono">year</span> echt größer
-								als 2010 ist. Sortiere aufsteigend nach Jahr.
-							</p>
-							<ol class="mt-5 space-y-2 text-[12.5px] text-ink-700">
-								{#each stepLabels as s, i (i)}
-									<li class="flex items-center gap-2">
-										<span
-											class={'w-4 h-4 rounded-full inline-flex items-center justify-center text-[9px] font-mono ' +
-												(i < 3
-													? 'bg-accent text-[oklch(0.16_0.04_195)]'
-													: i === 3
-														? 'bg-accent-soft text-accent border border-[oklch(0.72_0.15_195_/_0.4)]'
-														: 'bg-ink-200 text-ink-700')}
-										>
-											{i < 3 ? '✓' : i + 1}
-										</span>
-										<span class={i === 3 ? 'text-ink-900' : ''}>{s}</span>
-									</li>
-								{/each}
-							</ol>
-						</div>
-						<!-- code + result -->
-						<div class="grid grid-rows-[1fr_auto]">
-							<pre
-								class="m-0 p-5 font-mono text-[13px] leading-[20px] whitespace-pre overflow-x-auto bg-ink-50"><span
-									class="tok-com">{`-- Bücher nach dem Jahr 2010 filtern & sortieren\n`}</span><span
-									class="tok-kw">SELECT</span><span class="tok-pun">{' '}</span><span
-									class="tok-id">title</span><span class="tok-pun">,</span><span
-									class="tok-pun">{' '}</span><span class="tok-id">year</span>{`\n`}<span
-									class="tok-kw">FROM</span><span class="tok-pun">{'   '}</span><span
-									class="tok-id">books</span>{`\n`}<span class="tok-kw">WHERE</span><span
-									class="tok-pun">{'  '}</span><span class="tok-id">year</span><span
-									class="tok-pun">{' '}</span><span class="tok-pun">{'>'}</span><span
-									class="tok-pun">{' '}</span><span class="tok-num">2010</span>{`\n`}<span
-									class="tok-kw">ORDER BY</span><span class="tok-pun">{' '}</span><span
-									class="tok-id">year</span><span class="tok-pun">{' '}</span><span
-									class="tok-kw">ASC</span><span class="tok-pun">;</span><span
-									class="caret tok-pun"
-									style="border-right: 1.5px solid oklch(0.72 0.15 195); margin-left: 2px"
-									>&nbsp;</span></pre>
-							<div class="border-t border-ink-200 bg-ink-0/40">
-								<div
-									class="px-4 h-8 flex items-center justify-between text-[11px] font-mono text-ink-700"
-								>
-									<span>4 Zeilen · 1.2 ms</span>
-									<span class="text-accent">● ok</span>
-								</div>
-								<div class="overflow-hidden">
-									<table class="w-full font-mono text-[12px] tabular-num">
-										<thead class="border-t border-ink-200">
-											<tr class="text-left text-ink-700">
-												<th class="px-4 py-1.5 w-8 text-right text-ink-600">#</th>
-												<th class="px-4 py-1.5">title</th>
-												<th class="px-4 py-1.5 w-24">year</th>
-											</tr>
-										</thead>
-										<tbody>
-											{#each previewRows as [i, t, y] (i)}
-												<tr class="border-t border-ink-100">
-													<td class="px-4 py-1.5 text-right text-ink-600">{i}</td>
-													<td class="px-4 py-1.5 text-ink-900">{t}</td>
-													<td class="px-4 py-1.5 text-ink-900">{y}</td>
-												</tr>
-											{/each}
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-					</div>
-
+					<img
+						src="/images/lesson-mockup.png"
+						alt="Vorschau der Lektion „Bücher, die nach 2010 erschienen sind" — Schritt 4 von 5"
+						width="6000"
+						height="4171"
+						loading="lazy"
+						class="w-full h-auto select-none"
+					/>
 					<!-- hover hint (desktop only) -->
 					<div
 						class="hidden md:block absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition pointer-events-none"
 					>
 						<Badge tone="accent">Diese Lektion öffnen →</Badge>
 					</div>
-				</div>
+				</button>
 			</div>
 		</div>
 	</section>
