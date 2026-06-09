@@ -40,3 +40,35 @@ region). Self-hosted Inter + JetBrains Mono fonts (no Google CDN).
 - Teachers: murat.meric@jmestudio.de
 - Issues: https://github.com/WarumSindNamenSoSchwer/SbSQLTT/issues
 - Project owner: Murat-Can Meric (jmestudio GbR, Berlin, Germany)
+
+## Frequently asked questions
+
+**Was ist SbSQLTT?**
+SbSQLTT (Server based SQL Teaching Tool) ist ein kostenloser, quelloffener Web-SQL-Trainer für den Informatikunterricht an deutschen Gymnasien. Schülerinnen und Schüler schreiben SQL direkt im Browser und lassen ihre Abfragen gegen eine echte Postgres-Engine laufen, die als WebAssembly auf dem eigenen Gerät arbeitet. Es gibt keinen Server, der die Queries sieht.
+
+**Für wen ist SbSQLTT?**
+Primär für Informatik-Lehrkräfte und Schüler:innen der Sekundarstufe II, sekundär für Studierende in Datenbank-Grundkursen und Selbstlerner. Die Inhalte orientieren sich an den deutschen Rahmenlehrplänen (Berlin, Brandenburg, NRW).
+
+**Wie unterscheidet sich SbSQLTT von sqlbolt.com?**
+sqlbolt.com ist statisch von 2014 mit fester Tabelle und ohne Lehrer-Sicht. SbSQLTT bringt eine echte Postgres-Engine in den Browser (PGlite), erlaubt eigene Schema-Entwürfe, hat ein Lehrer-Dashboard mit Klassen-Matrix und „hängt fest"-Anzeige und ist auf den DACH-Schulkontext zugeschnitten.
+
+**Welche SQL-Themen deckt SbSQLTT ab?**
+Drei Lerntracks: Anfänger (SELECT, FROM, WHERE, ORDER BY, LIMIT, DISTINCT, NULL-Handling), Fortgeschritten (COUNT/SUM/AVG, GROUP BY, HAVING, INNER/LEFT/RIGHT/FULL JOIN), Profi (Subqueries, Common Table Expressions, Window Functions, Indizes und EXPLAIN).
+
+**Ist SbSQLTT kostenlos?**
+Ja. SbSQLTT ist unter der AGPL-3.0 quelloffen lizenziert. Keine Werbung, keine Premium-Stufe, keine versteckten Kosten. Schulen dürfen es ohne Lizenzgebühr einsetzen.
+
+**Brauchen Schülerinnen und Schüler ein Konto?**
+Nein. Lektionen funktionieren vollständig anonym im Browser. Optional gibt es einen Magic-Link-Login (kein Passwort), um Fortschritt geräteübergreifend zu speichern.
+
+**Ist SbSQLTT DSGVO-konform?**
+Ja. SQL-Eingaben verlassen den Browser nicht. Hosting in der EU (Vercel Frankfurt). Keine Drittanbieter-Tracker, keine Werbe-Cookies. Eine Mustervereinbarung zur Auftragsverarbeitung nach Art. 28 DSGVO ist auf Anfrage erhältlich.
+
+**Wie tritt eine Klasse einer Lehrer-Klasse bei?**
+Lehrkräfte legen im Lehrer-Bereich eine Klasse an und teilen einen Beitritts-Code (Format `XXXX-XXN-NN`). Schüler:innen geben den Code ein oder scannen einen QR-Code, der im Vollbildmodus auf die Tafel projiziert werden kann. Kein Schüler-Konto nötig.
+
+**Welche Technologie nutzt SbSQLTT?**
+SvelteKit 5 mit TypeScript, Tailwind CSS v4, PGlite (Postgres-WebAssembly), CodeMirror 6 für den SQL-Editor, Supabase für optionalen Magic-Link-Login und Lehrer-Daten. Gehostet auf Vercel in Frankfurt, Domain über IONOS.
+
+**Wer entwickelt SbSQLTT?**
+Murat-Can Meric (jmestudio GbR, Berlin) entwickelt SbSQLTT als Solo-Projekt in enger Abstimmung mit Informatik-Lehrkräften. Kontakt: murat.meric@jmestudio.de.

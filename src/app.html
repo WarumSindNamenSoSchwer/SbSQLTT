@@ -5,8 +5,154 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
 		<title>SbSQLTT</title>
+		<meta
+			name="description"
+			content="SbSQLTT ist ein kostenloser, quelloffener SQL-Trainer fürs Web. Schülerinnen und Schüler üben SQL direkt im Browser, ohne Anmeldung. Entwickelt für den Informatikunterricht an deutschen Gymnasien."
+		/>
+		<meta name="author" content="Murat-Can Meric (jmestudio)" />
+		<meta name="theme-color" content="#1FA9AE" />
+		<link rel="canonical" href="https://sbsqltt.jmestudio.de/" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="apple-touch-icon" href="/favicon.svg" />
+
+		<!-- Open Graph (Facebook, LinkedIn, Discord, etc.) -->
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="SbSQLTT" />
+		<meta property="og:title" content="SbSQLTT — SQL lernen, indem du es schreibst" />
+		<meta
+			property="og:description"
+			content="Kostenloser, quelloffener SQL-Trainer fürs Web. Übe SQL direkt im Browser, ohne Anmeldung. Für den Informatikunterricht an deutschen Gymnasien."
+		/>
+		<meta property="og:locale" content="de_DE" />
+		<meta property="og:url" content="https://sbsqltt.jmestudio.de/" />
+		<meta property="og:image" content="https://sbsqltt.jmestudio.de/images/lesson-mockup.png" />
+
+		<!-- Twitter / X card -->
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content="SbSQLTT — SQL lernen, indem du es schreibst" />
+		<meta
+			name="twitter:description"
+			content="Kostenloser, quelloffener SQL-Trainer fürs Web für den Informatikunterricht."
+		/>
+		<meta name="twitter:image" content="https://sbsqltt.jmestudio.de/images/lesson-mockup.png" />
+
+		<!-- Schema.org structured data — fuels AI overviews -->
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@graph": [
+					{
+						"@type": "SoftwareApplication",
+						"@id": "https://sbsqltt.jmestudio.de/#app",
+						"name": "SbSQLTT",
+						"alternateName": "Server based SQL Teaching Tool",
+						"applicationCategory": "EducationalApplication",
+						"applicationSubCategory": "SQL Trainer",
+						"operatingSystem": "Web (Chrome, Firefox, Safari, Edge)",
+						"url": "https://sbsqltt.jmestudio.de/",
+						"description": "Kostenloser, quelloffener SQL-Trainer fürs Web. Schülerinnen und Schüler üben SQL direkt im Browser gegen eine echte Postgres-Engine (PGlite WebAssembly), ohne Konto und ohne Server. Entwickelt für den Informatikunterricht an deutschen Gymnasien und Universitäten.",
+						"inLanguage": ["de-DE", "en-US"],
+						"isAccessibleForFree": true,
+						"license": "https://www.gnu.org/licenses/agpl-3.0.html",
+						"offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+						"featureList": [
+							"Interaktive SQL-Lektionen mit echter Postgres-Engine im Browser",
+							"Lehrer-Dashboard mit Klassen-Matrix und Fortschritts-Anzeige",
+							"Beitritt per QR-Code oder E-Mail-Einladung",
+							"DSGVO-konform: keine Schülerdaten auf fremden Servern",
+							"Open Source unter AGPL-3.0"
+						],
+						"audience": {
+							"@type": "EducationalAudience",
+							"educationalRole": ["student", "teacher"]
+						},
+						"educationalLevel": "Sekundarstufe II",
+						"teaches": [
+							"SQL-Grundlagen (SELECT, FROM, WHERE, ORDER BY, LIMIT)",
+							"Aggregation und Gruppierung (COUNT, SUM, AVG, GROUP BY, HAVING)",
+							"Joins (INNER, LEFT, RIGHT, FULL OUTER)",
+							"Subqueries, Common Table Expressions, Window Functions",
+							"Datenbankdesign und Schemata"
+						],
+						"author": {
+							"@type": "Person",
+							"name": "Murat-Can Meric",
+							"url": "https://jmestudio.de"
+						},
+						"publisher": { "@id": "https://sbsqltt.jmestudio.de/#publisher" },
+						"sameAs": ["https://github.com/WarumSindNamenSoSchwer/SbSQLTT"]
+					},
+					{
+						"@type": "Organization",
+						"@id": "https://sbsqltt.jmestudio.de/#publisher",
+						"name": "jmestudio (GbR)",
+						"url": "https://jmestudio.de",
+						"email": "murat.meric@jmestudio.de",
+						"address": {
+							"@type": "PostalAddress",
+							"streetAddress": "Lübecker Str. 45",
+							"postalCode": "10559",
+							"addressLocality": "Berlin",
+							"addressCountry": "DE"
+						}
+					},
+					{
+						"@type": "WebSite",
+						"@id": "https://sbsqltt.jmestudio.de/#website",
+						"url": "https://sbsqltt.jmestudio.de/",
+						"name": "SbSQLTT",
+						"inLanguage": "de-DE",
+						"publisher": { "@id": "https://sbsqltt.jmestudio.de/#publisher" }
+					},
+					{
+						"@type": "FAQPage",
+						"@id": "https://sbsqltt.jmestudio.de/#faq",
+						"mainEntity": [
+							{
+								"@type": "Question",
+								"name": "Was ist SbSQLTT?",
+								"acceptedAnswer": {
+									"@type": "Answer",
+									"text": "SbSQLTT ist ein kostenloser, quelloffener SQL-Trainer fürs Web. Schülerinnen und Schüler üben SQL direkt im Browser gegen eine echte Postgres-Engine, die als WebAssembly auf dem eigenen Gerät läuft. Es ist für den Informatikunterricht an deutschen Gymnasien gedacht, kann aber auch im Selbststudium genutzt werden."
+								}
+							},
+							{
+								"@type": "Question",
+								"name": "Brauchen Schülerinnen und Schüler ein Konto?",
+								"acceptedAnswer": {
+									"@type": "Answer",
+									"text": "Nein. Lektionen lassen sich vollständig ohne Konto nutzen. Nur wenn der Fortschritt geräteübergreifend gespeichert werden soll, ist ein optionaler Login per Magic Link nötig — Passwörter werden nicht verwendet."
+								}
+							},
+							{
+								"@type": "Question",
+								"name": "Ist SbSQLTT DSGVO-konform?",
+								"acceptedAnswer": {
+									"@type": "Answer",
+									"text": "Ja. SQL-Abfragen verlassen niemals den Browser. Die Anwendung läuft EU-gehostet (Vercel Frankfurt). Es gibt kein Tracking, keine Werbung und keine Drittanbieter-Analyse. Eine Auftragsverarbeitungsvereinbarung nach Art. 28 DSGVO ist auf Anfrage erhältlich."
+								}
+							},
+							{
+								"@type": "Question",
+								"name": "Welche Lernziele werden abgedeckt?",
+								"acceptedAnswer": {
+									"@type": "Answer",
+									"text": "Die Lektionen orientieren sich an den Rahmenlehrplänen für Informatik in der Sekundarstufe II: Aufbau relationaler Datenbanken, SELECT-Abfragen, Filtern mit WHERE, Sortierung, Aggregatfunktionen, GROUP BY und HAVING, Joins, Subqueries, eigene Schemaentwürfe."
+								}
+							},
+							{
+								"@type": "Question",
+								"name": "Was kostet SbSQLTT?",
+								"acceptedAnswer": {
+									"@type": "Answer",
+									"text": "Nichts. SbSQLTT ist kostenlos und unter der AGPL-3.0 quelloffen. Es gibt keine Premium-Stufen, keine Werbung und keine versteckten Kosten."
+								}
+							}
+						]
+					}
+				]
+			}
+		</script>
 		<script>
 			// Apply theme before paint (no flash). Default: light. Override via toggle.
 			try {
