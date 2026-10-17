@@ -109,7 +109,7 @@ Grundsatz: Der Lehrerbereich ist **eigener Bereich** (eigene Navigation), getren
 - **Schüler:** Liste, entfernen, umbenennen.
 - **Einstellungen der Klasse:** Name, Code neu erzeugen, Klasse archivieren.
 - **Profil:** Name, E-Mail, Passwort.
-- (Aufgaben-Seite: vorerst ausblenden, später klären.)
+- **Lektionen** (ersetzt bisherige „Aufgaben“-Seite): Lektionen freischalten, Reihenfolge festlegen, eine Lektion als **Fokus** markieren. Einziger Ort, an dem die Lehrkraft steuert, *was* die Klasse lernt.
 
 ## 7. Live-Quiz (Kahoot-artig, Handy)
 
@@ -151,7 +151,7 @@ Zweck: **Handy fürs Quiz, PC zum Arbeiten.** Gibt dem QR-Code einen klaren Sinn
 ## 8. Offene Punkte
 
 - [ ] Schema der echten App von Muri → Basis für Lektionsdatensatz
-- [ ] Login-Methode Lehrkraft (E-Mail + Passwort? Magic Link braucht Mailserver)
+- [x] Login Lehrkraft: E-Mail + Passwort (Magic Link evtl. später)
 - [x] Login Schüler: echter Account (wegen Handy/PC-Sync), Beitritt per QR/Code
-- [ ] Aufgaben-Seite: behalten oder streichen?
+- [x] Aufgaben-Seite: wird mit Fokus-Lektion zur Seite „Lektionen“ zusammengelegt
 - [ ] Design-Entwürfe vom Designer auf Basis dieses Dokuments
