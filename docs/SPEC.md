@@ -111,10 +111,47 @@ Grundsatz: Der Lehrerbereich ist **eigener Bereich** (eigene Navigation), getren
 - **Profil:** Name, E-Mail, Passwort.
 - (Aufgaben-Seite: vorerst ausblenden, später klären.)
 
-## 7. Offene Punkte
+## 7. Live-Quiz (Kahoot-artig, Handy)
+
+Zweck: **Handy fürs Quiz, PC zum Arbeiten.** Gibt dem QR-Code einen klaren Sinn.
+
+### 7.1 Fragensätze
+- **Automatisch** aus jeder Lektion erzeugt (Standard-Fragensatz pro Lektion).
+- **Bearbeitbar:** Lehrkraft kann einen automatischen Satz kopieren und anpassen (Fragen ändern, löschen, umsortieren).
+- **Eigene Sätze:** Lehrkraft erstellt komplett eigene Fragensätze.
+- Fragetypen:
+  - „Was gibt diese Abfrage zurück?“
+  - „Welche Abfrage liefert dieses Ergebnis?“
+  - „Wo ist der Fehler?“
+- Pro Frage: 4 Antworten (1 richtig), Zeitlimit einstellbar (Standard 20 s).
+
+### 7.2 Ablauf Lehrkraft (Beamer)
+1. Klassen-Dashboard → **„Quiz starten“** → Fragensatz wählen.
+2. Lobby: QR-Code + Code groß, Liste beigetretener Schüler live.
+3. **„Los“** → Frage + Countdown, Anzahl Antworten live.
+4. Zeit abgelaufen → Auflösung: Verteilung der Antworten, richtige markiert.
+5. Zwischenstand (Top 5) → nächste Frage.
+6. Ende: Rangliste + **Auswertung**: welche Fragen schlecht liefen → Button **„Als Fokus-Lektion setzen“**.
+
+### 7.3 Ablauf Schüler (Handy oder PC)
+1. QR scannen → Anmelden (oder Account anlegen) → automatisch in Klasse + Quiz-Lobby.
+2. Frage sehen, Antwort tippen → „Antwort gespeichert“, warten.
+3. Nach Auflösung: richtig/falsch + Punkte.
+4. Ende: eigener Platz.
+- Quiz läuft auch im **PC-Browser** (falls Handys verboten sind).
+
+### 7.4 Account-Sync
+- Ein Account für Handy und PC. Beitritt per QR am Handy → am PC mit gleichem Account anmelden → Klasse ist da.
+- Folge: **Schüler brauchen echtes Login** (Benutzername + Passwort), nicht nur Name + Code.
+
+### 7.5 Technik
+- Echtzeit über **WebSockets** im Node-Container (auch self-hosted).
+- Priorität: **nach** Kern (SQLite, Lektionen, Redesign).
+
+## 8. Offene Punkte
 
 - [ ] Schema der echten App von Muri → Basis für Lektionsdatensatz
 - [ ] Login-Methode Lehrkraft (E-Mail + Passwort? Magic Link braucht Mailserver)
-- [ ] Login Schüler: nur Name + Klassencode, ohne Passwort?
+- [x] Login Schüler: echter Account (wegen Handy/PC-Sync), Beitritt per QR/Code
 - [ ] Aufgaben-Seite: behalten oder streichen?
 - [ ] Design-Entwürfe vom Designer auf Basis dieses Dokuments
