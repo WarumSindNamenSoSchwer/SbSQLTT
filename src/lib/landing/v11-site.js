@@ -49,7 +49,7 @@ function execute(){
  const correct=columns.length===2&&columns[0]==='title'&&columns[1]==='year'&&rows.length===3&&rows.map(r=>r.year).join(',')==='2017,2018,2019';feedback.className='feedback';feedback.textContent=correct?'✓ Richtig gelöst. Titel, Jahre und Reihenfolge stimmen.':rows.length?'✓ Abfrage ausgeführt. Vergleiche dein Ergebnis mit der Aufgabe.':'✓ Abfrage ausgeführt. Ein leeres Ergebnis ist kein SQL-Fehler.';
  button.textContent='↻ Erneut ausführen';
 }
-button.addEventListener('click',execute);query.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();execute();}});
+button.addEventListener('click',()=>window.SbExecute?window.SbExecute():execute());query.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();window.SbExecute?window.SbExecute():execute();}});
 document.getElementById('hint-toggle').addEventListener('click',event=>{const panel=document.getElementById('hint');panel.hidden=!panel.hidden;event.currentTarget.setAttribute('aria-expanded',String(!panel.hidden));});
 document.querySelector('.theme').addEventListener('click',event=>{const dark=root.dataset.theme!=='dark';root.dataset.theme=dark?'dark':'light';event.currentTarget.setAttribute('aria-pressed',String(dark));event.currentTarget.setAttribute('aria-label',dark?'Light Mode aktivieren':'Dark Mode aktivieren');});
 const dialog=document.getElementById('teacher-dialog'),teacherInfo=document.getElementById('teacher-info');if(dialog&&teacherInfo)teacherInfo.addEventListener('click',()=>dialog.showModal());

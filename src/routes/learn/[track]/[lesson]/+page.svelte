@@ -9,7 +9,7 @@
 	import { explainQuery } from '$lib/tabula/explain';
 	import { tok } from '$lib/tabula/highlight';
 	import { LESSONS, saveProgress, loadProgress, type Step } from '$lib/tabula/lessons';
-	import { openDb, run, runIsolated, readSchema, explainError, compare, exportDb, type Result, type Schema } from '$lib/tabula/sql';
+	import { openDb, run, runIsolated, readSchema, explainError, compare, sqlHint, exportDb, type Result, type Schema } from '$lib/tabula/sql';
 
 	const lesson = $derived(LESSONS[page.params.lesson ?? ''] ?? LESSONS['where-filters']);
 
@@ -152,7 +152,7 @@
 				x.sub = '';
 			} else {
 				x.state = 'wrong';
-				x.sub = c.sub;
+				x.sub = sqlHint(sql) ?? c.sub;
 			}
 		}
 	}

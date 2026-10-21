@@ -119,6 +119,13 @@ export function explainError(sql: string, err: unknown): Explained {
 
 export type Check = { ok: true } | { ok: false; msg: string; sub: string };
 
+/** Typische Denkfehler, die SQL nicht als Fehler meldet, aber zu falschen Ergebnissen fuehren. */
+export function sqlHint(sql: string): string | null {
+	const s = sql.replace(/'[^']*'/g, "''");
+	if (/\bJOIN\b/i.test(s) && !/\b(ON|USING)\b/i.test(s)) return 'Nach JOIN fehlt die Bedingung mit ON.';
+	return null;
+}
+
 export function compare(got: Result, want: Result, ordered: boolean): Check {
 	const no = 'Noch nicht ganz.';
 	const missing = want.columns.filter((c) => !got.columns.map((x) => x.toLowerCase()).includes(c.toLowerCase()));
@@ -131,7 +138,7 @@ export function compare(got: Result, want: Result, ordered: boolean): Check {
 	const shared = want.columns.filter((c) => !missing.includes(c));
 	const g = proj(got, shared).map(key);
 	const w = proj(want, shared).map(key);
-	const sameSet = g.length === w.length && [...g].sort().join() === [...w].sort().join();
+	const sameSet = shared.length > 0 && g.length === w.length && [...g].sort().join() === [...w].sort().join();
 	const rowsHint = () => {
 		const d = got.rows.length - want.rows.length;
 		if (d > 0) return `${d} ${d === 1 ? 'Zeile' : 'Zeilen'} zu viel.`;

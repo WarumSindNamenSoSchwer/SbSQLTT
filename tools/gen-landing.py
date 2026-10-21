@@ -6,6 +6,11 @@ css = '\n'.join(src[12:178])  # inside <style> (lines 12..179 exclusive)
 assert css.lstrip().startswith('@font-face'), css[:40]
 html = '\n'.join(src[182:246])
 js = open(D + 'website-v11.js', encoding='utf-8').read()
+# Studio-Demo laeuft mit der echten Engine (SQLite + Pruefung der Lektion), wenn die Seite sie bereitstellt
+_old = "button.addEventListener('click',execute);query.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();execute();}});"
+assert _old in js
+js = js.replace(_old, "button.addEventListener('click',()=>window.SbExecute?window.SbExecute():execute());query.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();window.SbExecute?window.SbExecute():execute();}});")
+assert 'SbExecute' in js, 'hook not applied'
 
 # --- HTML: Links/Assets an echte Routen anpassen
 rep = {
@@ -27,6 +32,49 @@ qr = open(R + 'static/qr-tabula.svg', encoding='utf-8').read()
 qr = qr[qr.index('<svg'):].replace('<svg ', '<svg class="t-qr-svg" role="img" aria-label="QR-Code zu www.tabulasql.de" ', 1)
 html = html.replace('<span class="t-qr" aria-hidden="true"></span>', '<span class="t-qr t-qr-real">' + qr + '</span>')
 assert 't-qr-real' in html
+
+# ---- Mockups mit echten Inhalten (aus tools/landing-data.json, erzeugt aus Datensatz + Lektionen + Pruefung)
+import json, html as H
+D_ = json.load(open(R + 'tools/landing-data.json', encoding='utf-8'))
+def sub(old, new, count=1):
+    global html
+    assert old in html, old[:80]
+    html = html.replace(old, new, count)
+def between(a, b, new):
+    global html
+    i = html.index(a) + len(a); j = html.index(b, i)
+    html = html[:i] + new + html[j:]
+e = H.escape
+# Hero: echte books-Tabelle (6 Zeilen), herausgefilterte Zeilen markiert
+rows = ''.join(f'<div class="motion-data-row"{"" if y > D_["keepYear"] else " data-old=\"\""}><span>{e(t)}</span><b>{y}</b></div>' for t, y in D_['books'])
+between('<div class="motion-table-label"><span>TITLE</span><span>YEAR</span></div>', '</div>\n<div class="motion-query">', rows)
+sub('<strong>books</strong><span>5 Zeilen</span>', f'<strong>books</strong><span>{len(D_["books"])} Zeilen</span>')
+res = ''.join(f'<div class="motion-result-row"><span>{e(t)}</span><b>{y}</b></div>' for t, y in D_['result'])
+between('<strong>Ergebnis</strong><span>3 Treffer</span></div>', '<div class="motion-output-footer">', res)
+sub('<strong>Ergebnis</strong><span>3 Treffer</span>', f'<strong>Ergebnis</strong><span>{len(D_["result"])} Treffer</span>')
+# Studio: echte Aufgabe, Schritt, Schema und Lektionsliste
+st = D_['studio']
+sub('<h3>Welche Bücher sind nach 2010 erschienen?</h3><p>Zeige Titel und Jahr. Sortiere die ältesten zuerst.</p></div><span>Schritt 2 / 5</span>',
+    f'<h3>{e(st["task"])}</h3><p>{e(st["taskSub"])}</p></div><span>Schritt {st["stepNo"]} / {st["stepOf"]}</span>')
+cols = ''.join(f'<div class="schema-column{" selected" if c["name"] in ("title","year") else ""}"><span>{e(c["name"])}</span><small>{c.get("key") or c["type"]}</small></div>' for c in D_['schemaBooks'])
+between('<div class="schema-title"><i aria-hidden="true"></i>books</div>', '</aside>', cols)
+items = ''.join(f'<div class="sidebar-item{" active" if l["no"] == st["lessonNo"] else ""}"><span>{"✓" if l["no"] < st["lessonNo"] else f"{l["no"]:02d}"}</span>{e(l["title"])}</div>' for l in D_['lessons'])
+between('<span class="section-label" style="padding-left:10px">SQL-Grundlagen</span>', '<div class="sidebar-caption">', items)
+sub('<h4>Ein Tipp von Edgar</h4><p>Mit <code>WHERE year &gt; 2010</code> bleiben die neueren Bücher übrig. <code>ORDER BY year</code> bringt sie in aufsteigende Reihenfolge.</p>',
+    f'<h4>Ein Tipp von Edgar</h4><p>{e(st["tip"])}</p>')
+# Hinweis-Panel: echte Rueckmeldung der Pruefung auf diese Abfrage
+sub('<span class="blue" style="font-size:10px">Lektion 2</span>', f'<span class="blue" style="font-size:10px">Lektion {D_["hint"]["lesson"]}</span>')
+sub('<div class="explanation"><strong>Die richtigen Bücher hast du schon.</strong><br>Die Aufgabe fragt auch nach dem Jahr. Ergänze <code>year</code> in der SELECT-Zeile, getrennt durch ein Komma.</div>',
+    f'<div class="explanation"><strong>Noch nicht ganz.</strong><br>{e(D_["hint"]["sub"])}</div>')
+# JOIN-Ergebnis aus echter Abfrage
+jr = ''.join(f'<div class="join-combined-row"><span>{e(t)}</span><strong>{e(n)}</strong></div>' for t, n in D_['joinResult'])
+between('<span>Gemeinsames Ergebnis</span><span>✓ 3 Zeilen</span></div>', '</div></div><div class="join-visual-footer">', jr)
+sub('<span>Gemeinsames Ergebnis</span><span>✓ 3 Zeilen</span>', f'<span>Gemeinsames Ergebnis</span><span>✓ {len(D_["joinResult"])} Zeilen</span>')
+sub('<span>O’Reilly Media</span>', f'<span>{e(D_["publishers"][1][1])}</span>')
+# Lehrkraft-Detail: echte Aufgabe + echte Rueckmeldung
+th = D_['teacherHelp']
+sub('<p class="t-task">Zeige zu jedem Buch den Namen des Verlags.</p>', f'<p class="t-task">{e(th["task"])}</p>')
+sub('<div class="t-error">Nach JOIN fehlt die Bedingung mit ON.</div>', f'<div class="t-error">{e(th["msg"])}</div>')
 html = re.sub(r'href="[^"#/:]+\.dc\.html"', 'href="/learn"', html)
 assert '.dc.html' not in html, re.findall(r'.{40}\.dc\.html', html)[:3]
 open(R + 'src/lib/landing/v11.html', 'w', encoding='utf-8').write(html)

@@ -1,0 +1,144 @@
+{
+ "books": [
+  [
+   "Refactoring",
+   2018
+  ],
+  [
+   "Clean Code",
+   2008
+  ],
+  [
+   "Database Internals",
+   2019
+  ],
+  [
+   "The Pragmatic Programmer",
+   1999
+  ],
+  [
+   "Data-Intensive Apps",
+   2017
+  ],
+  [
+   "Head First SQL",
+   2007
+  ]
+ ],
+ "keepYear": 2010,
+ "result": [
+  [
+   "Data-Intensive Apps",
+   2017
+  ],
+  [
+   "Refactoring",
+   2018
+  ],
+  [
+   "Database Internals",
+   2019
+  ]
+ ],
+ "schemaBooks": [
+  {
+   "name": "id",
+   "type": "int",
+   "key": "PK"
+  },
+  {
+   "name": "title",
+   "type": "text"
+  },
+  {
+   "name": "year",
+   "type": "int"
+  },
+  {
+   "name": "publisher_id",
+   "type": "int",
+   "key": "FK"
+  }
+ ],
+ "studio": {
+  "task": "Welche Bücher sind nach 2010 erschienen?",
+  "taskSub": "Zeige Titel und Jahr. Sortiere die ältesten zuerst.",
+  "stepNo": 3,
+  "stepOf": 5,
+  "lessonNo": 3,
+  "tip": "Schau dir die Jahreszahl in deiner Bedingung an. Welche Bücher sollen laut Aufgabe gerade nicht mehr dabei sein?"
+ },
+ "lessons": [
+  {
+   "no": 1,
+   "title": "Erste Abfrage mit SELECT"
+  },
+  {
+   "no": 2,
+   "title": "Spalten auswählen und umbenennen"
+  },
+  {
+   "no": 3,
+   "title": "Mit WHERE filtern"
+  },
+  {
+   "no": 4,
+   "title": "Ergebnisse sortieren"
+  }
+ ],
+ "hint": {
+  "query": "SELECT title\nFROM books\nWHERE year > 2010;",
+  "sub": "Die Zeilen stimmen. Es fehlt die Spalte year.",
+  "lesson": 3
+ },
+ "joinBooks": [
+  [
+   "Refactoring",
+   1
+  ],
+  [
+   "Database Internals",
+   2
+  ],
+  [
+   "Data-Intensive Apps",
+   2
+  ]
+ ],
+ "publishers": [
+  [
+   1,
+   "Addison-Wesley"
+  ],
+  [
+   2,
+   "O'Reilly Media"
+  ],
+  [
+   3,
+   "No Starch Press"
+  ]
+ ],
+ "joinResult": [
+  [
+   "Refactoring",
+   "Addison-Wesley"
+  ],
+  [
+   "Database Internals",
+   "O'Reilly Media"
+  ],
+  [
+   "Data-Intensive Apps",
+   "O'Reilly Media"
+  ]
+ ],
+ "teacherHelp": {
+  "task": "Von welchen Verlagen sind die Bücher nach 2010?",
+  "query": "SELECT b.title, p.name\nFROM books b\nJOIN publishers p;",
+  "msg": "Nach JOIN fehlt die Bedingung mit ON."
+ },
+ "pathCounts": {
+  "grund": 8
+ }
+}

@@ -61,7 +61,45 @@
 			paint();
 		};
 
-		import('$lib/landing/v11-site.js').then(() => {
+		import('$lib/landing/v11-site.js').then(async () => {
+			// Studio-Demo mit echter Engine: SQLite-Datenbank und Pruefung aus Lektion 3, Uebung „Bücher nach 2010“
+			const [{ openDb, run, runIsolated, compare, explainError, sqlHint }, { LESSONS }] = await Promise.all([import('$lib/tabula/sql'), import('$lib/tabula/lessons')]);
+			const L = LESSONS['where-filters'];
+			const ex = L.steps.find((s) => s.kind === 'exercise');
+			const db = await openDb(L.db.seed).catch(() => null);
+			const esc = (s: unknown) => String(s ?? 'NULL').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+			if (db && ex && ex.kind === 'exercise') {
+				w.SbExecute = () => {
+					const q = document.getElementById('query') as HTMLTextAreaElement;
+					const fbEl = document.getElementById('feedback')!;
+					const count = document.getElementById('result-count')!;
+					const content = document.getElementById('result-content')!;
+					const sql = q.value.trim();
+					fbEl.hidden = false;
+					let res;
+					try {
+						res = runIsolated(db, sql);
+					} catch (err) {
+						const x = explainError(sql, err);
+						fbEl.className = 'feedback error';
+						fbEl.textContent = x.msg;
+						count.textContent = 'Abfrage prüfen';
+						q.setAttribute('aria-invalid', 'true');
+						return;
+					}
+					q.removeAttribute('aria-invalid');
+					count.textContent = `${res.rows.length} ${res.rows.length === 1 ? 'Zeile' : 'Zeilen'}`;
+					content.innerHTML = res.rows.length
+						? '<table><thead><tr>' + res.columns.map((c) => `<th>${esc(c)}</th>`).join('') + '</tr></thead><tbody>' + res.rows.map((r) => '<tr>' + r.map((v) => `<td>${esc(v)}</td>`).join('') + '</tr>').join('') + '</tbody></table>'
+						: '<div class="result-empty">Keine Zeile erfüllt die Bedingung.</div>';
+					const c = compare(res, run(db, ex.solution), ex.ordered);
+					fbEl.className = 'feedback';
+					fbEl.textContent = c.ok ? `✓ ${ex.okMsg} ${ex.okSub}` : `${c.msg} ${sqlHint(sql) ?? c.sub}`;
+					(document.getElementById('run') as HTMLButtonElement).textContent = '↻ Erneut ausführen';
+				};
+				(document.getElementById('query') as HTMLTextAreaElement).value = ex.starter;
+				document.getElementById('query')!.dispatchEvent(new Event('input'));
+			}
 			(w.SbSiteInit as () => void)?.();
 			const follow = (target: Element | null, opts: MutationObserverInit, owlSel: string, pick: () => string | undefined) => {
 				const o = document.querySelector(owlSel);
@@ -107,6 +145,7 @@
 		return () => {
 			cleanups.forEach((f) => f());
 			delete root.dataset.theme;
+			delete (window as unknown as Record<string, unknown>).SbExecute;
 		};
 	});
 </script>
