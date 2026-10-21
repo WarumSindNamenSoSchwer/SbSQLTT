@@ -137,7 +137,7 @@
 	}
 </script>
 
-<div class="lernende-wrap">
+<div class="schueler-wrap">
 	<div class="toolbar">
 		<div class="search-field">
 			<span class="search-ico" aria-hidden="true">⌕</span>
@@ -250,8 +250,8 @@
 {/if}
 
 <style>
-	.lernende-wrap { padding: 24px 40px; display: flex; flex-direction: column; gap: 16px; }
-	@media (max-width: 767px) { .lernende-wrap { padding: 16px; } }
+	.schueler-wrap { padding: 24px 40px; display: flex; flex-direction: column; gap: 16px; }
+	@media (max-width: 767px) { .schueler-wrap { padding: 16px; } }
 
 	.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 	.search-field { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; color: var(--ink-3); max-width: 320px; flex: 1; }

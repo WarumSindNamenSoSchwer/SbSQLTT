@@ -27,11 +27,14 @@ import { loadProgress, clearProgress, mergeServerProgress } from './lessons.js';
 let _user = $state<PublicUser | null>(null);
 let _loading = $state(true);
 let _error = $state<string | null>(null);
+/** Wird nach jedem Server-Merge/Leeren des Fortschritts erhöht, damit Seiten neu laden. */
+let _progressVersion = $state(0);
 
 export const session = {
   get user(): PublicUser | null { return _user; },
   get loading(): boolean { return _loading; },
   get error(): string | null { return _error; },
+  get progressVersion(): number { return _progressVersion; },
 };
 
 // ---------------------------------------------------------------------------
@@ -88,6 +91,7 @@ export async function sessionLogout(): Promise<void> {
   // Lokalen Fortschritt loeschen (K4: Schulrechner-Datenschutz).
   // Damit sieht der naechste Schueler am selben Geraet nicht den Stand des vorherigen.
   clearProgress();
+  _progressVersion++;
 }
 
 // ---------------------------------------------------------------------------
@@ -114,6 +118,7 @@ async function _downloadAndMergeProgress(): Promise<void> {
   try {
     const { progress } = await apiGetProgress();
     mergeServerProgress(progress);
+    _progressVersion++;
   } catch {
     // Fehlschlag ignorieren, kein Showstopper
   }

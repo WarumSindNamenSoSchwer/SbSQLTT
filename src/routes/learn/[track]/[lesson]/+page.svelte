@@ -141,6 +141,16 @@
 			x.errOrig = ex.orig;
 			x.errLine = ex.line;
 			x.result = null;
+			if (step.kind === 'exercise') {
+				syncExerciseStep({
+					lesson_id: lesson.id,
+					step: cur,
+					done: false,
+					attempts: x.attempts,
+					lastQuery: sql,
+					errorMsg: ex.msg
+				});
+			}
 			return;
 		}
 		x.errLine = null;

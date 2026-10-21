@@ -28,7 +28,7 @@
 	const pathSuffix = $derived(() => {
 		const p = page.url.pathname;
 		if (p.endsWith('/lektionen')) return 'lektionen';
-		if (p.endsWith('/lernende')) return 'lernende';
+		if (p.endsWith('/schueler')) return 'schueler';
 		if (p.endsWith('/einstellungen')) return 'einstellungen';
 		return 'uebersicht';
 	});
@@ -36,7 +36,7 @@
 	const tabs = [
 		{ id: 'uebersicht', label: 'Übersicht', href: () => `/teach/${classId}` },
 		{ id: 'lektionen', label: 'Lektionen', href: () => `/teach/${classId}/lektionen` },
-		{ id: 'lernende', label: 'Lernende', href: () => `/teach/${classId}/lernende` },
+		{ id: 'schueler', label: 'Schüler', href: () => `/teach/${classId}/schueler` },
 		{ id: 'einstellungen', label: 'Einstellungen', href: () => `/teach/${classId}/einstellungen` },
 	];
 

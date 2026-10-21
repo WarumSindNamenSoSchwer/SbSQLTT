@@ -23,36 +23,35 @@
 		const mo = new MutationObserver(sync);
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-		// Klassen-Info laden (nur wenn angemeldet und ACCOUNTS_LIVE)
-		if (ACCOUNTS_LIVE && session.user && session.user.role === 'student') {
-			apiGetClasses().then(({ classes }) => {
-				if (classes.length === 0) return;
-				// Erste aktive Klasse verwenden
-				const cls = classes[0];
-				// Gesperrte Lektionen: lesson_settings vorhanden und unlocked=false
-				const hasSettings = cls.lessons.length > 0;
-				const locked = hasSettings
-					? cls.lessons.filter(l => !l.unlocked).map(l => l.lesson_id)
-					: [];
-				// Fokus-Lektion
-				const focusLesson = cls.lessons.find(l => l.is_focus);
-				klasse = {
-					name: cls.name,
-					focus: focusLesson ? { id: focusLesson.lesson_id } : cls.focus_lesson ? { id: cls.focus_lesson } : undefined,
-					locked,
-				};
-			}).catch(() => { /* Netzwerkfehler ignorieren */ });
-		}
-
 		return () => mo.disconnect();
+	});
+
+	// Klassen-Info laden, sobald die Sitzung bekannt ist (nur ACCOUNTS_LIVE + Schüler)
+	let klasseFor: number | null = null;
+	$effect(() => {
+		const u = session.user;
+		if (!ACCOUNTS_LIVE || !u || u.role !== 'student') { klasse = null; klasseFor = null; return; }
+		if (klasseFor === u.id) return;
+		klasseFor = u.id;
+		apiGetClasses().then(({ classes }) => {
+			if (classes.length === 0) return;
+			const cls = classes[0];
+			const locked = cls.lessons.filter((l) => !l.unlocked).map((l) => l.lesson_id);
+			const focusLesson = cls.lessons.find((l) => l.is_focus);
+			klasse = {
+				name: cls.name,
+				focus: focusLesson ? { id: focusLesson.lesson_id } : cls.focus_lesson ? { id: cls.focus_lesson } : undefined,
+				locked
+			};
+		}).catch(() => { /* Netzwerkfehler ignorieren */ });
 	});
 
 	// Fortschritt reaktiv aktualisieren wenn sich der Session-State aendert
 	// (z.B. nach Login mit Server-Merge)
 	$effect(() => {
-		if (session.user !== undefined) {
-			progress = loadProgress();
-		}
+		void session.user;
+		void session.progressVersion;
+		progress = loadProgress();
 	});
 
 
@@ -121,7 +120,7 @@
 					<a class="ga" href="/login">Anmelden</a>
 				</div>
 			{:else if klasse?.focus}
-				{@const f = CATALOG.find((l) => l.id === klasse.focus?.id)}
+				{@const f = CATALOG.find((l) => l.id === klasse?.focus?.id)}
 				{#if f}
 					<div class="focus">
 						<Edgar pose="curious" {dark} class="focus-owl" />
