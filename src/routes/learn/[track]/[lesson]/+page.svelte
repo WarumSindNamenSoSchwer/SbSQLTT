@@ -5,6 +5,8 @@
 	import type { Database } from 'sql.js';
 	import Edgar from '$lib/edgar/Edgar.svelte';
 	import CodeEditor from '$lib/tabula/CodeEditor.svelte';
+	import QueryViz from '$lib/tabula/QueryViz.svelte';
+	import { explainQuery } from '$lib/tabula/explain';
 	import { tok } from '$lib/tabula/highlight';
 	import { LESSONS, saveProgress, loadProgress, type Step } from '$lib/tabula/lessons';
 	import { openDb, run, runIsolated, readSchema, explainError, compare, exportDb, type Result, type Schema } from '$lib/tabula/sql';
@@ -25,6 +27,7 @@
 		sub: string;
 		tipOpen: boolean;
 		ran: boolean;
+		lastSql: string;
 	};
 
 	let cur = $state(0);
@@ -60,7 +63,8 @@
 			errOrig: '',
 			sub: '',
 			tipOpen: false,
-			ran: false
+			ran: false,
+			lastSql: ''
 		}));
 	}
 	initSteps();
@@ -135,6 +139,7 @@
 		}
 		x.errLine = null;
 		x.result = out;
+		x.lastSql = sql;
 		if (step.kind === 'example') {
 			x.state = 'solved';
 			return;
@@ -185,6 +190,7 @@
 		s.errLine = null;
 		dialog = null;
 		s.state = 'shown';
+		s.lastSql = step.solution;
 		if (db) s.result = runIsolated(db, step.solution);
 	}
 	function closeGuest() {
@@ -243,6 +249,19 @@
 		s?.state === 'error' ? (s.errLine ? `Kein Ergebnis. Behebe zuerst den Fehler in Zeile ${s.errLine}.` : 'Kein Ergebnis. Behebe zuerst den Fehler.') : 'Führe deine Abfrage aus, um das Ergebnis zu sehen.'
 	);
 	const shownRows = $derived(s?.result ? s.result.rows.slice(0, 100) : []);
+	let resTab = $state<'result' | 'viz'>('result');
+	// Visualisierung zur zuletzt ausgeführten Abfrage dieses Schritts (nur bei erfolgreichem SELECT)
+	const viz = $derived.by(() => {
+		if (!db || !s?.result || s.state === 'error' || s.state === 'running' || !s.lastSql) return null;
+		try {
+			return explainQuery(db, s.lastSql, schema, s.result);
+		} catch {
+			return null;
+		}
+	});
+	$effect(() => {
+		if (!viz && resTab === 'viz') resTab = 'result';
+	});
 
 	$effect(() => {
 		void cur;
@@ -442,7 +461,7 @@
 							</aside>
 
 							<div class="ide">
-								<div class="editor">
+								<div class="editor" class:compact={resTab === 'viz' && viz}>
 									<div class="ed-head mono">
 										<span>query.sql</span>
 										{#if badge}<span class="ed-badge">{badge}</span>{/if}
@@ -471,11 +490,19 @@
 								</div>
 
 								<div class="result">
-									<div class="res-head"><span class="lbl">ERGEBNIS</span><span class="mono res-n">{s.state === 'running' ? '' : resultCount}</span></div>
+									<div class="res-head">
+										<div class="res-tabs" role="tablist">
+											<button role="tab" class="res-tab lbl" class:on={resTab === 'result'} aria-selected={resTab === 'result'} onclick={() => (resTab = 'result')}>ERGEBNIS</button>
+											<button role="tab" class="res-tab lbl" class:on={resTab === 'viz'} aria-selected={resTab === 'viz'} disabled={!viz} onclick={() => (resTab = 'viz')}>WAS PASSIERT?</button>
+										</div>
+										<span class="mono res-n">{s.state === 'running' ? '' : resultCount}</span>
+									</div>
 									{#if s.state === 'running'}
 										<div class="res-empty"><span class="spin"></span>Abfrage läuft …</div>
 									{:else if dbState === 'loading'}
 										<div class="res-empty"><span class="spin"></span>Datenbank wird geladen …</div>
+									{:else if resTab === 'viz' && viz}
+										<QueryViz {viz} />
 									{:else if s.result && s.state !== 'error'}
 										<div class="res-table">
 											<div class="res-row res-hd" style="grid-template-columns:{grid}">
@@ -697,7 +724,8 @@
 	.ed-badge { padding: 1px 8px; border-radius: 999px; background: #1e3a8a; color: #bfdbfe; font-size: 11px; line-height: 18px; }
 	.ed-sql { color: #64748b; }
 	.m-reset { display: none; color: #94a3b8 !important; font-size: 11px; }
-	.ed-body { height: 236px; }
+	.ed-body { height: 236px; transition: height 0.25s ease; }
+	.editor.compact .d-ed { height: 128px; }
 	.m-ed { display: none; }
 	.ed-foot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid #1e293b; }
 	.run { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px !important; border-radius: 6px; font-size: 14px; font-weight: 500; }
@@ -712,7 +740,12 @@
 	.kbd { font-size: 12px; color: #64748b; }
 
 	.result { flex: 1; min-height: 140px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; display: flex; flex-direction: column; }
-	.res-head { flex: none; display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+	.res-head { flex: none; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; border-bottom: 1px solid var(--line); }
+	.res-tabs { display: flex; gap: 18px; }
+	.res-tab { padding: 10px 0 !important; border-bottom: 2px solid transparent !important; margin-bottom: -1px; }
+	.res-tab.on { color: var(--ink) !important; border-bottom-color: var(--accent) !important; }
+	.res-tab:disabled { opacity: 0.45; }
+	.res-tab:not(:disabled):not(.on):hover { color: var(--ink-2) !important; }
 	.res-n { font-size: 12px; color: var(--ink-3); }
 	.res-empty { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; font-size: 14px; color: var(--ink-3); }
 	.spin { width: 16px; height: 16px; border-radius: 999px; border: 2px solid var(--line-strong); border-top-color: var(--accent); animation: tb-spin 0.9s linear infinite; }
@@ -881,7 +914,8 @@
 		.m-ed { display: block; height: 164px; }
 		.ed-foot { display: none; }
 		.result { min-height: 120px; }
-		.res-head { padding: 8px 12px; }
+		.res-head { padding: 0 12px; }
+		.res-tab { padding: 8px 0 !important; }
 		.res-head .lbl, .res-n { font-size: 11px; }
 		.res-row > span { padding: 7px 12px; font-size: 13px; line-height: 18px; }
 		.res-hd > span { padding: 6px 12px; font-size: 11px; letter-spacing: 0; }
