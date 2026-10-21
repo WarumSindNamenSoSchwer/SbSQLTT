@@ -15,6 +15,8 @@ import authRoutes from './routes/auth.js'
 import passwordRoutes from './routes/password.js'
 import progressRoutes from './routes/progress.js'
 import classesRoutes from './routes/classes.js'
+import teacherRoutes from './routes/teacher.js'
+import studentClassesRoutes from './routes/student-classes.js'
 
 export interface AppConfig {
   db: Db
@@ -107,7 +109,16 @@ export async function buildApp(cfg: AppConfig) {
     // Fortschritt unter /api/progress (GET, PUT)
     await api.register(progressRoutes, { db: cfg.db })
     // Klassen-Beitritt: POST /api/classes/join
+    // Schueler-Klassen: GET /api/classes/mine
     await api.register(classesRoutes, { db: cfg.db })
+    await api.register(async (classApi) => {
+      await classApi.register(studentClassesRoutes, { db: cfg.db })
+    }, { prefix: '/classes' })
+
+    // Lehrkraft-API unter /api/teacher
+    await api.register(async (teacherApi) => {
+      await teacherApi.register(teacherRoutes, { db: cfg.db })
+    }, { prefix: '/teacher' })
   }, { prefix: '/api' })
 
   return app

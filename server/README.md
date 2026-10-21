@@ -63,7 +63,7 @@ Alle unter `/api/`:
 |---|---|---|
 | GET | `/health` | Gesundheitspruefung |
 | POST | `/register` | Konto erstellen (student/teacher) |
-| POST | `/login` | Anmelden (Benutzername oder E-Mail) |
+| POST | `/login` | Anmelden (Benutzername oder E-Mail); gibt `must_change_password` bei Lehrkraft-Reset |
 | POST | `/logout` | Abmelden |
 | GET | `/me` | Eigenes Konto abrufen |
 | PATCH | `/me` | Anzeigename / Benutzername aendern |
@@ -71,8 +71,30 @@ Alle unter `/api/`:
 | POST | `/password/forgot` | Passwort-Reset anfordern |
 | POST | `/password/reset` | Passwort zuruecksetzen |
 | GET | `/progress` | Lernfortschritt laden |
-| PUT | `/progress` | Lernfortschritt speichern |
+| PUT | `/progress` | Lernfortschritt speichern (inkl. last_attempt) |
 | POST | `/classes/join` | Klasse per Code beitreten |
+| GET | `/classes/mine` | Eigene Klassen (Schueler): Fokus-Lektion, freigeschaltete Lektionen |
+
+### Lehrkraft-API (`/api/teacher`, nur role=teacher)
+
+Zugriffskontrolle: Nur `role=teacher`. Fremde Klassen liefern 404 (nicht 403), um Existenz nicht zu verraten (K4).
+
+| Methode | Pfad | Beschreibung |
+|---|---|---|
+| GET | `/teacher/classes` | Alle eigenen Klassen (inkl. Schueleranzahl, haengt-fest-Zaehler) |
+| POST | `/teacher/classes` | Neue Klasse erstellen (Join-Code wird automatisch erzeugt) |
+| GET | `/teacher/classes/:id` | Eine Klasse abrufen |
+| PATCH | `/teacher/classes/:id` | Name oder `archived`-Flag aendern |
+| DELETE | `/teacher/classes/:id` | Klasse loeschen (K8: alle Mitgliedschaften, Fortschritt, Einstellungen) |
+| POST | `/teacher/classes/:id/code` | Neuen Join-Code erzeugen |
+| GET | `/teacher/classes/:id/dashboard` | Dashboard: je Schueler Status fuer Fokus-Lektion (fertig/dran/haengt_fest) |
+| GET | `/teacher/classes/:id/matrix` | Fortschritts-Matrix Schueler x Lektionen |
+| GET | `/teacher/classes/:id/students` | Schuelerliste der Klasse |
+| PATCH | `/teacher/classes/:id/students/:uid` | Anzeigename eines Schuelers aendern |
+| DELETE | `/teacher/classes/:id/students/:uid` | Schueler entfernen (K8: Mitgliedschaft + Fortschritt weg) |
+| GET | `/teacher/classes/:id/students/:uid/last-attempt` | Letzte Abfrage + Fehler eines Schuelers (K4) |
+| PUT | `/teacher/classes/:id/lessons` | Lektionseinstellungen setzen (freischalten, Reihenfolge, Fokus) |
+| POST | `/teacher/classes/:id/students/:uid/password-reset` | Einmal-Passwort fuer Schueler setzen; erzwingt Passwortaenderung beim naechsten Login (K3) |
 
 ## Deploy-Schritte (noch nicht ausfuehren - nur zur Dokumentation)
 
@@ -116,7 +138,7 @@ Alle unter `/api/`:
 
 - [ ] SMTP-Implementierung (Hetzner, `noreply@tabulasql.de`, Passwort aus `/run/secrets/smtp_noreply`)
 - [ ] WebSocket-Support fuer Live-Quiz (K5, Spec 7.5)
-- [ ] Lehrkraft-API (Klassen verwalten, Schuelerfortschritt einsehen)
+- [x] Lehrkraft-API (Klassen verwalten, Schuelerfortschritt einsehen) ← P6 erledigt
 - [ ] E-Mail-Verifikation fuer Lehrkraefte (K7)
 - [ ] Quiz-Tabellen implementieren (Migration 0006 ist Platzhalter)
 - [ ] `ACCOUNTS_LIVE = true` in `src/lib/tabula/privacy.ts` nach Freigabe

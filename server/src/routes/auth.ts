@@ -73,13 +73,13 @@ const patchMeSchema = z.object({
 
 function findUserByUsername(db: Db, username: string) {
   return db.prepare(
-    'SELECT id, username, display_name, email, name, school, role, password_hash, created_day, last_login_at FROM users WHERE username = ?'
+    'SELECT id, username, display_name, email, name, school, role, password_hash, created_day, last_login_at, must_change_password FROM users WHERE username = ?'
   ).get(username) as UserRow | undefined
 }
 
 function findUserByEmail(db: Db, email: string) {
   return db.prepare(
-    'SELECT id, username, display_name, email, name, school, role, password_hash, created_day, last_login_at FROM users WHERE email = ?'
+    'SELECT id, username, display_name, email, name, school, role, password_hash, created_day, last_login_at, must_change_password FROM users WHERE email = ?'
   ).get(email) as UserRow | undefined
 }
 
@@ -100,6 +100,7 @@ interface UserRow {
   password_hash: string
   created_day: string
   last_login_at: number | null
+  must_change_password: number
 }
 
 interface PublicUserRow {
@@ -230,7 +231,7 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
     const token = createSession(db, user.id)
     reply
       .setCookie(SESSION_COOKIE_NAME, token, sessionCookieOptions())
-      .send({ ok: true })
+      .send({ ok: true, must_change_password: user.must_change_password === 1 })
   })
 
   // POST /api/logout
