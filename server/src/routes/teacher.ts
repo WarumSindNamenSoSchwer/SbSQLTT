@@ -712,6 +712,52 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
 
     return reply.send({ ok: true })
   })
+
+  // -------------------------------------------------------------------------
+  // POST /api/teacher/classes/:id/students/:uid/complete
+  // Lehrkraft markiert einen Schritt eines Schuelers als erledigt (progress.done=1).
+  // Sicherheit: nur eigene Klasse, nur Mitglieder der Klasse.
+  // -------------------------------------------------------------------------
+
+  const completeSchema = z.object({
+    lesson_id: z.string().min(1).max(64),
+    step: z.number().int().min(0),
+  })
+
+  fastify.post('/classes/:id/students/:uid/complete', async (req, reply) => {
+    const session = await requireTeacher(db, req, reply)
+    if (!session) return
+
+    const classId = Number((req.params as { id: string; uid: string }).id)
+    const userId = Number((req.params as { id: string; uid: string }).uid)
+    if (!Number.isInteger(classId) || classId <= 0) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
+    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+
+    const cls = requireOwnClass(db, session.user_id, classId, reply)
+    if (!cls) return
+
+    // Mitgliedschaft pruefen (K4: Existenz nicht verraten -> 404 statt 403)
+    const member = db.prepare(
+      'SELECT id FROM memberships WHERE class_id = ? AND user_id = ?'
+    ).get(classId, userId)
+    if (!member) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+
+    const parsed = completeSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+    }
+
+    const { lesson_id, step } = parsed.data
+
+    // Schritt als erledigt markieren (upsert: existiert evtl. schon)
+    db.prepare(`
+      INSERT INTO progress (user_id, lesson_id, step, done, attempts, updated_at)
+      VALUES (?, ?, ?, 1, 0, unixepoch())
+      ON CONFLICT (user_id, lesson_id, step) DO UPDATE SET done = 1, updated_at = unixepoch()
+    `).run(userId, lesson_id, step)
+
+    return reply.send({ ok: true })
+  })
 }
 
 export default teacherRoutes

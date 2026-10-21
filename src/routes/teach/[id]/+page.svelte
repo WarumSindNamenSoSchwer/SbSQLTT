@@ -6,11 +6,13 @@
 		apiTeacherMatrix,
 		apiTeacherLastAttempt,
 		apiTeacherPatchClass,
+		apiTeacherComplete,
 		type DashboardStudent,
 		type MatrixRow,
 		type LastAttempt,
 	} from '$lib/tabula/api.js';
-	import { CATALOG } from '$lib/tabula/lessons.js';
+	import { CATALOG, LESSONS } from '$lib/tabula/lessons.js';
+	import { tok } from '$lib/tabula/highlight.js';
 
 	const ctx = getContext<{ cls: any; reload: () => void; setFocus: (l: string | null) => void }>('teachClass');
 
@@ -24,6 +26,7 @@
 	let selectedStudent = $state<DashboardStudent | null>(null);
 	let selectedAttempt = $state<LastAttempt | null>(null);
 	let panelLoading = $state(false);
+	let completeBusy = $state(false);
 
 	let pollInterval: ReturnType<typeof setInterval> | null = null;
 	let focusChangeOpen = $state(false);
@@ -44,7 +47,7 @@
 		return order[a.status] - order[b.status];
 	}));
 
-	function relTime(ts: number | null): string {
+	function relTime(ts: number | null | undefined): string {
 		if (!ts) return '–';
 		const s = Math.floor(Date.now() / 1000 - ts);
 		if (s < 60) return 'gerade eben';
@@ -52,6 +55,35 @@
 		if (s < 86400) return `vor ${Math.floor(s / 3600)} Std.`;
 		return `vor ${Math.floor(s / 86400)} Tagen`;
 	}
+
+	/** Zeitstempel als HH:MM Uhr */
+	function fmtTime(ts: number | null | undefined): string {
+		if (!ts) return '';
+		const d = new Date(ts * 1000);
+		return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} Uhr`;
+	}
+
+	/** AUFGABE-Text fuer aktuelle Uebung des ausgewaehlten Schuelers */
+	const currentTaskText = $derived(() => {
+		if (!selectedStudent || !focusLesson) return null;
+		const lesson = LESSONS[focusLesson];
+		if (!lesson) return null;
+		const stepIdx = selectedStudent.current_step;
+		if (stepIdx == null) return null;
+		const step = lesson.steps[stepIdx];
+		if (!step) return null;
+		// task-Text aus Schritt (verschiedene Felder je Step-Typ)
+		return (step as any).task ?? (step as any).prompt ?? null;
+	});
+
+	/** Aktueller Schritt fuer Panel-Anzeige: 1-basiert / total */
+	const panelStepLabel = $derived(() => {
+		const s = selectedStudent;
+		if (!s || s.current_step == null || s.total_steps == null) return null;
+		// current_step ist 0-basiert, Anzeige 1-basiert
+		const display = Math.min(s.current_step + 1, s.total_steps);
+		return `${display} von ${s.total_steps}`;
+	});
 
 	onMount(() => {
 		loadData();
@@ -86,6 +118,11 @@
 				const res = await apiTeacherDashboard(classId);
 				students = res.students;
 				lastUpdate = Date.now();
+				// Panel-Daten aktualisieren wenn Schueler ausgewaehlt
+				if (selectedStudent) {
+					const updated = res.students.find(s => s.user_id === selectedStudent!.user_id);
+					if (updated) selectedStudent = updated;
+				}
 			} else {
 				const res = await apiTeacherMatrix(classId);
 				matrixRows = res.rows;
@@ -133,6 +170,31 @@
 		const e = CATALOG.find(c => c.id === id);
 		return e ? e.n : id;
 	}
+
+	/** Schritt-Anzeige fuer Tabelle: geloesteSchritte+1 / total (aktuelle Position) */
+	function stepDisplay(s: DashboardStudent): string {
+		if (s.total_steps == null) return '–';
+		if (s.status === 'done') return `${s.total_steps} / ${s.total_steps}`;
+		// current_step ist 0-basiert (erster offener), Anzeige = current_step+1
+		if (s.current_step != null) return `${s.current_step + 1} / ${s.total_steps}`;
+		// Fallback: step (erledigte) + 1
+		if (s.step != null) return `${s.step + 1} / ${s.total_steps}`;
+		return `1 / ${s.total_steps}`;
+	}
+
+	async function markComplete() {
+		if (!selectedStudent || !focusLesson || completeBusy) return;
+		const stepIdx = selectedStudent.current_step ?? (selectedStudent.step ?? 0);
+		completeBusy = true;
+		try {
+			await apiTeacherComplete(classId, selectedStudent.user_id, focusLesson, stepIdx);
+			await loadData();
+		} catch {
+			// ignore
+		} finally {
+			completeBusy = false;
+		}
+	}
 </script>
 
 {#if loading && students.length === 0 && matrixRows.length === 0}
@@ -178,7 +240,6 @@
 									onclick={async () => {
 										focusChangeOpen = false;
 										await apiTeacherPatchClass(classId, {});
-										// Note: Focus is set via lesson settings; using a quick update here
 										ctx?.setFocus(c.id);
 									}}
 								>{c.n}. {c.title}</button>
@@ -217,8 +278,8 @@
 					<div class="table-header">
 						<span>NAME</span>
 						<span>STATUS</span>
-						<span>GELÖST</span>
-						<span>VERSUCHE</span>
+						<span>SCHRITT</span>
+						<span>FEHLVERSUCHE</span>
 						<span>ZULETZT AKTIV</span>
 					</div>
 					{#each sortedStudents as s (s.user_id)}
@@ -242,7 +303,7 @@
 									<span class="badge neutral">○ Nicht begonnen</span>
 								{/if}
 							</span>
-							<span class="mono dim">{s.step !== null ? `${s.step} / ${s.total_steps}` : '–'}</span>
+							<span class="mono dim">{stepDisplay(s)}</span>
 							<span class="mono dim">{s.attempts > 0 ? s.attempts : '–'}</span>
 							<span class="dim">{relTime(s.last_active)}</span>
 						</button>
@@ -257,7 +318,7 @@
 					<span class="ml-item"><span class="ml-cell open"></span>Offen</span>
 					<span class="ml-item"><span class="ml-cell locked"></span>Gesperrt</span>
 				</div>
-				<div class="matrix-table">
+				<div class="matrix-table" style="--cols: {matrixLessonIds.length}">
 					<div class="matrix-header">
 						<span class="m-name">NAME</span>
 						{#each matrixLessonIds as lid}
@@ -301,8 +362,8 @@
 							{:else}
 								<span class="badge neutral">○ Nicht begonnen</span>
 							{/if}
-							{#if selectedStudent.step !== null}
-								<span class="panel-step-info">Übung {Math.min(selectedStudent.step + 1, selectedStudent.total_steps ?? 0)} von {selectedStudent.total_steps} · {selectedStudent.attempts} Versuche</span>
+							{#if panelStepLabel()}
+								<span class="panel-step-info">Schritt {panelStepLabel()} · {selectedStudent.attempts} Fehlversuche</span>
 							{/if}
 						</div>
 					</div>
@@ -311,29 +372,60 @@
 
 				{#if panelLoading}
 					<div class="spinner-wrap-sm"><span class="spinner"></span></div>
-				{:else if selectedAttempt}
-					{#if selectedAttempt.query}
-						<div class="panel-section">
-							<span class="panel-lbl">LETZTE ABFRAGE · {relTime(selectedAttempt.updated_at)}</span>
-							<div class="query-box">
-								<pre class="query-pre">{selectedAttempt.query}</pre>
-							</div>
-						</div>
-					{/if}
-					{#if selectedAttempt.error_msg}
-						<div class="panel-section">
-							<span class="panel-lbl">FEHLERMELDUNG</span>
-							<div class="error-hint">
-								<span class="error-ico">!</span>
-								<span class="error-msg">{selectedAttempt.error_msg}</span>
-							</div>
-						</div>
-					{/if}
 				{:else}
-					<p class="panel-empty">Noch keine Abfrage gespeichert.</p>
+					<!-- AUFGABE -->
+					{#if currentTaskText()}
+						<div class="panel-section">
+							<span class="panel-lbl">AUFGABE</span>
+							<p class="panel-task">{currentTaskText()}</p>
+						</div>
+					{/if}
+
+					{#if selectedAttempt}
+						{#if selectedAttempt.query}
+							<div class="panel-section">
+								<span class="panel-lbl">LETZTE ABFRAGE · {relTime(selectedAttempt.updated_at).toUpperCase()}</span>
+								<div class="query-box">
+									{#each selectedAttempt.query.split('\n') as line, i}
+										<div class="query-line" class:query-line-err={selectedAttempt.error_msg && i === selectedAttempt.query.split('\n').length - 1}>
+											{#each tok(line) as token}
+												<span style="color:{token.c}">{token.t}</span>
+											{/each}
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+						{#if selectedAttempt.error_msg}
+							<div class="panel-section">
+								<span class="panel-lbl">FEHLERMELDUNG</span>
+								<div class="error-hint">
+									<span class="error-ico">!</span>
+									<div class="error-msg-wrap">
+										<span class="error-msg">{selectedAttempt.error_msg}</span>
+										<span class="error-time mono">{fmtTime(selectedAttempt.updated_at)}</span>
+									</div>
+								</div>
+							</div>
+						{/if}
+					{:else}
+						<p class="panel-empty">Noch keine Abfrage gespeichert.</p>
+					{/if}
 				{/if}
 
 				<span style="flex:1"></span>
+
+				<!-- Als erledigt markieren -->
+				{#if selectedStudent.status !== 'done' && focusLesson}
+					<button
+						class="btn-complete"
+						disabled={completeBusy}
+						onclick={markComplete}
+					>
+						{completeBusy ? '…' : '✓ Als erledigt markieren'}
+					</button>
+				{/if}
+
 				<p class="panel-privacy">Nur Sie sehen diese Ansicht. Schüler sehen keine Daten anderer.</p>
 			</aside>
 		{/if}
@@ -441,19 +533,44 @@
 	}
 	.panel-head { display: flex; align-items: flex-start; gap: 10px; }
 	.panel-student-info { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-	.panel-name { font-size: 22px; font-weight: 600; }
+	.panel-name { font-size: 22px; line-height: 28px; font-weight: 600; }
 	.panel-badges { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 	.panel-step-info { font-size: 13px; color: var(--ink-3); }
 	.panel-close { width: 32px; height: 32px; display: grid; place-items: center; color: var(--ink-3); border-radius: 6px; cursor: pointer; flex: none; }
 	.panel-close:hover { background: var(--subtle); }
 
-	.panel-section { display: flex; flex-direction: column; gap: 6px; }
+	.panel-section { display: flex; flex-direction: column; gap: 4px; }
 	.panel-lbl { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-3); }
-	.query-box { padding: 12px 14px; border-radius: 10px; background: #0f172a; }
-	.query-pre { font-family: var(--mono); font-size: 13px; line-height: 22px; color: #e2e8f0; white-space: pre-wrap; word-break: break-all; margin: 0; }
+	.panel-task { font-size: 15px; line-height: 22px; color: var(--ink); margin: 0; }
+
+	/* Query box with syntax highlighting */
+	.query-box { padding: 12px 14px; border-radius: 10px; background: #0f172a; font-family: var(--mono); font-size: 13px; line-height: 22px; }
+	.query-line { white-space: pre-wrap; word-break: break-all; }
+	.query-line-err { background: rgb(248 113 113 / 0.14); box-shadow: inset 3px 0 #f87171; margin: 0 -14px; padding: 0 14px; }
+
 	.error-hint { display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--danger-line); background: var(--danger-soft); }
 	.error-ico { width: 20px; height: 20px; flex: none; border-radius: 50%; background: var(--danger); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
-	.error-msg { font-size: 14px; line-height: 20px; color: var(--danger-ink); }
-	.panel-empty { font-size: 14px; color: var(--ink-3); }
-	.panel-privacy { font-size: 12px; color: var(--ink-3); text-align: center; }
+	.error-msg-wrap { display: flex; flex-direction: column; gap: 2px; }
+	.error-msg { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--danger-ink); }
+	.error-time { font-size: 11px; color: var(--ink-3); }
+
+	.panel-empty { font-size: 14px; color: var(--ink-3); margin: 0; }
+	.panel-privacy { font-size: 12px; color: var(--ink-3); text-align: center; margin: 0; }
+
+	.btn-complete {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 44px;
+		border-radius: 6px;
+		background: var(--accent);
+		color: #fff;
+		font-size: 15px;
+		font-weight: 500;
+		cursor: pointer;
+		flex: none;
+	}
+	.btn-complete:hover { background: var(--accent-strong); }
+	.btn-complete:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>

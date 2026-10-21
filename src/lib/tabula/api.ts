@@ -218,8 +218,11 @@ export interface DashboardStudent {
   user_id: number;
   display_name: string;
   status: 'done' | 'in_progress' | 'stuck' | 'not_started';
+  /** Anzahl erledigter Uebungsschritte */
   step: number | null;
   total_steps: number | null;
+  /** 0-basierter Index des aktuellen Schritts (erster offener) */
+  current_step: number | null;
   attempts: number;
   last_active: number | null;
 }
@@ -290,7 +293,7 @@ export async function apiTeacherDashboard(id: number): Promise<{ students: Dashb
   };
   const res = await request<{ focus_lesson: string | null; students: Array<{
     user_id: number; display_name: string; status: string;
-    steps_done?: number; steps_total?: number; attempts?: number; last_active?: number | null;
+    steps_done?: number; steps_total?: number; current_step?: number | null; attempts?: number; last_active?: number | null;
   }> }>('GET', `/teacher/classes/${id}/dashboard`);
   return {
     focus_lesson: res.focus_lesson,
@@ -300,12 +303,24 @@ export async function apiTeacherDashboard(id: number): Promise<{ students: Dashb
       display_name: s.display_name,
       status: STATUS[s.status] ?? 'not_started',
       // step = Anzahl erledigter Übungen, total_steps = Übungen der Fokus-Lektion
-      step: s.steps_total ? (s.steps_done ?? 0) : null,
+      step: s.steps_total != null ? (s.steps_done ?? 0) : null,
       total_steps: s.steps_total ?? null,
+      // current_step: 0-basierter Index des ersten offenen Schritts (fuer AUFGABE-Text)
+      current_step: s.current_step ?? null,
       attempts: s.attempts ?? 0,
       last_active: s.last_active ?? null,
     })),
   };
+}
+
+/** POST /api/teacher/classes/:id/students/:uid/complete - Schüler-Schritt als erledigt markieren */
+export function apiTeacherComplete(
+  classId: number,
+  userId: number,
+  lesson_id: string,
+  step: number,
+): Promise<{ ok: true }> {
+  return request('POST', `/teacher/classes/${classId}/students/${userId}/complete`, { lesson_id, step });
 }
 
 /** GET /api/teacher/classes/:id/matrix (Server-Antwort auf Zeilen abgebildet) */

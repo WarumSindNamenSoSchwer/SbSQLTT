@@ -3,9 +3,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import TopNav from '$lib/tabula/TopNav.svelte';
 	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
-	import { session } from '$lib/tabula/session.svelte.js';
+	import { session, sessionLogout } from '$lib/tabula/session.svelte.js';
 	import {
 		apiTeacherGetClasses,
 		apiTeacherGetClass,
@@ -24,6 +23,40 @@
 	let qrDataUrl = $state<string | null>(null);
 	let qrOpen = $state(false);
 	let classSwitcherOpen = $state(false);
+	let avatarMenuOpen = $state(false);
+
+	/** Schuljahr berechnen: ab 1. August neues Schuljahr (z.B. 2026/27). */
+	function schuljahr(): string {
+		const now = new Date();
+		const year = now.getFullYear();
+		const month = now.getMonth() + 1; // 1-12
+		const startYear = month >= 8 ? year : year - 1;
+		return `${startYear}/${String(startYear + 1).slice(-2)}`;
+	}
+
+	/** Avatar-Initialen aus display_name */
+	const navInitials = $derived(() => {
+		const u = session.user;
+		if (!u) return '';
+		const parts = u.display_name.trim().split(/\s+/);
+		if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+		return parts[0].slice(0, 2).toUpperCase();
+	});
+
+	/** Anzeigename (erster Vorname oder display_name) */
+	const navDisplayName = $derived(() => {
+		const u = session.user;
+		if (!u) return '';
+		// "Fr. Müller" aus name, sonst display_name kuerzen
+		if (u.name) {
+			const parts = u.name.trim().split(/\s+/);
+			if (parts.length >= 2) return `${parts[0]} ${parts[parts.length - 1]}`;
+			return u.name;
+		}
+		const parts = u.display_name.trim().split(/\s+/);
+		if (parts.length >= 2) return `${parts[0]} ${parts[parts.length - 1]}`;
+		return u.display_name;
+	});
 
 	const pathSuffix = $derived(() => {
 		const p = page.url.pathname;
@@ -64,6 +97,7 @@
 
 	function closeOnOutside(e: MouseEvent) {
 		if (!(e.target as Element).closest('.class-switcher')) classSwitcherOpen = false;
+		if (!(e.target as Element).closest('.av-wrap')) avatarMenuOpen = false;
 	}
 
 	async function loadData() {
@@ -91,7 +125,13 @@
 	}
 
 	function closeQrOnEsc(e: KeyboardEvent) {
-		if (e.key === 'Escape') qrOpen = false;
+		if (e.key === 'Escape') { qrOpen = false; }
+	}
+
+	async function handleAvatarLogout() {
+		avatarMenuOpen = false;
+		try { await sessionLogout(); } catch { /* ignore */ }
+		goto('/login');
 	}
 
 	// Provide class data to child pages via context
@@ -111,7 +151,77 @@
 <svelte:window onkeydown={closeQrOnEsc} />
 
 <div class="tb page">
-	<TopNav {dark} />
+	<!-- Lehrkraft-Topbar mit Klassen-Umschalter (Design D3-D6) -->
+	<header class="teach-nav">
+		<a class="teach-brand" href="/teach">
+			<svg class="teach-logo-owl" viewBox="0 0 120 104" fill="currentColor" aria-hidden="true">
+				<ellipse cx="60" cy="72" rx="40" ry="28"/>
+				<circle cx="40" cy="38" r="22"/>
+				<circle cx="80" cy="38" r="22"/>
+				<circle cx="40" cy="38" r="10" fill="var(--bg,#f8fafc)"/>
+				<circle cx="80" cy="38" r="10" fill="var(--bg,#f8fafc)"/>
+				<circle cx="42" cy="36" r="5"/>
+				<circle cx="82" cy="36" r="5"/>
+				<path d="M50 58 Q60 66 70 58" stroke="var(--bg,#f8fafc)" stroke-width="3" fill="none" stroke-linecap="round"/>
+			</svg>
+			Tabula
+		</a>
+		{#if cls}
+			<span class="teach-nav-sep" aria-hidden="true"></span>
+			<!-- Klassen-Umschalter Dropdown -->
+			<div class="class-switcher">
+				<button
+					class="class-switcher-btn"
+					aria-haspopup="listbox"
+					aria-expanded={classSwitcherOpen}
+					onclick={() => (classSwitcherOpen = !classSwitcherOpen)}
+				>{cls.name} <span class="cs-arrow">▾</span></button>
+				{#if classSwitcherOpen}
+					<div class="cs-dropdown" role="listbox" aria-label="Klasse wechseln">
+						{#each allClasses as c (c.id)}
+							<a
+								href="/teach/{c.id}"
+								class="cs-option"
+								class:cs-current={c.id === classId}
+								onclick={() => (classSwitcherOpen = false)}
+								role="option"
+								aria-selected={c.id === classId}
+							>{c.name}</a>
+						{/each}
+						{#if allClasses.length === 0}
+							<span class="cs-empty">Keine Klassen</span>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		{/if}
+		<span class="teach-nav-grow"></span>
+		<!-- Avatar-Menue -->
+		{#if session.user}
+			<div class="av-wrap">
+				<button
+					class="av-btn"
+					aria-label="Kontomenue"
+					aria-expanded={avatarMenuOpen}
+					onclick={() => (avatarMenuOpen = !avatarMenuOpen)}
+				>
+					<span class="av-circle">{navInitials()}</span>
+					<span class="av-name">{navDisplayName()} ▾</span>
+				</button>
+				{#if avatarMenuOpen}
+					<div class="av-menu" role="menu">
+						<div class="av-head">
+							<span class="av-display">{session.user.display_name}</span>
+							<span class="av-email">{session.user.email ?? session.user.username}</span>
+						</div>
+						<a role="menuitem" href="/profil" onclick={() => (avatarMenuOpen = false)} class="av-item">Profil</a>
+						<a role="menuitem" href="/teach" onclick={() => (avatarMenuOpen = false)} class="av-item">Alle Klassen</a>
+						<button role="menuitem" class="av-item av-logout" onclick={handleAvatarLogout}>Abmelden</button>
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</header>
 
 	{#if !ACCOUNTS_LIVE}
 		<main class="center">
@@ -127,7 +237,7 @@
 			<div class="class-header-top">
 				<div class="class-header-title">
 					<h1 class="class-name">{cls.name}</h1>
-					<span class="class-meta">{cls.student_count ?? 0} Schüler</span>
+					<span class="class-meta">Schuljahr {schuljahr()} · {cls.student_count ?? 0} Schüler</span>
 				</div>
 				<div class="class-header-actions">
 					<button class="code-btn" onclick={openQr} title="QR-Code anzeigen">
@@ -184,6 +294,150 @@
 	.spinner-wrap { display: grid; place-items: center; padding: 80px; }
 	.spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: tb-spin 0.8s linear infinite; }
 
+	/* Lehrkraft-Topbar */
+	.teach-nav {
+		height: 64px;
+		flex: none;
+		display: flex;
+		align-items: center;
+		gap: 20px;
+		padding: 0 32px;
+		border-bottom: 1px solid var(--line);
+		background: var(--surface);
+		position: relative;
+		z-index: 10;
+	}
+	@media (max-width: 767px) { .teach-nav { padding: 0 16px; gap: 12px; } }
+
+	.teach-brand {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		font-size: 19px;
+		font-weight: 600;
+		letter-spacing: -0.5px;
+		color: var(--ink);
+		text-decoration: none;
+		flex: none;
+	}
+	.teach-logo-owl { width: 30px; height: 26px; display: block; }
+
+	.teach-nav-sep { width: 1px; height: 22px; background: var(--line); flex: none; }
+	.teach-nav-grow { flex: 1; }
+
+	/* Klassen-Umschalter */
+	.class-switcher { position: relative; }
+	.class-switcher-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		height: 36px;
+		padding: 0 12px;
+		border-radius: 6px;
+		border: 1px solid var(--line-strong);
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		background: var(--surface);
+		color: var(--ink);
+	}
+	.class-switcher-btn:hover { background: var(--subtle); }
+	.cs-arrow { color: var(--ink-3); font-size: 12px; }
+	.cs-dropdown {
+		position: absolute;
+		top: calc(100% + 4px);
+		left: 0;
+		z-index: 20;
+		min-width: 200px;
+		max-height: 300px;
+		overflow-y: auto;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 8px;
+		box-shadow: var(--shadow-pop);
+		display: flex;
+		flex-direction: column;
+		padding: 4px;
+	}
+	.cs-option {
+		padding: 8px 10px;
+		border-radius: 6px;
+		font-size: 14px;
+		cursor: pointer;
+		color: var(--ink);
+		text-decoration: none;
+		display: block;
+	}
+	.cs-option:hover { background: var(--subtle); }
+	.cs-current { background: var(--accent-soft); color: var(--accent-ink); }
+	.cs-empty { padding: 8px 10px; font-size: 14px; color: var(--ink-3); }
+
+	/* Avatar-Menue */
+	.av-wrap { position: relative; }
+	.av-btn {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 14px;
+		cursor: pointer;
+		border-radius: 6px;
+		padding: 4px 8px;
+		color: var(--ink);
+	}
+	.av-btn:hover { background: var(--subtle); }
+	.av-circle {
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: var(--accent-soft);
+		color: var(--accent-ink);
+		display: grid;
+		place-items: center;
+		font-size: 12px;
+		font-weight: 600;
+		flex: none;
+	}
+	.av-name { font-weight: 500; }
+	.av-menu {
+		position: absolute;
+		top: calc(100% + 6px);
+		right: 0;
+		z-index: 20;
+		width: 260px;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		box-shadow: var(--shadow-pop);
+		display: flex;
+		flex-direction: column;
+		padding: 6px;
+		font-size: 14px;
+	}
+	.av-head {
+		display: flex;
+		flex-direction: column;
+		padding: 10px 10px 12px;
+		border-bottom: 1px solid var(--line);
+		margin-bottom: 4px;
+		gap: 2px;
+	}
+	.av-display { font-weight: 600; }
+	.av-email { font-size: 12px; color: var(--ink-3); }
+	.av-item {
+		padding: 9px 10px;
+		border-radius: 6px;
+		color: var(--ink);
+		text-decoration: none;
+		cursor: pointer;
+		text-align: left;
+		font-size: 14px;
+		display: block;
+		width: 100%;
+	}
+	.av-item:hover { background: var(--subtle); }
+	.av-logout { color: var(--ink-2); border-top: 1px solid var(--line); margin-top: 4px; border-radius: 0 0 6px 6px; }
+
+	/* Klassen-Header */
 	.class-header { flex: none; background: var(--surface); border-bottom: 1px solid var(--line); padding: 24px 40px 0; display: flex; flex-direction: column; gap: 16px; }
 	@media (max-width: 767px) { .class-header { padding: 16px 16px 0; } }
 	.class-header-top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
@@ -195,13 +449,13 @@
 	.code-btn { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line-strong); font-size: 15px; font-weight: 500; cursor: pointer; background: var(--surface); }
 	.code-btn:hover { background: var(--subtle); }
 	.code-text { letter-spacing: 2px; font-family: var(--mono); }
-	.code-qr-hint { font-size: 13px; color: var(--ink-3); font-family: var(--sans); letter-spacing: 0; }
+	.code-qr-hint { font-size: 13px; color: var(--ink-3); font-family: var(--mono); letter-spacing: 0; }
 	.btn-quiz { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }
 	.btn-quiz:hover { background: var(--accent-strong); }
 
 	.class-tabs { display: flex; gap: 28px; font-size: 14px; color: var(--ink-2); overflow-x: auto; }
 	@media (max-width: 767px) { .class-tabs { gap: 20px; } }
-	.tab { padding-bottom: 12px; white-space: nowrap; }
+	.tab { padding-bottom: 12px; white-space: nowrap; color: inherit; text-decoration: none; }
 	.tab:hover { color: var(--ink); }
 	.tab.active { color: var(--ink); font-weight: 500; box-shadow: 0 2px 0 var(--accent); }
 

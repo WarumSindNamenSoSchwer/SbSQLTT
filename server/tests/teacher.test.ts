@@ -1102,3 +1102,92 @@ describe('Schueler umbenennen', () => {
     db.close()
   })
 })
+
+// ---------------------------------------------------------------------------
+// POST /api/teacher/classes/:id/students/:uid/complete
+// ---------------------------------------------------------------------------
+
+describe('Als erledigt markieren (complete endpoint)', () => {
+  it('Lehrkraft kann Schritt eines Schuelers als erledigt markieren', async () => {
+    const { app, db } = await setup()
+    const { cookie: teacherCookie } = await registerAndLoginTeacher(app, 'lehrComplete')
+    const classId = await createClass(app, teacherCookie, 'CompleteKlasse')
+
+    const clsRes = await app.inject({
+      method: 'GET',
+      url: `/api/teacher/classes/${classId}`,
+      headers: { cookie: teacherCookie },
+    })
+    const joinCode = JSON.parse(clsRes.body).class.join_code
+
+    const { cookie: studentCookie } = await registerAndLoginStudent(app, 'schuelerComplete')
+    await joinClass(app, studentCookie, joinCode)
+    const student = db.prepare("SELECT id FROM users WHERE username = 'schuelercomplete'").get() as { id: number }
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/teacher/classes/${classId}/students/${student.id}/complete`,
+      headers: { 'content-type': 'application/json', cookie: teacherCookie },
+      body: JSON.stringify({ lesson_id: 'select-basics', step: 0 }),
+    })
+    expect(res.statusCode).toBe(200)
+    expect(JSON.parse(res.body)).toEqual({ ok: true })
+
+    const row = db.prepare(
+      'SELECT done FROM progress WHERE user_id = ? AND lesson_id = ? AND step = ?'
+    ).get(student.id, 'select-basics', 0) as { done: number } | undefined
+    expect(row?.done).toBe(1)
+
+    await app.close()
+    db.close()
+  })
+
+  it('Fremde Klasse liefert 404 (K4)', async () => {
+    const { app, db } = await setup()
+    const { cookie: teacher1Cookie } = await registerAndLoginTeacher(app, 'lehrComplA')
+    const { cookie: teacher2Cookie } = await registerAndLoginTeacher(app, 'lehrComplB')
+    const classId = await createClass(app, teacher1Cookie, 'ComplKlasseA')
+
+    const clsRes = await app.inject({
+      method: 'GET',
+      url: `/api/teacher/classes/${classId}`,
+      headers: { cookie: teacher1Cookie },
+    })
+    const joinCode = JSON.parse(clsRes.body).class.join_code
+
+    const { cookie: studentCookie } = await registerAndLoginStudent(app, 'schuelerComplB')
+    await joinClass(app, studentCookie, joinCode)
+    const student = db.prepare("SELECT id FROM users WHERE username = 'schuelercomplb'").get() as { id: number }
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/teacher/classes/${classId}/students/${student.id}/complete`,
+      headers: { 'content-type': 'application/json', cookie: teacher2Cookie },
+      body: JSON.stringify({ lesson_id: 'select-basics', step: 0 }),
+    })
+    expect(res.statusCode).toBe(404)
+
+    await app.close()
+    db.close()
+  })
+
+  it('Schueler ausserhalb der Klasse liefert 404', async () => {
+    const { app, db } = await setup()
+    const { cookie: teacherCookie } = await registerAndLoginTeacher(app, 'lehrComplC')
+    const classId = await createClass(app, teacherCookie, 'ComplKlasseC')
+
+    await registerAndLoginStudent(app, 'schuelerComplC2')
+    const student = db.prepare("SELECT id FROM users WHERE username = 'schuelercomplc2'").get() as { id: number }
+
+    const res = await app.inject({
+      method: 'POST',
+      url: `/api/teacher/classes/${classId}/students/${student.id}/complete`,
+      headers: { 'content-type': 'application/json', cookie: teacherCookie },
+      body: JSON.stringify({ lesson_id: 'select-basics', step: 0 }),
+    })
+    expect(res.statusCode).toBe(404)
+
+    await app.close()
+    db.close()
+  })
+})
