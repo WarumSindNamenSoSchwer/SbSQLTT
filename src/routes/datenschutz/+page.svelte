@@ -10,7 +10,7 @@
 	let active = $state(SECTIONS[0].id);
 	let showSrc = $state(false);
 	const srcById = Object.fromEntries(SOURCES.map((s) => [s.id, s]));
-	const draft = !CONTROLLER.name || CONTROLLER.address.length === 0 || !CONTROLLER.avv;
+	const draft = !CONTROLLER.name || CONTROLLER.address.length === 0;
 
 	onMount(() => {
 		const sync = () => (dark = !document.documentElement.classList.contains('light'));
@@ -52,7 +52,7 @@
 			<h1>Datenschutzerklärung</h1>
 			<span class="stand">Stand: {STAND}</span>
 			{#if draft}
-				<p class="draft" role="note">Entwurf: Name und ladungsfähige Anschrift des Verantwortlichen sowie der Vertrag zur Auftragsverarbeitung werden noch ergänzt.</p>
+				<p class="draft" role="note">Entwurf: Name und ladungsfähige Anschrift des Verantwortlichen werden noch ergänzt.</p>
 			{/if}
 			<label class="srcswitch"><input type="checkbox" bind:checked={showSrc} /> Quellen zu jedem Absatz anzeigen</label>
 

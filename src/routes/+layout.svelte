@@ -13,7 +13,8 @@
 		/^\/learn(\/|$)/.test(page.url.pathname) ||
 		/^\/datasets(\/|$)/.test(page.url.pathname) ||
 		/^\/login(\/|$)/.test(page.url.pathname) ||
-		page.url.pathname === '/datenschutz'
+		page.url.pathname === '/datenschutz' ||
+		page.url.pathname === '/impressum'
 	);
 </script>
 

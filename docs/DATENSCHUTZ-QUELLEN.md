@@ -6,7 +6,7 @@ Jede Aussage der Erklärung trägt im Code eine Quellen-ID. Auf der Seite lassen
 ## Offene Punkte vor Veröffentlichung (Seite zeigt bis dahin „Entwurf“ und `noindex`)
 
 1. **Name und ladungsfähige Anschrift** des Verantwortlichen in `CONTROLLER` eintragen (Art. 13 Abs. 1 lit. a DSGVO).
-2. **AV-Vertrag mit Hetzner** im Kundenkonto abschließen: https://accounts.hetzner.com/account/dpa (Checkbox, keine Unterschrift nötig, laut Hetzner-FAQ). Danach `CONTROLLER.avv = true`. Vorher behauptet die Seite keinen Vertrag. Achtung: Das Postfach kontakt@tabulasql.de liegt auf dem Webhosting-Paket (konsoleH, 030Activities). Gehört das zu einem anderen Kundenkonto als der Cloud-Server, braucht auch dieses Konto einen AV-Vertrag.
+2. ~~**AV-Vertrag mit Hetzner**~~ erledigt am 21.10.2026 (Cloud-Konto). Prüfen, ob das Webhosting-Konto (Mail) dasselbe Konto ist; sonst dort ebenfalls abschließen: https://accounts.hetzner.com/account/dpa (Checkbox, keine Unterschrift nötig, laut Hetzner-FAQ). Danach `CONTROLLER.avv = true`. Vorher behauptet die Seite keinen Vertrag. Achtung: Das Postfach kontakt@tabulasql.de liegt auf dem Webhosting-Paket (konsoleH, 030Activities). Gehört das zu einem anderen Kundenkonto als der Cloud-Server, braucht auch dieses Konto einen AV-Vertrag.
 3. **Zuständige Aufsichtsbehörde** hängt vom Sitz des Verantwortlichen ab (§ 40 Abs. 1 BDSG). Text ist für Berlin vorbereitet; bei anderem Bundesland anpassen.
 
 ## Technische Prüfung (T)
@@ -16,12 +16,11 @@ Jede Aussage der Erklärung trägt im Code eine Quellen-ID. Auf der Seite lassen
 | T1 | Keine Cookies | Playwright, frisches Profil, alle Seiten (/, /learn, Lektionen, /learn/python/*, /datasets, /login, /impressum, /datenschutz, /teach*, /docs, /fuer-lehrkraefte) | `context.cookies()` = [] |
 | T2 | Nur eigener Host | Netzwerkmitschnitt (`page.on('request')`) über alle Seiten | einziger Host `www.tabulasql.de` |
 | T3 | SQL im Browser | `src/lib/tabula/sql.ts` | `initSqlJs({ locateFile: () => '/sql/sql-wasm.wasm' })`, kein fetch |
-| T4 | Login sendet nichts | `src/routes/login/+page.svelte` submitLogin/submitRegister/submitForgot | nur `preventDefault()`, State-Änderung |
 | T5 | Kein Tracking | `grep` im Build nach Fremd-URLs, Netzwerkmitschnitt | keine Analyse-/Werbedienste |
 | T6 | Kein Zugriffsprotokoll | `deploy/Caddyfile` ohne `log` in Site-Blöcken (Caddy-Doku: Zugriffslog nur mit `log`); Test: 2 Aufrufe, Zeilenzahl der Logs vorher = nachher (101 = 101) | bestätigt |
 | T7 | Gekürzte IPs, 14 Tage | globales `log default` mit `format filter` (`ip_mask 24 48` auf remote_ip/client_ip/X-Forwarded-For, `remote delete`), `roll_at 00:00`, `roll_keep_for 312h`; `caddy validate` = Valid; Test: Protokolldatei enthält nur `127.0.0.1` | bestätigt |
 | T8 | Standort Nürnberg | Hetzner-Metadaten `169.254.169.254/hetzner/v1/metadata` | `region: eu-central`, `availability-zone: nbg1-dc3` |
-| T9 | AV-Vertrag | Hetzner-Kundenkonto | **offen**, siehe oben |
+| T9 | AV-Vertrag | Hetzner-Kundenkonto | abgeschlossen, bestätigt vom Verantwortlichen am 21.10.2026 |
 | T10 | TLS, Weiterleitung | `openssl s_client` / `curl` | Issuer Let's Encrypt (YE1); `tabulasql.de` → 301 `https://www.tabulasql.de/` |
 | T11 | localStorage nur nach Handlung | `grep localStorage` in `src`; Playwright frisches Profil je Seite | Schlüssel `tabula-progress`, `sbsqltt-theme`, `tabula-guest-hint`; nach reinem Aufruf jeder Seite leer (nach Fix in `/teach/settings`) |
 | T12 | sessionStorage SvelteKit | `node_modules/@sveltejs/kit/src/runtime/client/constants.js` | `sveltekit:snapshot`, `sveltekit:scroll` |
@@ -36,6 +35,10 @@ Zusätzlich am 21.10.2026 auf dem Server gesetzt (damit die 14-Tage-Aussage für
 - `journald`: `/etc/systemd/journald.conf.d/50-retention.conf` mit `MaxRetentionSec=14day`.
 - `rsyslog` (`/var/log/auth.log` u. a.): `/etc/logrotate.d/rsyslog` auf `daily`, `rotate 13`.
 - Docker-Konsolenlog des Webservers: Treiber `local`, `max-size 1m`, `max-file 2` (`deploy/compose.yml`).
+
+## Konten, Klassen, Quiz (K)
+
+Die Erklärung beschreibt Konten bereits so, wie sie gebaut werden. Grundlage sind die verbindlichen Vorgaben in `docs/BACKEND-DATENSCHUTZ.md` (K1 bis K12). Das Backend darf nur live gehen, wenn deren Freigabe-Checkliste erfüllt ist.
 
 ## Rechtsquellen (R) und Anbieter (A)
 
