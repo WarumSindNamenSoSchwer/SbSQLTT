@@ -1,0 +1,90 @@
+/* Tabula Design-System v3 (Designer-Lieferung), gescoped auf .tb, damit Altseiten unberuehrt bleiben. */
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+.tb {
+	color-scheme: light;
+	--bg: #f8fafc;
+	--surface: #fff;
+	--subtle: #f1f5f9;
+	--line: #e2e8f0;
+	--line-strong: #cbd5e1;
+	--ink: #0f172a;
+	--ink-2: #475569;
+	--ink-3: #64748b;
+	--accent: #3b82f6;
+	--accent-strong: #2563eb;
+	--accent-soft: #eff6ff;
+	--accent-line: #bfdbfe;
+	--accent-ink: #1d4ed8;
+	--ok: #16a34a;
+	--ok-soft: #f0fdf4;
+	--ok-line: #bbf7d0;
+	--ok-ink: #166534;
+	--danger: #dc2626;
+	--danger-soft: #fef2f2;
+	--danger-line: #fecaca;
+	--danger-ink: #991b1b;
+	--shadow-pop: 0 12px 32px -12px rgb(15 23 42 / 0.28);
+	--sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+	--mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--sans);
+	font-size: 16px;
+	line-height: 26px;
+	-webkit-font-smoothing: antialiased;
+}
+html:not(.light) .tb {
+	color-scheme: dark;
+	--bg: #0b1220;
+	--surface: #111a2e;
+	--subtle: #1e293b;
+	--line: #334155;
+	--line-strong: #475569;
+	--ink: #e2e8f0;
+	--ink-2: #94a3b8;
+	--ink-3: #94a3b8;
+	--accent-strong: #60a5fa;
+	--accent-soft: #172554;
+	--accent-line: #1e3a8a;
+	--accent-ink: #93c5fd;
+	--ok: #4ade80;
+	--ok-soft: #052e16;
+	--ok-line: #14532d;
+	--ok-ink: #86efac;
+	--danger: #f87171;
+	--danger-soft: #450a0a;
+	--danger-line: #7f1d1d;
+	--danger-ink: #fca5a5;
+	--shadow-pop: 0 12px 32px -12px rgb(0 0 0 / 0.6);
+}
+.tb [data-tone='neutral'] { --fb-bg: var(--surface); --fb-line: var(--line); --fb-ink: var(--ink); --fb-ico-bg: var(--subtle); --fb-ico: var(--ink-2); }
+.tb [data-tone='accent'] { --fb-bg: var(--accent-soft); --fb-line: var(--accent-line); --fb-ink: var(--accent-ink); --fb-ico-bg: var(--accent); --fb-ico: #fff; }
+.tb [data-tone='danger'] { --fb-bg: var(--danger-soft); --fb-line: var(--danger-line); --fb-ink: var(--danger-ink); --fb-ico-bg: var(--danger); --fb-ico: #fff; }
+.tb [data-tone='ok'] { --fb-bg: var(--ok-soft); --fb-line: var(--ok-line); --fb-ink: var(--ok-ink); --fb-ico-bg: var(--ok); --fb-ico: #fff; }
+.tb button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+.tb button:disabled { cursor: default; }
+.tb a { color: inherit; text-decoration: none; }
+.tb :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tb .mono { font-family: var(--mono); }
+.tb .lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); }
+/* Design-Frames nutzen content-box (kein CSS-Reset) */
+.tb, .tb *, .tb *::before, .tb *::after { box-sizing: content-box; }
+@keyframes tb-spin { to { transform: rotate(360deg); } }
+/* Pfeil-Icon aus dem Design (Maske, nimmt currentColor) */
+.tb .arr {
+	display: inline-block;
+	width: 0.9em;
+	height: 0.9em;
+	flex: none;
+	vertical-align: -0.1em;
+	background: currentColor;
+	-webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M2.5%208h10.5M8.5%203.5%2013%208l-4.5%204.5%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;
+	mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M2.5%208h10.5M8.5%203.5%2013%208l-4.5%204.5%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;
+	margin-left: 0.2em;
+}
+.tb .arr.back { transform: scaleX(-1); margin-left: 0; margin-right: 0.2em; }
