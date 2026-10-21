@@ -13,7 +13,9 @@ const ex = where.steps.find((s) => s.name === 'Neue Bücher');
 // wrongWhere: fehlende Spalte year (typischer Fehler)
 const wrongWhere = 'SELECT title\nFROM books\nWHERE year > 2020;';
 const c1 = compare(run(db, wrongWhere), run(db, ex.solution), ex.ordered);
-const wrongJoin = 'SELECT b.title, p.name\nFROM books b\nJOIN publishers p;';
+const joinEx = LESSONS['joins'].steps.find((s) => s.kind === 'exercise');
+// Typischer Fehler genau dieser Übung (Feld wrong aus dem Kurs), mehrzeilig wie im Editor
+const wrongJoin = joinEx.wrong.replace(/\s+FROM /, '\nFROM ').replace(/\s+JOIN /, '\nJOIN ');
 const out = {
 	// Hero: nur erste 6 Buecher nach ID (damit das Layout nicht platzt)
 	books: q('SELECT title, year FROM books ORDER BY id LIMIT 6'),
@@ -26,7 +28,7 @@ const out = {
 	joinBooks: q('SELECT b.title, b.publisher_id FROM books b JOIN publishers p ON b.publisher_id = p.id WHERE b.year > 2010 ORDER BY b.id'),
 	publishers: q('SELECT id, name FROM publishers ORDER BY id'),
 	joinResult: q('SELECT b.title, p.name FROM books b JOIN publishers p ON b.publisher_id = p.id WHERE b.year > 2010 ORDER BY b.id'),
-	teacherHelp: { task: LESSONS['joins'].steps.find((s) => s.kind === 'exercise').task, query: wrongJoin, msg: sqlHint(wrongJoin) },
+	teacherHelp: { task: joinEx.task, query: wrongJoin, msg: sqlHint(wrongJoin) },
 	pathCounts: { grund: Object.values(LESSONS).filter((l) => l.track === 'beginner').length }
 };
 console.log(JSON.stringify(out, null, 1));

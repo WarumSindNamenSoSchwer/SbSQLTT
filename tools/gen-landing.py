@@ -87,6 +87,9 @@ sub('<span>O\u2019Reilly Media</span>', '<span>' + e(D_['publishers'][1][1]) + '
 th = D_['teacherHelp']
 sub('<p class="t-task">Zeige zu jedem Buch den Namen des Verlags.</p>', '<p class="t-task">' + e(th['task']) + '</p>')
 sub('<div class="t-error">Nach JOIN fehlt die Bedingung mit ON.</div>', '<div class="t-error">' + e(th['msg']) + '</div>')
+# Letzte Abfrage: echter typischer Fehler genau dieser Uebung (Schluesselwoerter fett wie im Design)
+_q = '<br>'.join(re.sub(r'\b(SELECT|FROM|JOIN|WHERE|ON|GROUP BY|ORDER BY)\b', r'<b>\1</b>', e(line)) for line in th['query'].split('\n'))
+sub('<div class="t-codeblock"><b>SELECT</b> b.title, p.name<br><b>FROM</b> books b<br><b>JOIN</b> publishers p;</div>', '<div class="t-codeblock">' + _q + '</div>')
 html = re.sub(r'href="[^"#/:]+\.dc\.html"', 'href="/learn"', html)
 assert '.dc.html' not in html, re.findall(r'.{40}\.dc\.html', html)[:3]
 open(R + 'src/lib/landing/v11.html', 'w', encoding='utf-8').write(html)
