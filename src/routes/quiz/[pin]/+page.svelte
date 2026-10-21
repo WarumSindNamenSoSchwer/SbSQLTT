@@ -3,69 +3,106 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import TopNav from '$lib/tabula/TopNav.svelte';
 	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
 	import { session } from '$lib/tabula/session.svelte.js';
 	import { tok } from '$lib/tabula/highlight.js';
 	import { quizWsUrl, type WsInMsg } from '$lib/tabula/quiz-api.js';
+	import Edgar from '$lib/edgar/Edgar.svelte';
 
-	let dark = $state(false);
+	// Design-Farben der 4 Antwort-Slots (q1–q4)
+	const Q_COLORS = [
+		'oklch(0.80 0.13 80)',   // q1 – gelb-orange ▲
+		'oklch(0.80 0.10 240)',  // q2 – blau ◆
+		'oklch(0.80 0.11 25)',   // q3 – rot-rosa ●
+		'oklch(0.80 0.10 155)',  // q4 – grün ■
+	];
+	const Q_SYMBOLS = ['▲', '◆', '●', '■'];
+
+	type Phase =
+		| 'connecting'
+		| 'reconnecting'  // E-H3 Verbindung unterbrochen
+		| 'lobby'         // E1-H
+		| 'question'      // E2-H
+		| 'answered'      // E2-H2
+		| 'reveal_correct' // E3-H
+		| 'reveal_wrong'   // E3-H2
+		| 'leaderboard'   // E4-H Zwischenstand
+		| 'ended'         // E5-H
+		| 'error';
+
 	let ws = $state<WebSocket | null>(null);
-	let phase = $state<'connecting' | 'lobby' | 'question' | 'answered' | 'reveal' | 'ended' | 'error'>('connecting');
+	let phase = $state<Phase>('connecting');
 	let errorMsg = $state('');
+	let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+	let reconnectAttempts = 0;
 
-	// Lobby
-	let participantCount = $state(0);
+	// Sitzungsdaten
+	let displayName = $state('');
+	let totalPoints = $state(0);
 
 	// Frage
 	let qIndex = $state(0);
+	let qTotal = $state(0);
 	let qText = $state('');
 	let qCode = $state<string | null>(null);
 	let qOptions = $state<string[]>([]);
 	let qTimeLimit = $state(0);
-	let qId = $state(0); // question_id für Antwort
+	let qId = $state(0);
 	let timeLeft = $state(0);
 	let selectedAnswer = $state<number | null>(null);
+	let selectedAnswerText = $state('');
+	let selectedAnswerIdx = $state<number | null>(null);
 	let answerCorrect = $state<boolean | null>(null);
 	let earnedPoints = $state(0);
-	let totalPoints = $state(0);
-
-	// Auflösung
 	let correctIdx = $state<number | null>(null);
 
-	// Rangliste / Endergebnis
+	// Zwischenstand / Rangliste
+	let myRank = $state<number | null>(null);
+	let totalParticipants = $state(0);
 	let rankings = $state<{ rank: number; display_name: string; points: number }[]>([]);
 
 	let timer: ReturnType<typeof setInterval> | null = null;
-
 	const pin = $derived((page.params.pin ?? '').toUpperCase());
 
+	// Kopfzeile links-Text je Phase
+	const headerLeft = $derived(() => {
+		if (phase === 'lobby' || phase === 'connecting' || phase === 'reconnecting') return 'QUIZ · JOIN';
+		if (phase === 'ended') return 'QUIZ BEENDET';
+		if (phase === 'leaderboard') return `NACH FRAGE ${qIndex}`;
+		return `FRAGE ${qIndex} / ${qTotal || '…'}`;
+	});
+
+	// Punkte rechts (leer in Lobby)
+	const headerRight = $derived(() => {
+		if (phase === 'lobby' || phase === 'connecting' || phase === 'reconnecting') return '';
+		return totalPoints > 0 ? totalPoints.toLocaleString('de-DE') : '';
+	});
+
 	onMount(() => {
-		const sync = () => (dark = !document.documentElement.classList.contains('light'));
-		sync();
-		const mo = new MutationObserver(sync);
-		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 		const check = () => {
 			if (!ACCOUNTS_LIVE) return;
 			if (session.loading) { setTimeout(check, 50); return; }
 			if (!session.user) { goto(`/login?redirect=/quiz/${pin}`); return; }
+			displayName = session.user.display_name ?? '';
 			connect();
 		};
 		check();
-		return () => mo.disconnect();
 	});
 
 	onDestroy(() => {
 		clearInterval(timer ?? undefined);
+		clearTimeout(reconnectTimer ?? undefined);
 		ws?.close();
 	});
 
 	function connect() {
+		if (ws) { ws.onclose = null; ws.onerror = null; ws.close(); ws = null; }
 		const url = quizWsUrl();
 		const sock = new WebSocket(url);
 		ws = sock;
 
 		sock.addEventListener('open', () => {
+			reconnectAttempts = 0;
 			sock.send(JSON.stringify({ type: 'student_join', pin }));
 		});
 
@@ -76,32 +113,49 @@
 		});
 
 		sock.addEventListener('close', () => {
-			if (phase !== 'ended') { phase = 'error'; errorMsg = 'Verbindung getrennt.'; }
+			if (phase === 'ended') return;
+			// Zeige E-H3, reconnecte automatisch
+			phase = 'reconnecting';
+			scheduleReconnect();
 		});
 
 		sock.addEventListener('error', () => {
-			phase = 'error'; errorMsg = 'Verbindungsfehler.';
+			if (phase === 'ended') return;
+			phase = 'reconnecting';
+			scheduleReconnect();
 		});
+	}
+
+	function scheduleReconnect() {
+		clearTimeout(reconnectTimer ?? undefined);
+		const delay = Math.min(1000 * 2 ** reconnectAttempts, 15000);
+		reconnectAttempts++;
+		reconnectTimer = setTimeout(() => {
+			if (phase !== 'ended') connect();
+		}, delay);
 	}
 
 	function handleMsg(msg: WsInMsg) {
 		if (msg.type === 'error') {
+			const m = msg as { type: 'error'; code: string; message: string };
+			if (m.code === 'login_required') { goto(`/login?redirect=/quiz/${pin}`); return; }
 			phase = 'error';
-			errorMsg = (msg as any).message;
-			if ((msg as any).code === 'login_required') goto(`/login?redirect=/quiz/${pin}`);
+			errorMsg = m.message;
 			return;
 		}
 		if (msg.type === 'joined') {
 			phase = 'lobby';
+			const m = msg as { type: 'joined'; display_name?: string };
+			if (m.display_name) displayName = m.display_name;
 		}
 		if (msg.type === 'lobby_state') {
 			phase = 'lobby';
-			participantCount = (msg as any).count ?? 0;
 		}
 		if (msg.type === 'question_start') {
-			const m = msg as any;
+			const m = msg as { type: 'question_start'; question_index: number; question_total: number; question_id: number; question: string; code?: string; options: string[]; time_limit: number; started_at: number };
 			phase = 'question';
 			qIndex = m.question_index;
+			qTotal = m.question_total ?? qTotal;
 			qText = m.question;
 			qCode = m.code ?? null;
 			qOptions = m.options;
@@ -109,6 +163,8 @@
 			qId = m.question_id;
 			timeLeft = m.time_limit;
 			selectedAnswer = null;
+			selectedAnswerText = '';
+			selectedAnswerIdx = null;
 			answerCorrect = null;
 			correctIdx = null;
 			clearInterval(timer ?? undefined);
@@ -118,7 +174,7 @@
 			}, 1000);
 		}
 		if (msg.type === 'answer_ack') {
-			const m = msg as any;
+			const m = msg as { type: 'answer_ack'; correct: boolean; points: number; total_points: number };
 			phase = 'answered';
 			answerCorrect = m.correct;
 			earnedPoints = m.points;
@@ -126,14 +182,25 @@
 			clearInterval(timer ?? undefined); timer = null;
 		}
 		if (msg.type === 'reveal') {
-			// Wenn Schüler noch nicht geantwortet hat → zeige Auflösung direkt
-			if (phase !== 'answered') phase = 'reveal';
-			else phase = 'reveal';
-			correctIdx = (msg as any).correct_idx;
+			const m = msg as { type: 'reveal'; correct_idx: number; answer_counts: number[]; correct_ratio: number };
+			correctIdx = m.correct_idx;
 			clearInterval(timer ?? undefined); timer = null;
+			if (answerCorrect === true) {
+				phase = 'reveal_correct';
+			} else if (answerCorrect === false) {
+				phase = 'reveal_wrong';
+			} else {
+				// Nicht geantwortet: zeige Auflösung als "falsch"
+				phase = 'reveal_wrong';
+			}
 		}
 		if (msg.type === 'leaderboard') {
-			rankings = (msg as any).rankings ?? [];
+			const m = msg as { type: 'leaderboard'; rankings: { rank: number; display_name: string; points: number }[] };
+			rankings = m.rankings ?? [];
+			totalParticipants = rankings.length;
+			const me = rankings.find(r => r.display_name === displayName);
+			if (me) { myRank = me.rank; totalPoints = me.points; }
+			phase = 'leaderboard';
 		}
 		if (msg.type === 'quiz_ended') {
 			phase = 'ended';
@@ -144,180 +211,361 @@
 	function sendAnswer(idx: number) {
 		if (phase !== 'question' || selectedAnswer !== null) return;
 		selectedAnswer = idx;
+		selectedAnswerIdx = idx;
+		selectedAnswerText = qOptions[idx] ?? '';
 		ws?.send(JSON.stringify({ type: 'answer', question_id: qId, chosen_idx: idx }));
 	}
 
-	const letterLabels = ['A', 'B', 'C', 'D'];
-	const myRank = $derived(() => {
-		if (!session.user) return null;
-		const name = session.user.display_name;
-		const entry = rankings.find(s => s.display_name === name);
-		return entry?.rank ?? null;
+	// Statistiken fürs Ende
+	const endCorrect = $derived(() => {
+		const me = rankings.find(r => r.display_name === displayName);
+		return me ? undefined : undefined; // aus answer_ack-Summen nicht direkt verfügbar
 	});
 </script>
 
 <svelte:head><title>Quiz · Tabula</title></svelte:head>
 
-<div class="tb page">
-	<TopNav {dark} />
+<div class="phone-wrap">
+	<!-- Kopfzeile wie im Design -->
+	<header class="phone-header">
+		<span class="header-left mono">{headerLeft()}</span>
+		<span class="header-spacer"></span>
+		<span class="header-name">{displayName || ''}</span>
+		{#if headerRight()}
+			<span class="header-pts mono">{headerRight()}</span>
+		{/if}
+	</header>
 
-	{#if !ACCOUNTS_LIVE}
-		<main class="center"><p class="note">Kommt in Kürze.</p></main>
-	{:else if phase === 'connecting'}
-		<main class="center"><div class="spinner-wrap"><span class="spinner"></span></div><p class="hint">Verbinde …</p></main>
-	{:else if phase === 'error'}
-		<main class="center">
-			<div class="error-card">
-				<p class="err-msg">{errorMsg}</p>
-				<a href="/quiz" class="btn-ghost">Anderen PIN eingeben</a>
-			</div>
-		</main>
-	{:else if phase === 'lobby'}
-		<main class="center">
-			<div class="lobby-box">
-				<div class="lobby-pin">
-					<span class="pin-lbl">PIN</span>
-					<span class="pin-val">{pin}</span>
-				</div>
-				<p class="lobby-name">{session.user?.display_name}</p>
-				<p class="lobby-count">{participantCount} Teilnehmer beigetreten</p>
-				<span class="lobby-wait">Warte auf die Lehrkraft …</span>
-			</div>
-		</main>
-	{:else if phase === 'question' || phase === 'answered'}
-		<main class="quiz-main">
-			<div class="quiz-content">
-				<div class="q-progress">
-					<span class="q-counter">Frage {qIndex}</span>
-					<span class="q-timer" class:urgent={timeLeft <= 5 && phase === 'question'}>{timeLeft}s</span>
-				</div>
+	<main class="phone-main">
 
-				<div class="q-card">
-					<p class="q-text">{qText}</p>
-					{#if qCode}
-						<pre class="q-code" aria-label="SQL-Code">{#each qCode.split('\n') as line}<span class="cl">{#each tok(line) as t}<span style="color:{t.c}">{t.t}</span>{/each}</span>
-{/each}</pre>
+		{#if !ACCOUNTS_LIVE}
+			<!-- Kommt bald -->
+			<div class="msg-center">
+				<Edgar pose="idle" style="width:120px;height:108px" />
+				<p class="msg-title">Kommt bald</p>
+				<p class="msg-body">Die Quiz-Funktion ist in Kürze verfügbar.</p>
+			</div>
+
+		{:else if phase === 'connecting'}
+			<div class="msg-center">
+				<span class="spinner"></span>
+				<p class="msg-body">Verbinde …</p>
+			</div>
+
+		{:else if phase === 'reconnecting'}
+			<!-- E-H3 Verbindung unterbrochen -->
+			<div class="msg-center">
+				<Edgar pose="loading" style="width:150px;height:135px" />
+				<p class="msg-title">Verbindung unterbrochen</p>
+				<p class="msg-body">Wir verbinden dich neu … Du bleibst im Quiz.</p>
+			</div>
+
+		{:else if phase === 'error'}
+			<div class="msg-center">
+				<Edgar pose="thinking" style="width:150px;height:135px" />
+				<p class="msg-title">{errorMsg}</p>
+				<a href="/quiz" class="btn-primary">Anderen PIN eingeben</a>
+			</div>
+
+		{:else if phase === 'lobby'}
+			<!-- E1-H Lobby -->
+			<div class="msg-center">
+				<Edgar pose="wave" style="width:150px;height:135px" />
+				<p class="msg-title">Du bist drin!</p>
+				<p class="msg-body">Warte auf den Start. Deine Lehrkraft startet das Quiz am Beamer.</p>
+			</div>
+
+		{:else if phase === 'question' || phase === 'answered'}
+			<!-- E2-H Frage / E2-H2 Antwort gespeichert -->
+			{#if phase === 'answered'}
+				<div class="msg-center">
+					<Edgar pose="loading" style="width:150px;height:135px" />
+					<p class="msg-title">Antwort gespeichert</p>
+					<p class="msg-body">Warte auf die anderen.</p>
+					{#if selectedAnswerIdx !== null}
+						<div class="pick-pill" style="background:{Q_COLORS[selectedAnswerIdx]}">
+							<span class="pick-sym">{Q_SYMBOLS[selectedAnswerIdx]}</span>
+							<span class="pick-text mono">{selectedAnswerText}</span>
+						</div>
 					{/if}
 				</div>
-
-				<div class="opts-grid">
-					{#each qOptions as opt, i}
-						<button
-							class="opt-btn"
-							class:selected={selectedAnswer === i}
-							class:dimmed={selectedAnswer !== null && selectedAnswer !== i}
-							onclick={() => sendAnswer(i)}
-							disabled={selectedAnswer !== null}
-						>
-							<span class="opt-letter">{letterLabels[i]}</span>
-							<span class="opt-text">{opt}</span>
-						</button>
-					{/each}
+			{:else}
+				<!-- Frage aktiv -->
+				<div class="q-wrap">
+					<div class="q-top">
+						<h2 class="q-text">{qText}</h2>
+						<div class="timer-circle" class:urgent={timeLeft <= 5}>
+							<span class="timer-num mono">{timeLeft}</span>
+						</div>
+					</div>
+					{#if qCode}
+						<pre class="q-code">{#each qCode.split('\n') as line}<span class="cl">{#each tok(line) as t}<span style="color:{t.c}">{t.t}</span>{/each}</span>
+{/each}</pre>
+					{/if}
+					<div class="opts-list">
+						{#each qOptions as opt, i}
+							<button
+								class="opt-tile"
+								style="background:{Q_COLORS[i]}"
+								onclick={() => sendAnswer(i)}
+								disabled={selectedAnswer !== null}
+							>
+								<span class="opt-sym">{Q_SYMBOLS[i]}</span>
+								<span class="opt-text mono">{opt}</span>
+							</button>
+						{/each}
+					</div>
 				</div>
+			{/if}
 
-				{#if phase === 'answered'}
-					<div class="ack-box" class:correct={answerCorrect} class:wrong={!answerCorrect}>
-						{answerCorrect ? `+${earnedPoints} Punkte` : 'Falsch'}
-						<span class="total-pts">{totalPoints} gesamt</span>
+		{:else if phase === 'reveal_correct'}
+			<!-- E3-H Richtig -->
+			<div class="msg-center">
+				<Edgar pose="success" style="width:150px;height:135px" />
+				<p class="msg-title ok">Richtig! +{earnedPoints.toLocaleString('de-DE')}</p>
+				{#if myRank !== null}
+					<p class="msg-body">Du bist auf Platz {myRank}.</p>
+				{/if}
+			</div>
+
+		{:else if phase === 'reveal_wrong'}
+			<!-- E3-H2 Falsch -->
+			<div class="msg-center">
+				<Edgar pose="thinking" style="width:150px;height:135px" />
+				<p class="msg-title">Leider falsch</p>
+				{#if correctIdx !== null}
+					<p class="msg-body">Richtig wäre gewesen:</p>
+					<div class="pick-pill" style="background:{Q_COLORS[correctIdx]}">
+						<span class="pick-sym">{Q_SYMBOLS[correctIdx]}</span>
+						<span class="pick-text mono">{qOptions[correctIdx]}</span>
 					</div>
 				{/if}
 			</div>
-		</main>
-	{:else if phase === 'reveal'}
-		<main class="quiz-main">
-			<div class="quiz-content">
-				<h2 class="section-title">Auflösung</h2>
-				<div class="opts-grid">
-					{#each qOptions as opt, i}
-						<div
-							class="opt-reveal"
-							class:is-correct={i === correctIdx}
-							class:was-selected={i === selectedAnswer}
-						>
-							<span class="opt-letter">{letterLabels[i]}</span>
-							<span class="opt-text">{opt}</span>
-							{#if i === correctIdx}<span class="tick">✓</span>{/if}
-						</div>
-					{/each}
-				</div>
-				<p class="wait-hint">Nächste Frage kommt …</p>
-			</div>
-		</main>
-	{:else if phase === 'ended'}
-		<main class="quiz-main">
-			<div class="quiz-content">
-				<h2 class="section-title">Quiz beendet!</h2>
-				{#if myRank()}
-					<div class="my-rank">Platz {myRank()} von {rankings.length}</div>
+
+		{:else if phase === 'leaderboard'}
+			<!-- E4-H Zwischenstand -->
+			<div class="msg-center">
+				<Edgar pose="idle" style="width:150px;height:135px" />
+				{#if myRank !== null}
+					<p class="msg-title">Platz {myRank}</p>
+					<p class="msg-body">{totalPoints.toLocaleString('de-DE')} Punkte.</p>
+				{:else}
+					<p class="msg-title">Zwischenstand</p>
+					<p class="msg-body">Gleich geht es weiter.</p>
 				{/if}
-				<div class="score-list">
-					{#each rankings as s}
-						<div class="score-row" class:mine={s.display_name === session.user?.display_name}>
-							<span class="s-rank">#{s.rank}</span>
-							<span class="s-name">{s.display_name}</span>
-							<span class="s-pts">{s.points} Pkt.</span>
-						</div>
-					{/each}
+			</div>
+
+		{:else if phase === 'ended'}
+			<!-- E5-H Ende -->
+			<div class="msg-center">
+				<Edgar pose="trophy" style="width:150px;height:135px" />
+				{#if myRank !== null}
+					<p class="msg-title">Platz {myRank} von {totalParticipants}</p>
+				{:else}
+					<p class="msg-title">Quiz beendet!</p>
+				{/if}
+				<p class="msg-body">Gut gemacht. Punkte zählen nur in diesem Quiz.</p>
+				<div class="stats-grid">
+					<div class="stat-box">
+						<span class="stat-val">{totalPoints.toLocaleString('de-DE')}</span>
+						<span class="stat-lbl">Punkte</span>
+					</div>
 				</div>
 				<a href="/quiz" class="btn-primary">Weiteres Quiz</a>
 			</div>
-		</main>
-	{/if}
+		{/if}
+
+	</main>
 </div>
 
 <style>
-	.page { display: flex; flex-direction: column; min-height: 100svh; }
-	.center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px 20px; }
-	.spinner-wrap { display: grid; place-items: center; }
-	.spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: tb-spin 0.8s linear infinite; }
-	.hint, .note { font-size: 14px; color: var(--ink-3); }
-	.error-card { display: flex; flex-direction: column; gap: 16px; padding: 28px; border: 1px solid var(--danger-line); border-radius: 12px; max-width: 400px; text-align: center; }
-	.err-msg { color: var(--danger-ink); font-size: 15px; }
-	.lobby-box { display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
-	.lobby-pin { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-	.pin-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: var(--ink-3); text-transform: uppercase; }
-	.pin-val { font-size: 40px; font-weight: 700; letter-spacing: 0.15em; color: var(--accent); font-family: var(--mono); }
-	.lobby-name { font-size: 20px; font-weight: 600; }
-	.lobby-count { font-size: 15px; color: var(--ink-2); }
-	.lobby-wait { font-size: 14px; color: var(--ink-3); animation: pulse 2s ease-in-out infinite; }
-	@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
-	.quiz-main { flex: 1; display: flex; justify-content: center; padding: 28px 20px; }
-	.quiz-content { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 20px; }
-	.q-progress { display: flex; align-items: center; justify-content: space-between; }
-	.q-counter { font-size: 13px; font-weight: 600; color: var(--ink-3); }
-	.q-timer { font-size: 22px; font-weight: 700; color: var(--accent); }
-	.q-timer.urgent { color: var(--danger-ink); }
-	.q-card { padding: 20px 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 14px; }
-	.q-text { font-size: 20px; font-weight: 600; line-height: 1.4; }
-	.q-code { margin: 0; padding: 12px 16px; border-radius: 8px; background: #0f172a; font-family: var(--mono); font-size: 13px; line-height: 20px; overflow-x: auto; }
+	/* Vollbild, kein TopNav – wie im Design */
+	:global(body) { background: var(--bg); }
+	.phone-wrap {
+		min-height: 100svh;
+		display: flex;
+		flex-direction: column;
+		font-family: 'IBM Plex Sans', sans-serif;
+		background: var(--bg);
+		color: var(--ink);
+	}
+
+	/* Kopfzeile */
+	.phone-header {
+		height: 52px;
+		flex: none;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 0 16px;
+		border-bottom: 1px solid var(--line);
+		background: var(--surface);
+		font-size: 13px;
+	}
+	.header-left { color: var(--ink-3); }
+	.header-spacer { flex: 1; }
+	.header-name { font-weight: 500; color: var(--ink); }
+	.header-pts { color: var(--ink-2); }
+	.mono { font-family: 'IBM Plex Mono', monospace; }
+
+	/* Hauptbereich */
+	.phone-main {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* Nachrichten-Center (Lobby, Auflösung, Ende, etc.) */
+	.msg-center {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 14px;
+		padding: 24px;
+		text-align: center;
+	}
+	.msg-title {
+		font-size: 26px;
+		line-height: 32px;
+		font-weight: 600;
+		color: var(--ink);
+	}
+	.msg-title.ok { color: var(--ok-ink); }
+	.msg-body {
+		font-size: 15px;
+		line-height: 22px;
+		color: var(--ink-2);
+		max-width: 300px;
+	}
+
+	/* Gewählte Antwort-Pille */
+	.pick-pill {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 16px;
+		border-radius: 12px;
+		color: #0f172a;
+		width: 100%;
+		max-width: 340px;
+	}
+	.pick-sym { font-size: 22px; }
+	.pick-text { font-size: 14px; font-weight: 500; text-align: left; }
+
+	/* Statistik-Grid (Ende) */
+	.stats-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+		width: 100%;
+		max-width: 340px;
+	}
+	.stat-box {
+		display: flex;
+		flex-direction: column;
+		padding: 12px;
+		border-radius: 10px;
+		border: 1px solid var(--line);
+		background: var(--surface);
+	}
+	.stat-val { font-size: 26px; line-height: 32px; font-weight: 600; }
+	.stat-lbl { font-size: 13px; color: var(--ink-3); }
+
+	/* Frage-Ansicht */
+	.q-wrap {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		padding: 16px;
+	}
+	.q-top {
+		display: flex;
+		align-items: flex-start;
+		gap: 10px;
+	}
+	.q-text {
+		flex: 1;
+		font-size: 18px;
+		line-height: 24px;
+		font-weight: 600;
+	}
+	.timer-circle {
+		width: 48px;
+		height: 48px;
+		border-radius: 999px;
+		border: 4px solid var(--accent);
+		display: grid;
+		place-items: center;
+		flex: none;
+	}
+	.timer-circle.urgent { border-color: var(--danger); }
+	.timer-num {
+		font-size: 18px;
+		font-weight: 500;
+	}
+
+	/* Code-Block */
+	.q-code {
+		margin: 0;
+		padding: 10px 12px;
+		border-radius: 10px;
+		background: #0f172a;
+		color: #e2e8f0;
+		font-family: 'IBM Plex Mono', monospace;
+		font-size: 13px;
+		line-height: 20px;
+		overflow-x: auto;
+	}
 	.cl { display: block; }
-	.opts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-	@media (max-width: 500px) { .opts-grid { grid-template-columns: 1fr; } }
-	.opt-btn { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); text-align: left; cursor: pointer; font-size: 15px; font-weight: 500; transition: border-color 0.12s, background 0.12s; }
-	.opt-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
-	.opt-btn.selected { border-color: var(--accent); background: var(--accent-soft); }
-	.opt-btn.dimmed { opacity: 0.4; }
-	.opt-letter { width: 30px; height: 30px; border-radius: 6px; background: var(--subtle); font-weight: 700; display: grid; place-items: center; font-size: 14px; flex: none; }
-	.opt-text { flex: 1; }
-	.ack-box { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 18px; border-radius: 10px; font-size: 20px; font-weight: 700; }
-	.ack-box.correct { background: #dcfce7; color: #15803d; }
-	.ack-box.wrong { background: #fee2e2; color: #b91c1c; }
-	.total-pts { font-size: 14px; font-weight: 500; opacity: 0.8; }
-	.section-title { font-size: 24px; font-weight: 600; }
-	.opt-reveal { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 2px solid var(--line); border-radius: 10px; font-size: 15px; font-weight: 500; }
-	.opt-reveal.is-correct { border-color: #16a34a; background: #dcfce7; }
-	.opt-reveal.was-selected:not(.is-correct) { border-color: #dc2626; background: #fee2e2; }
-	.tick { margin-left: auto; font-weight: 700; color: #16a34a; }
-	.wait-hint { font-size: 14px; color: var(--ink-3); text-align: center; }
-	.my-rank { text-align: center; font-size: 28px; font-weight: 700; color: var(--accent); }
-	.score-list { display: flex; flex-direction: column; gap: 6px; }
-	.score-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
-	.score-row.mine { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
-	.s-rank { width: 28px; color: var(--ink-3); font-size: 13px; }
-	.s-name { flex: 1; }
-	.s-pts { color: var(--accent); font-weight: 600; }
-	.btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 24px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; align-self: flex-start; }
-	.btn-primary:hover { background: var(--accent-strong); }
-	.btn-ghost { display: inline-flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 8px; border: 1px solid var(--line); color: var(--ink-2); font-size: 15px; font-weight: 500; text-decoration: none; }
-	.btn-ghost:hover { background: var(--subtle); color: var(--ink); }
+
+	/* Antwort-Kacheln – 4 Zeilen à volle Breite */
+	.opts-list {
+		flex: 1;
+		display: grid;
+		grid-template-rows: repeat(4, 1fr);
+		gap: 10px;
+	}
+	.opt-tile {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		padding: 0 16px;
+		border-radius: 12px;
+		border: none;
+		color: #0f172a;
+		min-height: 64px;
+		cursor: pointer;
+		text-align: left;
+		font-size: 15px;
+	}
+	.opt-tile:disabled { cursor: default; }
+	.opt-sym { font-size: 26px; width: 28px; text-align: center; }
+	.opt-text { font-size: 15px; font-weight: 500; }
+
+	/* Spinner */
+	.spinner {
+		width: 28px; height: 28px;
+		border: 3px solid var(--line);
+		border-top-color: var(--accent);
+		border-radius: 50%;
+		animation: tb-spin 0.8s linear infinite;
+	}
+
+	/* Primär-Button */
+	.btn-primary {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 48px;
+		padding: 0 24px;
+		border-radius: 6px;
+		background: var(--accent);
+		color: #fff;
+		font-size: 16px;
+		font-weight: 500;
+		text-decoration: none;
+	}
 </style>

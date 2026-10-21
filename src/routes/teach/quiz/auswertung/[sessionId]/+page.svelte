@@ -45,8 +45,21 @@
 
 	function fmtDate(ts: number): string {
 		const d = new Date(ts * 1000);
-		return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-			+ ', ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+		return 'Quiz · ' + d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+			+ ' · heute, ' + d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+	}
+
+	// Korrekt-Quote pro Teilnehmer, Durchschnitt
+	const avgCorrect = $derived(() => {
+		if (!result || result.participants.length === 0) return null;
+		const sum = result.participants.reduce((s, p) => s + (p.total > 0 ? p.correct / p.total : 0), 0);
+		return Math.round(sum / result.participants.length * 100);
+	});
+
+	// Breite des Balken-Fortschrittsbalkens je Teilnehmer
+	function barWidth(p: { correct: number; total: number }): string {
+		if (p.total === 0) return '0%';
+		return Math.round(p.correct / p.total * 100) + '%';
 	}
 </script>
 
@@ -69,34 +82,39 @@
 	{:else}
 		<main class="teach-main">
 			<div class="teach-content">
+				<!-- Breadcrumb + Titel -->
 				<div class="page-header">
-					<a href="/teach/quiz" class="btn-ghost sm">← Fragensatz</a>
-					<h1 class="page-title">Auswertung: {result.quiz_title}</h1>
+					<span class="breadcrumb">Quiz · {result.quiz_title} · {fmtDate(result.ended_at).replace('Quiz · ', '').split(' · ').slice(1).join(' · ')}</span>
+					<h1 class="page-title">Auswertung</h1>
+					{#if avgCorrect() !== null}
+						<p class="page-sub">{result.participants.length} Teilnehmende · im Schnitt {avgCorrect()} % richtig. Schwierigste Fragen zuerst.</p>
+					{/if}
 				</div>
-				<p class="meta-line">{fmtDate(result.ended_at)} · {result.participants.length} Teilnehmer</p>
 
 				{#if result.participants.length === 0}
 					<div class="empty-state"><span class="empty-title">Keine Teilnehmer</span></div>
 				{:else}
-					<div class="results-table">
-						<div class="results-head">
-							<span class="col-rank">#</span>
-							<span class="col-name">Name</span>
-							<span class="col-pts">Punkte</span>
-							<span class="col-correct">Richtig</span>
-							<span class="col-pct">Quote</span>
-						</div>
-						{#each result.participants as p, i}
-							<div class="results-row" class:podium={i < 3}>
-								<span class="col-rank rank-badge" class:gold={i === 0} class:silver={i === 1} class:bronze={i === 2}>{i + 1}</span>
-								<span class="col-name">{p.display_name}</span>
-								<span class="col-pts">{p.total_points}</span>
-								<span class="col-correct">{p.correct}/{p.total}</span>
-								<span class="col-pct">{p.total > 0 ? Math.round(p.correct / p.total * 100) : 0} %</span>
+					<!-- Tabelle nach Korrektheit sortiert (schlechteste zuerst) -->
+					<div class="eval-table">
+						{#each result.participants
+							.slice()
+							.sort((a, b) => (a.total > 0 ? a.correct / a.total : 0) - (b.total > 0 ? b.correct / b.total : 0)) as p, i}
+							<div class="eval-row">
+								<span class="eval-num">{result.participants.indexOf(p) + 1}</span>
+								<span class="eval-name">{p.display_name}</span>
+								<div class="eval-bar-wrap">
+									<div class="eval-bar-fill" style="width:{barWidth(p)}"></div>
+								</div>
+								<span class="eval-pct mono">{p.total > 0 ? Math.round(p.correct / p.total * 100) : 0} %</span>
+								<span class="eval-pts">{p.total_points} Pkt.</span>
 							</div>
 						{/each}
 					</div>
 				{/if}
+
+				<div class="footer-actions">
+					<a href="/teach/quiz" class="btn-ghost">← Fragensätze</a>
+				</div>
 			</div>
 		</main>
 	{/if}
@@ -112,30 +130,57 @@
 	.title-block .sub { font-size: 15px; color: var(--ink-2); }
 	.spinner-wrap { display: grid; place-items: center; padding: 80px; }
 	.spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: tb-spin 0.8s linear infinite; }
-	.teach-main { flex: 1; display: flex; justify-content: center; padding: 44px 40px; }
-	@media (max-width: 767px) { .teach-main { padding: 20px 16px; } }
-	.teach-content { width: 100%; max-width: 860px; display: flex; flex-direction: column; gap: 24px; }
-	.page-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-	.page-title { flex: 1; font-size: 28px; font-weight: 600; letter-spacing: -0.015em; }
-	.meta-line { font-size: 14px; color: var(--ink-3); }
 	.err { color: var(--danger-ink); font-size: 15px; }
+
+	.teach-main { flex: 1; display: flex; justify-content: center; padding: 36px 40px; }
+	@media (max-width: 767px) { .teach-main { padding: 20px 16px; } }
+	.teach-content { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 20px; }
+
+	/* Header */
+	.page-header { display: flex; flex-direction: column; gap: 2px; }
+	.breadcrumb { font-size: 14px; color: var(--ink-3); }
+	.page-title { font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: -0.01em; }
+	.page-sub { font-size: 15px; color: var(--ink-2); }
+
+	/* Auswertungs-Tabelle */
+	.eval-table {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--line);
+		border-radius: 10px;
+		background: var(--surface);
+	}
+	.eval-row {
+		display: grid;
+		grid-template-columns: 40px minmax(0, 1fr) 260px 80px 120px;
+		align-items: center;
+		gap: 16px;
+		min-height: 60px;
+		padding: 0 20px;
+		border-bottom: 1px solid var(--line);
+	}
+	.eval-row:last-child { border-bottom: none; }
+	.eval-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-3); }
+	.eval-name { font-size: 15px; }
+	.eval-bar-wrap {
+		height: 8px;
+		border-radius: 999px;
+		background: var(--line);
+		overflow: hidden;
+	}
+	.eval-bar-fill {
+		height: 100%;
+		background: var(--accent);
+		border-radius: 999px;
+	}
+	.eval-pct { font-size: 13px; font-family: 'IBM Plex Mono', monospace; }
+	.eval-pts { font-size: 14px; font-weight: 500; color: var(--accent-strong); text-align: right; }
+	.mono { font-family: 'IBM Plex Mono', monospace; }
+
 	.empty-state { display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line-strong); border-radius: 10px; padding: 56px; }
 	.empty-title { font-size: 20px; font-weight: 600; }
-	.results-table { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-	.results-head, .results-row { display: grid; grid-template-columns: 48px 1fr 90px 80px 70px; padding: 12px 20px; align-items: center; gap: 12px; }
-	.results-head { background: var(--subtle); font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink-3); text-transform: uppercase; border-bottom: 1px solid var(--line); }
-	.results-row { border-top: 1px solid var(--line); font-size: 15px; }
-	.results-row:first-of-type { border-top: none; }
-	.results-row.podium { background: var(--surface); }
-	.col-rank { font-weight: 700; }
-	.rank-badge { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; }
-	.rank-badge.gold { background: #fef08a; color: #854d0e; }
-	.rank-badge.silver { background: #e2e8f0; color: #475569; }
-	.rank-badge.bronze { background: #fed7aa; color: #9a3412; }
-	.col-pts { font-weight: 600; color: var(--accent); }
-	.col-pct { color: var(--ink-3); font-size: 13px; }
-	.btn-ghost { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line); color: var(--ink-2); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; }
+
+	.footer-actions { display: flex; gap: 12px; }
+	.btn-ghost { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line); color: var(--ink-2); font-size: 14px; font-weight: 500; text-decoration: none; }
 	.btn-ghost:hover { background: var(--subtle); color: var(--ink); }
-	.btn-ghost.sm { height: 34px; font-size: 13px; padding: 0 12px; }
-	@media (max-width: 640px) { .results-head, .results-row { grid-template-columns: 40px 1fr 70px 60px; } .col-pct { display: none; } }
 </style>

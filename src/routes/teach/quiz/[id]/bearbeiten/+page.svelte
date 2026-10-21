@@ -161,8 +161,10 @@
 			<div class="teach-content">
 
 				<div class="page-header">
-					<a href="/teach/quiz" class="btn-ghost sm">← Fragensatz</a>
-					<h1 class="page-title">{quiz.title}</h1>
+					<div class="page-header-left">
+						<a href="/teach/quiz" class="breadcrumb">← Fragensätze</a>
+						<h1 class="page-title">{quiz.title}</h1>
+					</div>
 					<button
 						class="btn-primary"
 						onclick={startQuiz}
@@ -280,11 +282,14 @@
 	.title-block .sub { font-size: 15px; color: var(--ink-2); }
 	.spinner-wrap { display: grid; place-items: center; padding: 80px; }
 	.spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: tb-spin 0.8s linear infinite; }
-	.teach-main { flex: 1; display: flex; justify-content: center; padding: 44px 40px; }
+	.teach-main { flex: 1; display: flex; justify-content: center; padding: 36px 40px; }
 	@media (max-width: 767px) { .teach-main { padding: 20px 16px; } }
-	.teach-content { width: 100%; max-width: 860px; display: flex; flex-direction: column; gap: 24px; }
-	.page-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-	.page-title { flex: 1; font-size: 28px; font-weight: 600; letter-spacing: -0.015em; }
+	.teach-content { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 22px; }
+	.page-header { display: flex; align-items: flex-end; gap: 16px; }
+	.page-header-left { flex: 1; display: flex; flex-direction: column; }
+	.breadcrumb { font-size: 14px; color: var(--ink-3); text-decoration: none; }
+	.breadcrumb:hover { color: var(--ink); }
+	.page-title { font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: -0.01em; }
 	.error-box { padding: 14px; border-radius: 8px; background: var(--danger-soft); border: 1px solid var(--danger-line); color: var(--danger-ink); font-size: 14px; }
 	/* Fragenliste */
 	.q-list { display: flex; flex-direction: column; gap: 10px; }

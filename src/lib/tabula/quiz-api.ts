@@ -180,7 +180,7 @@ export type WsInMsg =
   | { type: 'error'; code: string; message: string }
   | { type: 'joined'; role: 'teacher' | 'student'; room_id?: number; display_name?: string; participant_id?: number }
   | { type: 'lobby_state'; participants: string[]; count: number; expected?: number }
-  | { type: 'question_start'; question_index: number; question_id: number; question: string; code?: string; options: string[]; time_limit: number; started_at: number }
+  | { type: 'question_start'; question_index: number; question_total: number; question_id: number; question: string; code?: string; options: string[]; time_limit: number; started_at: number }
   | { type: 'answer_ack'; correct: boolean; points: number; total_points: number }
   | { type: 'reveal'; correct_idx: number; answer_counts: number[]; correct_ratio: number }
   | { type: 'leaderboard'; rankings: { rank: number; display_name: string; points: number }[] }

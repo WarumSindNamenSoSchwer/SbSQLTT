@@ -22,7 +22,7 @@
  * NACHRICHTEN SERVER -> CLIENT (alle)
  *   { type: "lobby_state", participants: string[], count: number,
  *           expected?: number }       expected = Anzahl Klassenmitglieder (nur bei Klassensitzung)
- *   { type: "question_start", question_index: number, question_id: number,
+ *   { type: "question_start", question_index: number, question_total: number, question_id: number,
  *           question: string, code?: string, options: string[], time_limit: number,
  *           started_at: number }
  *   { type: "answer_progress", count: number, total: number }
@@ -257,6 +257,7 @@ function handleNextQuestion(db: Db, roomId: number, room: RoomState): void {
   const msg: Record<string, unknown> = {
     type: 'question_start',
     question_index: newIndex,
+    question_total: questions.length,
     question_id: nextQuestion.id,
     question: nextQuestion.question,
     options: JSON.parse(nextQuestion.options) as string[],
