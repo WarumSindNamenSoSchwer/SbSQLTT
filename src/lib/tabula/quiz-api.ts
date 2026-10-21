@@ -139,12 +139,35 @@ export function apiQuizDeleteQuestion(quizId: number, questionId: number): Promi
   return request('DELETE', `/teacher/quizzes/${quizId}/questions/${questionId}`);
 }
 
-/** Sitzung starten */
+/** Sitzung starten (eigener Fragensatz) */
 export function apiQuizStart(
   quizId: number,
   opts?: { class_id?: number },
 ): Promise<QuizSession> {
-  return request('POST', `/teacher/quizzes/${quizId}/sessions`, opts ?? {});
+  return request('POST', '/teacher/quiz-sessions', { quiz_id: quizId, ...opts });
+}
+
+// ---------------------------------------------------------------------------
+// Quiz-Bank (automatische Fragensaetze)
+// ---------------------------------------------------------------------------
+
+export type QuizBankEntry = {
+  lesson_id: string;
+  title: string;
+  question_count: number;
+};
+
+/** Liste aller Lektionen mit Fragensatz aus der Quiz-Bank */
+export function apiQuizBankList(): Promise<QuizBankEntry[]> {
+  return request('GET', '/teacher/quiz-bank');
+}
+
+/** Auto-Quiz aus Bank starten */
+export function apiQuizStartFromBank(
+  lessonId: string,
+  opts?: { class_id?: number },
+): Promise<QuizSession> {
+  return request('POST', '/teacher/quiz-sessions', { bank_lesson_id: lessonId, ...opts });
 }
 
 /** Sitzung beenden */

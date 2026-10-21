@@ -6,7 +6,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && cp src/lesson-steps.json dist/lesson-steps.json",
+    "build": "tsc && cp src/lesson-steps.json dist/lesson-steps.json && cp src/quiz-bank.json dist/quiz-bank.json",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "test": "vitest run",

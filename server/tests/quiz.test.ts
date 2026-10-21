@@ -1052,3 +1052,126 @@ describe('Quiz WebSocket: Anmeldung per HttpOnly-Cookie', () => {
     await teardown(app, db)
   })
 })
+
+// ---------------------------------------------------------------------------
+// Quiz-Bank: automatische Fragensaetze
+// ---------------------------------------------------------------------------
+
+describe('Quiz-Bank: GET /api/teacher/quiz-bank', () => {
+  it('liefert 10 Lektionen mit je 8 Fragen', async () => {
+    const { app, db } = await setup()
+    const token = await registerTeacher(app)
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/teacher/quiz-bank',
+      headers: { cookie: `tabula_session=${token}` },
+    })
+    expect(res.statusCode).toBe(200)
+    const bank = JSON.parse(res.body) as { lesson_id: string; title: string; question_count: number }[]
+    expect(bank.length).toBe(10)
+    for (const entry of bank) {
+      expect(entry.question_count).toBe(8)
+      expect(typeof entry.title).toBe('string')
+    }
+
+    await teardown(app, db)
+  })
+
+  it('nicht angemeldete Anfrage wird abgelehnt', async () => {
+    const { app, db } = await setup()
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/teacher/quiz-bank',
+    })
+    expect(res.statusCode).toBe(401)
+
+    await teardown(app, db)
+  })
+})
+
+describe('Quiz-Bank: POST /api/teacher/quiz-sessions mit bank_lesson_id', () => {
+  it('Lehrkraft startet Auto-Quiz, Fragen kommen an', async () => {
+    const { app, db, wsUrl } = await setup()
+    const token = await registerTeacher(app)
+
+    // Auto-Session starten
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/teacher/quiz-sessions',
+      headers: { 'content-type': 'application/json', cookie: `tabula_session=${token}` },
+      body: JSON.stringify({ bank_lesson_id: 'joins' }),
+    })
+    expect(res.statusCode).toBe(201)
+    const { id, pin } = JSON.parse(res.body) as { id: number; pin: string }
+    expect(id).toBeGreaterThan(0)
+    expect(pin).toMatch(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/)
+
+    // Fragensatz wurde mit source='auto' angelegt
+    const qSet = db.prepare(
+      "SELECT id, source FROM quiz_question_sets WHERE teacher_id = (SELECT id FROM users WHERE username = 'lehrer1') AND source = 'auto'"
+    ).get() as { id: number; source: string } | undefined
+    expect(qSet).toBeDefined()
+    expect(qSet?.source).toBe('auto')
+
+    // 8 Fragen vorhanden
+    const qCount = (db.prepare('SELECT COUNT(*) AS cnt FROM quiz_questions WHERE set_id = ?').get(qSet!.id) as { cnt: number }).cnt
+    expect(qCount).toBe(8)
+
+    // Zweiter Aufruf: gleicher Satz wird wiederverwendet (kein Duplikat)
+    const res2 = await app.inject({
+      method: 'POST',
+      url: '/api/teacher/quiz-sessions',
+      headers: { 'content-type': 'application/json', cookie: `tabula_session=${token}` },
+      body: JSON.stringify({ bank_lesson_id: 'joins' }),
+    })
+    expect(res2.statusCode).toBe(201)
+    const setCount = (db.prepare(
+      "SELECT COUNT(*) AS cnt FROM quiz_question_sets WHERE source = 'auto' AND title = 'Tabellen verbinden mit JOIN'"
+    ).get() as { cnt: number }).cnt
+    expect(setCount).toBe(1)
+
+    await teardown(app, db)
+  })
+
+  it('fremde Lehrkraft sieht keine Auto-Saetze anderer', async () => {
+    const { app, db } = await setup()
+    const token1 = await registerTeacher(app, 'lehrer1')
+    const token2 = await registerTeacher(app, 'lehrer2')
+
+    // Lehrer 1 legt Auto-Satz an
+    await app.inject({
+      method: 'POST',
+      url: '/api/teacher/quiz-sessions',
+      headers: { 'content-type': 'application/json', cookie: `tabula_session=${token1}` },
+      body: JSON.stringify({ bank_lesson_id: 'select-basics' }),
+    })
+
+    // Lehrer 2 listet eigene Fragensaetze
+    const listRes = await app.inject({
+      method: 'GET',
+      url: '/api/teacher/quizzes',
+      headers: { cookie: `tabula_session=${token2}` },
+    })
+    const list = JSON.parse(listRes.body) as { id: number }[]
+    expect(list.length).toBe(0)
+
+    await teardown(app, db)
+  })
+
+  it('ungueltige lesson_id liefert 404', async () => {
+    const { app, db } = await setup()
+    const token = await registerTeacher(app)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/teacher/quiz-sessions',
+      headers: { 'content-type': 'application/json', cookie: `tabula_session=${token}` },
+      body: JSON.stringify({ bank_lesson_id: 'nichtvorhanden' }),
+    })
+    expect(res.statusCode).toBe(404)
+
+    await teardown(app, db)
+  })
+})

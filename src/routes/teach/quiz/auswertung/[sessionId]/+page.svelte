@@ -87,7 +87,7 @@
 					<span class="breadcrumb">Quiz · {result.quiz_title} · {fmtDate(result.ended_at).replace('Quiz · ', '').split(' · ').slice(1).join(' · ')}</span>
 					<h1 class="page-title">Auswertung</h1>
 					{#if avgCorrect() !== null}
-						<p class="page-sub">{result.participants.length} Teilnehmende · im Schnitt {avgCorrect()} % richtig. Schwierigste Fragen zuerst.</p>
+						<p class="page-sub">{result.participants.length} Schüler · im Schnitt {avgCorrect()} % richtig. Schwierigste Fragen zuerst.</p>
 					{/if}
 				</div>
 

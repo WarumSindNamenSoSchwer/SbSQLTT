@@ -15,8 +15,49 @@
 import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import { randomBytes } from 'node:crypto'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Db } from '../db.js'
 import { validateSession, SESSION_COOKIE_NAME } from '../session.js'
+
+// ---------------------------------------------------------------------------
+// Quiz-Bank (aus quiz-bank.json, generiert von tools/gen-quiz-bank.mjs)
+// ---------------------------------------------------------------------------
+
+const _require = createRequire(import.meta.url)
+const _quizBankPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'quiz-bank.json')
+
+interface QuizBankQuestion {
+  question: string
+  code?: string
+  options: [string, string, string, string]
+  correct_idx: 0 | 1 | 2 | 3
+  time_limit: number
+}
+
+interface QuizBankEntry {
+  lesson_id: string
+  title: string
+  questions: QuizBankQuestion[]
+}
+
+let _QUIZ_BANK: QuizBankEntry[] | null = null
+
+function getQuizBank(): QuizBankEntry[] {
+  if (!_QUIZ_BANK) {
+    try {
+      _QUIZ_BANK = _require(_quizBankPath) as QuizBankEntry[]
+    } catch {
+      _QUIZ_BANK = []
+    }
+  }
+  return _QUIZ_BANK
+}
+
+function getQuizBankEntry(lessonId: string): QuizBankEntry | undefined {
+  return getQuizBank().find(e => e.lesson_id === lessonId)
+}
 
 // ---------------------------------------------------------------------------
 // PIN-Erzeugung (ohne verwechselbare Zeichen, wie JOIN_CODE in teacher.ts)
@@ -87,9 +128,13 @@ const patchQuizSchema = z.object({
 })
 
 const startSessionSchema = z.object({
-  quiz_id: z.number().int().positive(),
+  quiz_id: z.number().int().positive().optional(),
+  /** Automatischer Fragensatz aus der Bank: lesson_id */
+  bank_lesson_id: z.string().min(1).max(64).optional(),
   /** Optionaler Klassen-Bezug (K4) */
   class_id: z.number().int().positive().optional(),
+}).refine(d => d.quiz_id !== undefined || d.bank_lesson_id !== undefined, {
+  message: 'quiz_id oder bank_lesson_id muss angegeben werden.',
 })
 
 // ---------------------------------------------------------------------------
@@ -287,10 +332,30 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
   })
 
   // ==========================================================================
+  // Quiz-Bank (automatische Fragensaetze)
+  // ==========================================================================
+
+  // GET /api/teacher/quiz-bank - Liste aller Lektionen mit Fragensatz
+  fastify.get('/quiz-bank', async (req, reply) => {
+    const teacher = await requireTeacher(db, req, reply)
+    if (!teacher) return
+
+    const bank = getQuizBank()
+    return bank.map(entry => ({
+      lesson_id: entry.lesson_id,
+      title: entry.title,
+      question_count: entry.questions.length,
+    }))
+  })
+
+  // ==========================================================================
   // Quiz-Sitzungen (quiz-sessions)
   // ==========================================================================
 
   // POST /api/teacher/quiz-sessions - Neue Sitzung starten
+  // Akzeptiert quiz_id (eigener Satz) ODER bank_lesson_id (automatisch aus Bank).
+  // Bei bank_lesson_id wird ein Fragensatz mit source='auto' angelegt (oder ein
+  // bereits vorhandener dieser Lehrkraft fuer dieselbe Lektion wiederverwendet).
   fastify.post('/quiz-sessions', async (req, reply) => {
     const teacher = await requireTeacher(db, req, reply)
     if (!teacher) return
@@ -299,14 +364,53 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
     if (!parsed.success) {
       return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
-    const { quiz_id, class_id } = parsed.data
+    const { quiz_id, bank_lesson_id, class_id } = parsed.data
 
-    // Eigentuemerschaft pruefen
-    const quiz = db.prepare(
-      'SELECT id, teacher_id FROM quiz_question_sets WHERE id = ?'
-    ).get(quiz_id) as QuizRow | undefined
-    if (!quiz || quiz.teacher_id !== teacher.user_id) {
-      return reply.code(404).send({ fehler: 'Fragensatz nicht gefunden.' })
+    let effectiveQuizId: number
+
+    if (bank_lesson_id !== undefined) {
+      // Automatischer Fragensatz: Bank-Eintrag laden
+      const bankEntry = getQuizBankEntry(bank_lesson_id)
+      if (!bankEntry) {
+        return reply.code(404).send({ fehler: 'Kein Fragensatz fuer diese Lektion.' })
+      }
+
+      // Pruefen ob fuer diese Lehrkraft bereits ein auto-Satz fuer diese Lektion existiert
+      const existing = db.prepare(
+        "SELECT id FROM quiz_question_sets WHERE teacher_id = ? AND source = 'auto' AND title = ? ORDER BY created_at DESC LIMIT 1"
+      ).get(teacher.user_id, bankEntry.title) as { id: number } | undefined
+
+      if (existing) {
+        effectiveQuizId = existing.id
+      } else {
+        // Neuen Fragensatz aus der Bank anlegen
+        effectiveQuizId = db.transaction(() => {
+          const setResult = db.prepare(
+            "INSERT INTO quiz_question_sets (teacher_id, title, source) VALUES (?, ?, 'auto')"
+          ).run(teacher.user_id, bankEntry.title)
+          const setId = setResult.lastInsertRowid as number
+
+          for (let i = 0; i < bankEntry.questions.length; i++) {
+            const q = bankEntry.questions[i]
+            db.prepare(
+              'INSERT INTO quiz_questions (set_id, position, question, code, options, correct_idx, time_limit) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            ).run(setId, i + 1, q.question, q.code ?? null, JSON.stringify(q.options), q.correct_idx, q.time_limit)
+          }
+          return setId
+        })()
+      }
+    } else {
+      // Eigener Fragensatz: Eigentuemer pruefen
+      if (quiz_id === undefined) {
+        return reply.code(400).send({ fehler: 'quiz_id oder bank_lesson_id muss angegeben werden.' })
+      }
+      const quiz = db.prepare(
+        'SELECT id, teacher_id FROM quiz_question_sets WHERE id = ?'
+      ).get(quiz_id) as QuizRow | undefined
+      if (!quiz || quiz.teacher_id !== teacher.user_id) {
+        return reply.code(404).send({ fehler: 'Fragensatz nicht gefunden.' })
+      }
+      effectiveQuizId = quiz.id
     }
 
     // Optionale Klasse pruefen
@@ -332,14 +436,14 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
       }
     }
     if (!pin) {
-      return reply.code(503).send({ fehler: 'Kein PIN verfügbar. Bitte erneut versuchen.' })
+      return reply.code(503).send({ fehler: 'Kein PIN verfuegbar. Bitte erneut versuchen.' })
     }
 
     // Sitzung anlegen (class_id kann NULL sein - Gast-Modus)
     const roomResult = db.prepare(
       `INSERT INTO quiz_rooms (class_id, set_id, state, pin, current_q)
        VALUES (?, ?, 'lobby', ?, 0)`
-    ).run(class_id ?? null, quiz_id, pin)
+    ).run(class_id ?? null, effectiveQuizId, pin)
 
     const roomId = roomResult.lastInsertRowid as number
     return reply.code(201).send({ id: roomId, pin })

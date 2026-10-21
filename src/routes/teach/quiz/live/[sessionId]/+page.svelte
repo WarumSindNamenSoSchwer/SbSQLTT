@@ -350,7 +350,7 @@
 	{:else if phase === 'ended'}
 		<!-- E5-B Ende · Podium -->
 		<div class="end-header">
-			<h2 class="end-title">Geschafft! {totalQuestions || qTotal} Fragen, {finalRankings.length} Teilnehmende</h2>
+			<h2 class="end-title">Geschafft! {totalQuestions || qTotal} Fragen, {finalRankings.length} Schüler</h2>
 			<a href="/teach/quiz/auswertung/{sessionId}" class="btn-auswertung">Auswertung</a>
 		</div>
 		<Edgar pose="trophy" style="width:260px;height:234px;display:block;margin:0 auto" />

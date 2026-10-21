@@ -10,7 +10,10 @@
 		apiQuizList,
 		apiQuizDelete,
 		apiQuizStart,
+		apiQuizBankList,
+		apiQuizStartFromBank,
 		type QuizSet,
+		type QuizBankEntry,
 	} from '$lib/tabula/quiz-api.js';
 
 	let dark = $state(false);
@@ -20,6 +23,13 @@
 	let busy = $state<number | null>(null);
 	// Aktiver Tab
 	let activeTab = $state<'auto' | 'mine'>('auto');
+
+	// Auto-Tab
+	let bank = $state<QuizBankEntry[]>([]);
+	let bankLoading = $state(false);
+	let bankBusy = $state<string | null>(null);  // lesson_id des laufenden Starts
+	// Vorschau-Modal
+	let previewEntry = $state<QuizBankEntry | null>(null);
 
 	onMount(() => {
 		const sync = () => (dark = !document.documentElement.classList.contains('light'));
@@ -32,6 +42,7 @@
 			if (!session.user) { goto('/login?redirect=/teach/quiz'); return; }
 			if (session.user.role !== 'teacher') { goto('/teach'); return; }
 			load();
+			loadBank();
 		};
 		check();
 		return () => mo.disconnect();
@@ -46,6 +57,29 @@
 			error = e instanceof Error ? e.message : 'Fehler beim Laden.';
 		} finally {
 			loading = false;
+		}
+	}
+
+	async function loadBank() {
+		bankLoading = true;
+		try {
+			bank = await apiQuizBankList();
+		} catch {
+			// Bank-Ladefehler still ignorieren - Fallback auf leere Liste
+		} finally {
+			bankLoading = false;
+		}
+	}
+
+	async function startFromBank(entry: QuizBankEntry) {
+		bankBusy = entry.lesson_id;
+		error = null;
+		try {
+			const s = await apiQuizStartFromBank(entry.lesson_id);
+			goto(`/teach/quiz/live/${s.session_id}`);
+		} catch (e) {
+			error = e instanceof Error ? e.message : 'Start fehlgeschlagen.';
+			bankBusy = null;
 		}
 	}
 
@@ -86,9 +120,15 @@
 		const mins = Math.round(count * 0.75);
 		return `ca. ${mins} min`;
 	}
+
+	// Tastatur: Escape schliesst Modal
+	function onKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') previewEntry = null;
+	}
 </script>
 
 <svelte:head><title>Quiz starten · Tabula</title></svelte:head>
+<svelte:window onkeydown={onKeydown} />
 
 <div class="tb page">
 	<TopNav {dark} />
@@ -147,41 +187,51 @@
 				</div>
 
 				{#if activeTab === 'auto'}
-					<!-- Vorschlag-Box mit Edgar (Quiz-Pose) -->
-					<div class="suggestion-box">
-						<Edgar pose="quiz" style="width:64px;height:58px;flex:none" />
-						<div class="suggestion-info">
-							<span class="suggestion-label">VORSCHLAG ZUR FOKUS-LEKTION</span>
-							<span class="suggestion-title">Tabellen verbinden mit JOIN</span>
-							<span class="suggestion-meta">8 Fragen · ca. 6 min</span>
-						</div>
-						<button class="btn-vorschau-link">Vorschau</button>
-						<button class="btn-start-primary">▶ Starten</button>
-					</div>
 
-					<!-- Liste mit allen automatischen Fragensätzen -->
-					{#if loading}
+					{#if bankLoading}
 						<div class="spinner-wrap"><span class="spinner"></span></div>
-					{:else if quizzes.length === 0}
+					{:else if bank.length === 0}
 						<div class="empty-state">
-							<span class="empty-title">Noch kein Fragensatz</span>
-							<p class="empty-body">Erstellen Sie Ihren ersten Fragensatz.</p>
-							<button class="btn-primary mt6" onclick={() => goto('/teach/quiz/neu')}>+ Neuer Fragensatz</button>
+							<span class="empty-title">Keine Fragensätze verfügbar</span>
+							<p class="empty-body">Die automatischen Fragensätze konnten nicht geladen werden.</p>
 						</div>
 					{:else}
+						<!-- Vorschlag-Box: erster Eintrag als Empfehlung -->
+						{@const suggestion = bank[0]}
+						<div class="suggestion-box">
+							<Edgar pose="quiz" style="width:64px;height:58px;flex:none" />
+							<div class="suggestion-info">
+								<span class="suggestion-label">VORSCHLAG</span>
+								<span class="suggestion-title">{suggestion.title}</span>
+								<span class="suggestion-meta">{suggestion.question_count} Fragen · {estTime(suggestion.question_count)}</span>
+							</div>
+							<button
+								class="btn-vorschau-link"
+								onclick={() => previewEntry = suggestion}
+							>Vorschau</button>
+							<button
+								class="btn-start-primary"
+								disabled={bankBusy === suggestion.lesson_id}
+								onclick={() => startFromBank(suggestion)}
+							>{bankBusy === suggestion.lesson_id ? '…' : '▶ Starten'}</button>
+						</div>
+
+						<!-- Alle Lektionen -->
 						<div class="quiz-table">
-							{#each quizzes as q (q.id)}
+							{#each bank as entry, i (entry.lesson_id)}
 								<div class="quiz-row">
-									<span class="row-num">{quizzes.indexOf(q) + 1}</span>
-									<span class="row-title">{q.title}</span>
-									<span class="row-meta">{q.question_count} {q.question_count === 1 ? 'Frage' : 'Fragen'} · {estTime(q.question_count)}</span>
-									<button class="btn-row-link" onclick={() => {}}>Vorschau</button>
-									<button class="btn-row-link" onclick={() => goto(`/teach/quiz/${q.id}/bearbeiten`)}>Kopieren &amp; bearbeiten</button>
+									<span class="row-num">{i + 1}</span>
+									<span class="row-title">{entry.title}</span>
+									<span class="row-meta">{entry.question_count} Fragen · {estTime(entry.question_count)}</span>
+									<button
+										class="btn-row-link"
+										onclick={() => previewEntry = entry}
+									>Vorschau</button>
 									<button
 										class="btn-starten"
-										onclick={() => startQuiz(q)}
-										disabled={busy === q.id || q.question_count === 0}
-									>{busy === q.id ? '…' : 'Starten'}</button>
+										disabled={bankBusy === entry.lesson_id}
+										onclick={() => startFromBank(entry)}
+									>{bankBusy === entry.lesson_id ? '…' : 'Starten'}</button>
 								</div>
 							{/each}
 						</div>
@@ -225,6 +275,29 @@
 		</main>
 	{/if}
 </div>
+
+<!-- Vorschau-Modal -->
+{#if previewEntry}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="modal-backdrop" onclick={() => previewEntry = null}>
+		<div class="modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Vorschau: {previewEntry.title}" tabindex="-1">
+			<div class="modal-header">
+				<h2 class="modal-title">{previewEntry.title}</h2>
+				<button class="modal-close" onclick={() => previewEntry = null} aria-label="Schließen">✕</button>
+			</div>
+			<p class="modal-meta">{previewEntry.question_count} Fragen · {estTime(previewEntry.question_count)}</p>
+			<p class="modal-hint">Alle Fragen sind Multiple Choice mit 20 Sekunden Antwortzeit.</p>
+			<div class="modal-actions">
+				<button class="btn-modal-secondary" onclick={() => previewEntry = null}>Abbrechen</button>
+				<button
+					class="btn-modal-primary"
+					disabled={bankBusy === previewEntry.lesson_id}
+					onclick={() => { const e = previewEntry!; previewEntry = null; startFromBank(e); }}
+				>{bankBusy === previewEntry?.lesson_id ? '…' : '▶ Starten'}</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <style>
 	.page { display: flex; flex-direction: column; min-height: 100svh; }
@@ -312,4 +385,42 @@
 	.mt6 { margin-top: 6px; }
 	.btn-primary { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; }
 	.btn-primary:hover { background: var(--accent-strong); }
+	.btn-start-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+	/* Vorschau-Modal */
+	.modal-backdrop {
+		position: fixed; inset: 0; z-index: 100;
+		background: rgba(0,0,0,0.4); backdrop-filter: blur(2px);
+		display: flex; align-items: center; justify-content: center; padding: 24px;
+	}
+	.modal {
+		width: 100%; max-width: 440px;
+		background: var(--surface); border-radius: 12px;
+		border: 1px solid var(--line); padding: 28px 28px 24px;
+		display: flex; flex-direction: column; gap: 12px;
+	}
+	.modal-header { display: flex; align-items: flex-start; gap: 12px; }
+	.modal-title { flex: 1; font-size: 20px; font-weight: 600; line-height: 28px; }
+	.modal-close {
+		width: 28px; height: 28px; border-radius: 6px; border: none;
+		background: var(--subtle); color: var(--ink-2); cursor: pointer;
+		font-size: 14px; display: grid; place-items: center; flex: none;
+	}
+	.modal-close:hover { background: var(--line); }
+	.modal-meta { font-size: 14px; color: var(--ink-2); }
+	.modal-hint { font-size: 14px; color: var(--ink-3); line-height: 22px; }
+	.modal-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 8px; }
+	.btn-modal-secondary {
+		height: 38px; padding: 0 16px; border-radius: 6px;
+		border: 1px solid var(--line-strong); background: var(--surface);
+		font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+	}
+	.btn-modal-secondary:hover { background: var(--subtle); }
+	.btn-modal-primary {
+		height: 38px; padding: 0 18px; border-radius: 6px;
+		border: none; background: var(--accent); color: #fff;
+		font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+	}
+	.btn-modal-primary:hover:not(:disabled) { background: var(--accent-strong); }
+	.btn-modal-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 </style>
