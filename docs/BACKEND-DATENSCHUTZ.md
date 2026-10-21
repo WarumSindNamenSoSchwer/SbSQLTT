@@ -16,7 +16,18 @@ Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geände
 
 ## K3 Passwörter
 - Speicherung nur als Hash mit Argon2id (mind. 19 MiB, 2 Iterationen, Parallelität 1) und Salt, wie OWASP Password Storage Cheat Sheet.
+- Eingaben in den Hash (Vorgabe Muri, 21.10.2026):
+  - Passwort (Klartext, nur im Arbeitsspeicher),
+  - **zufälliger Salt** je Konto (16 Byte, kryptografisch zufällig) – bleibt Pflicht, siehe Begründung,
+  - **Benutzername** (klein geschrieben, Unicode-NFC) und **Erstellungstag des Kontos** (UTC, `YYYY-MM-DD`) als Argon2-Parameter „associated data“: `ad = "tabula:v1:" + benutzername + ":" + erstellungstag`.
+- Gespeichert werden Hash, Salt und Parameter (PHC-Format). Erstellungstag liegt ohnehin im Konto.
+- Folgen:
+  - Ein kopierter Hash passt nur zu genau diesem Konto (anderer Benutzername oder Tag = ungültig).
+  - **Benutzername ändern** geht nur mit Eingabe des aktuellen Passworts, dann wird neu gehasht.
+  - Lehrkraft setzt Passwort eines Schülers zurück: neuer Hash mit demselben Benutzernamen und Tag.
+- Begründung, warum der zufällige Salt bleibt: Benutzername + Tag sind vorhersehbar. Allein als Salt könnte ein Angreifer für bekannte Konten vorab rechnen. Als zusätzliche Eingabe schaden sie nicht und binden den Hash an das Konto.
 - Klartext-Passwörter werden nie gespeichert oder protokolliert.
+- Test: gleicher Benutzername + Passwort an zwei Tagen ergibt verschiedene Hashes; Hash von Konto A schlägt bei Konto B fehl; Umbenennen ohne Passwort wird abgelehnt.
 
 ## K4 Klassen und Lernfortschritt
 - Beitritt nur per Klassencode oder QR-Code, durch Handlung des Schülers.

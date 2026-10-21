@@ -154,7 +154,7 @@ export const SECTIONS: Section[] = [
 			{
 				list: [
 					'Benutzername (zum Anmelden) und Anzeigename (sieht deine Lehrkraft). Beides darf ein ausgedachter Name sein.',
-					'Passwort, nur als nicht umkehrbarer Hash (Argon2id mit Salt). Dein Passwort selbst kennen wir nicht.',
+					'Passwort, nur als nicht umkehrbarer Hash (Argon2id mit zufälligem Salt, zusätzlich an Benutzername und Erstellungstag gebunden). Dein Passwort selbst kennen wir nicht.',
 					'Freiwillig: E-Mail-Adresse, nur um ein vergessenes Passwort zurückzusetzen.',
 					'Zeitpunkt der Registrierung und der letzten Anmeldung.'
 				],
@@ -398,7 +398,7 @@ export const SOURCES: Source[] = [
 	// Verbindliche Vorgaben für Konten, Klassen und Quiz (docs/BACKEND-DATENSCHUTZ.md); Freigabe-Checkliste dort
 	{ id: 'K1', label: 'docs/BACKEND-DATENSCHUTZ.md K1: Schülerkonto: Pflichtfelder Benutzername, Anzeigename, Passwort; E-Mail und Klassencode optional', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
 	{ id: 'K2', label: 'docs/BACKEND-DATENSCHUTZ.md K2: Lehrkraftkonto: Name, E-Mail, Passwort, Nutzungsbedingungen; Schule optional', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
-	{ id: 'K3', label: 'docs/BACKEND-DATENSCHUTZ.md K3: Passwörter nur als Argon2id-Hash mit Salt, nie im Klartext gespeichert oder protokolliert', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
+	{ id: 'K3', label: 'docs/BACKEND-DATENSCHUTZ.md K3: Passwörter nur als Argon2id-Hash mit Salt, gebunden an Benutzername und Erstellungstag, nie im Klartext', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
 	{ id: 'K4', label: 'docs/BACKEND-DATENSCHUTZ.md K4: Klassen und Fortschritt: Beitritt per Code/QR, gespeicherte Felder, nur letzte Abfrage, Sichtbarkeit nur Lehrkraft, einmalige Übernahme des Browser-Fortschritts', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
 	{ id: 'K5', label: 'docs/BACKEND-DATENSCHUTZ.md K5: Live-Quiz: gespeicherte Daten, Rangliste, Löschung 24 h nach Ende, WebSocket zum eigenen Server', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
 	{ id: 'K6', label: 'docs/BACKEND-DATENSCHUTZ.md K6: Ein Cookie tabula_session (HttpOnly, Secure, SameSite=Lax, 30 Tage), erst beim Anmelden', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
