@@ -30,14 +30,16 @@ stamp=$(date -u +%Y-%m-%d)
 tmp=$(mktemp -p /dev/shm tabula-backup.XXXXXX)
 trap 'rm -f "$tmp"' EXIT
 
-# Schnappschuss im Container nach /tmp (tmpfs), dann herauskopieren und dort löschen
+# Schnappschuss im Container nach /tmp (tmpfs), per Pipe herausholen (docker cp sieht tmpfs nicht)
+# und dort sofort löschen
 docker exec "$CONTAINER" node -e "
   const D = require('better-sqlite3');
   const db = new D(process.env.DB_PATH || '/data/tabula.db', { readonly: true });
   db.backup('/tmp/snapshot.db').then(() => { db.close(); }).catch((e) => { console.error(e.message); process.exit(1); });
 "
-docker cp "$CONTAINER:/tmp/snapshot.db" "$tmp" >/dev/null
+docker exec "$CONTAINER" cat /tmp/snapshot.db > "$tmp"
 docker exec "$CONTAINER" rm -f /tmp/snapshot.db
+head -c 16 "$tmp" | grep -q "SQLite format 3" || { echo "Schnappschuss ist keine SQLite-Datei" >&2; exit 1; }
 
 age -R "$RECIPIENTS" -o "$BACKUP_DIR/tabula-$stamp.db.age" "$tmp"
 chmod 600 "$BACKUP_DIR/tabula-$stamp.db.age"
