@@ -30,4 +30,4 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
-Sitemap: https://sbsqltt.jmestudio.de/sitemap.xml
+Sitemap: https://www.tabulasql.de/sitemap.xml

@@ -8,20 +8,20 @@
 > server. Optional teacher dashboard for class management, student progress, and
 > assignment scheduling.
 
-Hosted at https://sbsqltt.jmestudio.de. Source: https://github.com/WarumSindNamenSoSchwer/SbSQLTT (AGPL-3.0). Status: Pre-MVP / public alpha (v0.4).
+Hosted at https://www.tabulasql.de. Source: https://github.com/WarumSindNamenSoSchwer/SbSQLTT (AGPL-3.0). Status: Pre-MVP / public alpha (v0.4).
 
 ## Project pages
 
-- [Landing page](https://sbsqltt.jmestudio.de/): pitch, current lesson preview, contact for teachers.
-- [Lesson catalog](https://sbsqltt.jmestudio.de/learn): three tracks (Anfänger, Fortgeschritten, Profi), 14 planned lessons.
-- [Sample lesson: Mit WHERE filtern](https://sbsqltt.jmestudio.de/learn/beginner/where-filters): the one fleshed-out lesson in v0.4 — narrative + interactive query editor.
-- [SQL reference (stub)](https://sbsqltt.jmestudio.de/docs): planned topic outline; content fills in over time.
-- [Hinweise für Lehrkräfte](https://sbsqltt.jmestudio.de/fuer-lehrkraefte): teacher-facing notes on classroom use, data protection, technical requirements.
+- [Landing page](https://www.tabulasql.de/): pitch, current lesson preview, contact for teachers.
+- [Lesson catalog](https://www.tabulasql.de/learn): three tracks (Anfänger, Fortgeschritten, Profi), 14 planned lessons.
+- [Sample lesson: Mit WHERE filtern](https://www.tabulasql.de/learn/beginner/where-filters): the one fleshed-out lesson in v0.4 — narrative + interactive query editor.
+- [SQL reference (stub)](https://www.tabulasql.de/docs): planned topic outline; content fills in over time.
+- [Hinweise für Lehrkräfte](https://www.tabulasql.de/fuer-lehrkraefte): teacher-facing notes on classroom use, data protection, technical requirements.
 
 ## Legal
 
-- [Impressum (TMG §5)](https://sbsqltt.jmestudio.de/impressum)
-- [Datenschutzerklärung (DSGVO)](https://sbsqltt.jmestudio.de/datenschutz)
+- [Impressum (TMG §5)](https://www.tabulasql.de/impressum)
+- [Datenschutzerklärung (DSGVO)](https://www.tabulasql.de/datenschutz)
 
 ## Repository
 
