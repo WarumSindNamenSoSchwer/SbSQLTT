@@ -45,7 +45,7 @@ Die Datenschutzerklärung stützt Konten derzeit auf Art. 6 Abs. 1 lit. b DSGVO 
 ### 5. Impressum und Datenschutzerklärung
 - Reicht das Impressum einer Privatperson ohne Gewinnabsicht (Angaben nach § 5 DDG) in der jetzigen Form?
 - Gibt es Punkte in der Datenschutzerklärung, die vor dem Start der Konten angepasst werden müssen (insbesondere die Abschnitte „Konten“, „Klassen“, „Live-Quiz“, „Hinweis für Schüler und Eltern“)?
-- Nutzungsbedingungen für Lehrkräfte: Gibt es Mindestinhalte (z. B. Zusicherung, dass die Schule den Einsatz erlaubt)?
+- Nutzungsbedingungen für Lehrkräfte: Gibt es Mindestinhalte (z. B. Zusicherung, dass die Schule den Einsatz erlaubt)? Derzeit gibt es **keine** Nutzungsbedingungen; die Lehrkraft bestätigt bei der Registrierung nur, die Datenschutzhinweise gelesen zu haben (das ist bewusst keine Einwilligung). K2 sieht eine Bestätigung von Nutzungsbedingungen vor: Brauchen wir sie, und wenn ja, mit welchem Inhalt?
 
 ## Was bereits umgesetzt und geprüft ist
 Siehe Freigabe-Checkliste in `docs/BACKEND-DATENSCHUTZ.md` (Tests für Datenminimierung, Löschung, Trennung zwischen Klassen, keine IPs, keine personenbezogenen Daten in Protokollen, verschlüsselte Sicherung mit Wiederherstellungstest).

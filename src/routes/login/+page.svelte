@@ -526,7 +526,7 @@
 							<span>Ich habe die Hinweise zum Datenschutz gelesen. <a href="/datenschutz" class="link-inline">Datenschutzerklärung</a></span>
 						</div>
 						{#if regAcceptedErr}
-							<span class="field-hint err-hint" style="margin-top:-8px">Bitte stimmen Sie der Datenschutzerklärung zu.</span>
+							<span class="field-hint err-hint" style="margin-top:-8px">Bitte bestätigen Sie, dass Sie die Hinweise zum Datenschutz gelesen haben.</span>
 						{/if}
 
 						<button type="submit" class="btn-primary" disabled={busy}>
