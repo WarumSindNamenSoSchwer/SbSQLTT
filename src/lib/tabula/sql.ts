@@ -130,7 +130,7 @@ export function compare(got: Result, want: Result, ordered: boolean): Check {
 	};
 	if (missing.length) {
 		const cols = missing.join(', ');
-		return { ok: false, msg: no, sub: sameSet ? `Die Bücher stimmen. Es fehlt die Spalte ${cols}.` : `Es fehlt die Spalte ${cols}. ${rowsHint()}` };
+		return { ok: false, msg: no, sub: sameSet ? `Die Zeilen stimmen. Es fehlt die Spalte ${cols}.` : `Es fehlt die Spalte ${cols}. ${rowsHint()}` };
 	}
 	if (!sameSet) return { ok: false, msg: no, sub: rowsHint() };
 	if (extra.length) return { ok: false, msg: no, sub: `Die Spalte ${extra.join(', ')} ist zu viel.` };

@@ -404,6 +404,306 @@ const orderLimit: Lesson = {
 	done: {
 		sub: 'Du kannst Ergebnisse jetzt sortieren und begrenzen.',
 		points: ['ORDER BY sortiert.', 'ASC und DESC bestimmen die Richtung.', 'LIMIT schneidet nach n Zeilen ab.']
+	},
+	next: { id: 'aggregates', title: 'Zählen und zusammenfassen' }
+};
+
+const aggregates: Lesson = {
+	...base,
+	id: 'aggregates',
+	no: 5,
+	title: 'Zählen und zusammenfassen',
+	steps: [
+		{
+			kind: 'explain',
+			name: 'Viele Zeilen, eine Zahl',
+			type: 'Erklärung',
+			title: 'Viele Zeilen, eine Zahl',
+			paras: [
+				'Oft interessiert dich nicht jede einzelne Zeile, sondern eine Zusammenfassung: Wie viele Bücher gibt es? Wann ist das neueste erschienen?',
+				'Dafür gibt es Aggregatfunktionen. COUNT(*) zählt Zeilen, MIN und MAX finden den kleinsten und größten Wert, AVG berechnet den Durchschnitt und SUM die Summe.',
+				'Eine Aggregatfunktion macht aus vielen Zeilen eine einzige. Mit AS gibst du dem Ergebnis einen lesbaren Namen.'
+			],
+			example: 'SELECT COUNT(*) AS anzahl,\n       MIN(year) AS aeltestes,\n       MAX(year) AS neuestes\nFROM books;'
+		},
+		{
+			kind: 'example',
+			name: 'Bücher zählen',
+			type: 'Beispiel',
+			task: 'So fasst du eine ganze Tabelle in einer Zeile zusammen.',
+			taskSub: 'Führe die Abfrage aus und lies die drei Werte ab.',
+			code: 'SELECT COUNT(*) AS anzahl,\n       MIN(year) AS aeltestes,\n       MAX(year) AS neuestes\nFROM books;',
+			msg: (r) => `${r.rows[0]?.[0]} Bücher, erschienen zwischen ${r.rows[0]?.[1]} und ${r.rows[0]?.[2]}.`,
+			sub: 'Ergänze AVG(year) AS schnitt und führe die Abfrage noch einmal aus.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Neue Bücher zählen',
+			type: 'Übung',
+			task: 'Wie viele Bücher sind nach 2010 erschienen?',
+			taskSub: 'Gib nur die Anzahl aus und nenne die Spalte anzahl.',
+			starter: 'SELECT \nFROM books\nWHERE year > 2010;',
+			solution: 'SELECT COUNT(*) AS anzahl\nFROM books\nWHERE year > 2010;',
+			ordered: false,
+			okMsg: 'Richtig! Drei Bücher.',
+			okSub: 'WHERE filtert zuerst, dann zählt COUNT.',
+			tip: 'Hinter SELECT gehört COUNT(*) AS anzahl. Die Bedingung steht schon da.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Durchschnittsjahr',
+			type: 'Übung',
+			task: 'In welchem Jahr sind die Bücher im Schnitt erschienen?',
+			taskSub: 'Nenne die Spalte schnitt.',
+			starter: 'SELECT \nFROM books;',
+			solution: 'SELECT AVG(year) AS schnitt\nFROM books;',
+			ordered: false,
+			okMsg: 'Richtig! Im Schnitt 2011.',
+			okSub: 'AVG berechnet den Durchschnitt einer Spalte.',
+			tip: 'Die Funktion für den Durchschnitt heißt AVG. In die Klammern gehört die Spalte year.'
+		},
+		{
+			kind: 'summary',
+			name: 'Fazit',
+			type: 'Zusammenfassung',
+			title: 'Das hast du gelernt',
+			points: [
+				'COUNT(*) zählt Zeilen.',
+				'MIN und MAX finden den kleinsten und größten Wert.',
+				'AVG berechnet den Durchschnitt, SUM die Summe.',
+				'WHERE filtert, bevor zusammengefasst wird.'
+			],
+			real: 'Dashboards zeigen fast nur Aggregate: Nutzer heute, Umsatz pro Monat, durchschnittliche Ladezeit. Jede dieser Zahlen ist eine Abfrage mit COUNT, SUM oder AVG.'
+		}
+	],
+	done: {
+		sub: 'Du kannst jetzt ganze Tabellen in einer Zahl zusammenfassen.',
+		points: ['COUNT zählt Zeilen.', 'MIN, MAX und AVG fassen Werte zusammen.', 'Erst WHERE, dann zusammenfassen.']
+	},
+	next: { id: 'group-by', title: 'Gruppieren mit GROUP BY' }
+};
+
+const groupBy: Lesson = {
+	...base,
+	id: 'group-by',
+	no: 6,
+	title: 'Gruppieren mit GROUP BY',
+	steps: [
+		{
+			kind: 'explain',
+			name: 'Zusammenfassen pro Gruppe',
+			type: 'Erklärung',
+			title: 'Zusammenfassen pro Gruppe',
+			paras: [
+				'COUNT(*) zählt alle Zeilen. Oft willst du aber pro Gruppe zählen, zum Beispiel: Wie viele Bücher hat jeder Verlag?',
+				'GROUP BY teilt die Zeilen in Gruppen mit gleichem Wert. Die Aggregatfunktion wird dann für jede Gruppe einzeln berechnet. Jede Gruppe wird zu einer Zeile im Ergebnis.',
+				'Mit HAVING filterst du Gruppen. WHERE filtert einzelne Zeilen vor dem Gruppieren, HAVING filtert die fertigen Gruppen danach.'
+			],
+			example: 'SELECT publisher_id, COUNT(*) AS anzahl\nFROM books\nGROUP BY publisher_id;'
+		},
+		{
+			kind: 'example',
+			name: 'Bücher pro Verlag',
+			type: 'Beispiel',
+			task: 'So zählst du Bücher pro Verlag.',
+			taskSub: 'Führe die Abfrage aus. Jede Zeile ist eine Gruppe.',
+			code: 'SELECT publisher_id, COUNT(*) AS anzahl\nFROM books\nGROUP BY publisher_id;',
+			msg: (r) => `${r.rows.length} Gruppen, eine pro Verlag mit Büchern.`,
+			sub: 'Ersetze COUNT(*) durch MAX(year) und sieh dir das neueste Buch pro Verlag an.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Neuestes Buch pro Verlag',
+			type: 'Übung',
+			task: 'Wann hat jeder Verlag sein neuestes Buch veröffentlicht?',
+			taskSub: 'Zeige publisher_id und das neueste Jahr als neuestes.',
+			starter: 'SELECT publisher_id, \nFROM books\n',
+			solution: 'SELECT publisher_id, MAX(year) AS neuestes\nFROM books\nGROUP BY publisher_id;',
+			ordered: false,
+			okMsg: 'Richtig! Ein Jahr pro Verlag.',
+			okSub: 'MAX wird für jede Gruppe einzeln berechnet.',
+			tip: 'Du brauchst MAX(year) AS neuestes und am Ende GROUP BY publisher_id.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Gruppen filtern',
+			type: 'Übung',
+			task: 'Welche Verlage veröffentlichen eher neue Bücher?',
+			taskSub: 'Zeige nur publisher_id der Verlage, deren Bücher im Schnitt nach 2010 erschienen sind.',
+			starter: 'SELECT publisher_id\nFROM books\nGROUP BY publisher_id\n',
+			solution: 'SELECT publisher_id\nFROM books\nGROUP BY publisher_id\nHAVING AVG(year) > 2010;',
+			ordered: false,
+			okMsg: 'Richtig! Nur ein Verlag bleibt übrig.',
+			okSub: 'HAVING filtert Gruppen nach dem Zusammenfassen.',
+			tip: 'Die Bedingung betrifft den Durchschnitt einer Gruppe. Dafür brauchst du HAVING AVG(year) > 2010.'
+		},
+		{
+			kind: 'summary',
+			name: 'Fazit',
+			type: 'Zusammenfassung',
+			title: 'Das hast du gelernt',
+			points: [
+				'GROUP BY bildet Gruppen mit gleichem Wert.',
+				'Aggregatfunktionen rechnen pro Gruppe.',
+				'WHERE filtert Zeilen vorher, HAVING filtert Gruppen nachher.',
+				'Reihenfolge: SELECT, FROM, WHERE, GROUP BY, HAVING, ORDER BY.'
+			],
+			real: 'Nutzer pro Stunde, Fehler pro Server, Bestellungen pro Kunde: Wer Daten auswertet, gruppiert ständig. Genau so entstehen die Kurven, mit denen Firmen Entscheidungen treffen.'
+		}
+	],
+	done: {
+		sub: 'Du kannst Daten jetzt pro Gruppe auswerten.',
+		points: ['GROUP BY bildet Gruppen.', 'Aggregate rechnen pro Gruppe.', 'HAVING filtert Gruppen.']
+	},
+	next: { id: 'joins', title: 'Tabellen verbinden mit JOIN' }
+};
+
+const joins: Lesson = {
+	...base,
+	id: 'joins',
+	no: 7,
+	title: 'Tabellen verbinden mit JOIN',
+	steps: [
+		{
+			kind: 'explain',
+			name: 'Zwei Tabellen, ein Ergebnis',
+			type: 'Erklärung',
+			title: 'Zwei Tabellen, ein Ergebnis',
+			paras: [
+				'In books steht bei jedem Buch nur die Nummer des Verlags, publisher_id. Der Name des Verlags steht in einer zweiten Tabelle, publishers. So muss jeder Name nur einmal gespeichert werden.',
+				'Mit JOIN verbindest du beide Tabellen. Nach ON steht, welche Spalten zusammengehören: books.publisher_id = publishers.id. Kurze Namen wie b und p sparen Schreibarbeit.',
+				'Ein normaler JOIN zeigt nur Zeilen, die in beiden Tabellen einen Partner haben. LEFT JOIN zeigt alle Zeilen der linken Tabelle, auch ohne Partner. Fehlende Werte sind dann NULL.'
+			],
+			example: 'SELECT b.title, p.name\nFROM books b\nJOIN publishers p ON b.publisher_id = p.id;'
+		},
+		{
+			kind: 'example',
+			name: 'Buch und Verlag',
+			type: 'Beispiel',
+			task: 'So zeigst du zu jedem Buch den Namen des Verlags.',
+			taskSub: 'Führe die Abfrage aus. Die Spalten kommen aus zwei Tabellen.',
+			code: 'SELECT b.title, p.name\nFROM books b\nJOIN publishers p ON b.publisher_id = p.id;',
+			msg: (r) => `${r.rows.length} Bücher, jedes mit seinem Verlag.`,
+			sub: 'Lösche die ON-Zeile und sieh dir an, was passiert.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Neue Bücher mit Verlag',
+			type: 'Übung',
+			task: 'Von welchen Verlagen sind die Bücher nach 2010?',
+			taskSub: 'Zeige title und name für alle Bücher nach 2010.',
+			starter: 'SELECT b.title, p.name\nFROM books b\nJOIN publishers p ON \nWHERE ',
+			solution: 'SELECT b.title, p.name\nFROM books b\nJOIN publishers p ON b.publisher_id = p.id\nWHERE b.year > 2010;',
+			ordered: false,
+			okMsg: 'Richtig! Drei Bücher mit Verlag.',
+			okSub: 'JOIN und WHERE lassen sich kombinieren.',
+			tip: 'Nach ON gehört b.publisher_id = p.id, nach WHERE die Bedingung b.year > 2010.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Auch ohne Partner',
+			type: 'Übung',
+			task: 'Welche Verlage gibt es, auch solche ohne Bücher?',
+			taskSub: 'Zeige name und title für alle Verlage. Ein Verlag hat noch kein Buch.',
+			starter: 'SELECT p.name, b.title\nFROM publishers p\n',
+			solution: 'SELECT p.name, b.title\nFROM publishers p\nLEFT JOIN books b ON b.publisher_id = p.id;',
+			ordered: false,
+			okMsg: 'Richtig! No Starch Press steht mit NULL da.',
+			okSub: 'LEFT JOIN behält alle Zeilen der linken Tabelle.',
+			tip: 'Ein normaler JOIN lässt Verlage ohne Buch weg. Probiere LEFT JOIN.'
+		},
+		{
+			kind: 'summary',
+			name: 'Fazit',
+			type: 'Zusammenfassung',
+			title: 'Das hast du gelernt',
+			points: [
+				'Daten werden auf mehrere Tabellen verteilt, damit nichts doppelt steht.',
+				'JOIN … ON verbindet Zeilen, die zusammengehören.',
+				'JOIN zeigt nur Paare, LEFT JOIN auch Zeilen ohne Partner.',
+				'Fehlende Werte erscheinen als NULL.'
+			],
+			real: 'Ein Onlineshop speichert Kunden, Bestellungen und Produkte in getrennten Tabellen. Die Rechnung entsteht erst durch JOINs zwischen ihnen.'
+		}
+	],
+	done: {
+		sub: 'Du kannst jetzt Daten aus mehreren Tabellen kombinieren.',
+		points: ['JOIN … ON verbindet Tabellen.', 'LEFT JOIN behält alle Zeilen links.', 'Fehlende Partner werden NULL.']
+	},
+	next: { id: 'subqueries', title: 'Unterabfragen' }
+};
+
+const subqueries: Lesson = {
+	...base,
+	id: 'subqueries',
+	no: 8,
+	title: 'Unterabfragen',
+	steps: [
+		{
+			kind: 'explain',
+			name: 'Abfrage in der Abfrage',
+			type: 'Erklärung',
+			title: 'Abfrage in der Abfrage',
+			paras: [
+				'Manchmal brauchst du für eine Bedingung einen Wert, den du erst ausrechnen musst. Zum Beispiel: Welche Bücher sind neuer als der Durchschnitt?',
+				'Dafür setzt du eine zweite Abfrage in Klammern in die erste. Die innere Abfrage läuft zuerst und liefert einen Wert. Die äußere Abfrage benutzt ihn wie eine feste Zahl.',
+				'Liefert die innere Abfrage mehrere Werte, vergleichst du mit IN statt mit =.'
+			],
+			example: 'SELECT title, year\nFROM books\nWHERE year > (SELECT AVG(year) FROM books);'
+		},
+		{
+			kind: 'example',
+			name: 'Neuer als der Schnitt',
+			type: 'Beispiel',
+			task: 'So findest du Bücher, die neuer als der Durchschnitt sind.',
+			taskSub: 'Führe die Abfrage aus. Die Zahl in der Klammer berechnet SQL selbst.',
+			code: 'SELECT title, year\nFROM books\nWHERE year > (SELECT AVG(year) FROM books);',
+			msg: (r) => `${r.rows.length} Bücher sind neuer als der Durchschnitt.`,
+			sub: 'Führe die innere Abfrage einzeln aus, um den Durchschnitt zu sehen.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Das neueste Buch',
+			type: 'Übung',
+			task: 'Welches Buch ist das neueste?',
+			taskSub: 'Zeige title und year. Benutze eine Unterabfrage mit MAX, nicht LIMIT.',
+			starter: 'SELECT title, year\nFROM books\nWHERE year = ',
+			solution: 'SELECT title, year\nFROM books\nWHERE year = (SELECT MAX(year) FROM books);',
+			ordered: false,
+			okMsg: 'Richtig! Database Internals von 2019.',
+			okSub: 'Die Unterabfrage liefert das größte Jahr.',
+			tip: 'In die Klammer gehört SELECT MAX(year) FROM books.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Nach Verlagsname',
+			type: 'Übung',
+			task: 'Welche Bücher sind bei Addison-Wesley erschienen?',
+			taskSub: 'Zeige title. Suche die Nummer des Verlags per Unterabfrage über den Namen.',
+			starter: 'SELECT title\nFROM books\nWHERE publisher_id = (\n  \n);',
+			solution: "SELECT title\nFROM books\nWHERE publisher_id = (\n  SELECT id FROM publishers WHERE name = 'Addison-Wesley'\n);",
+			ordered: false,
+			okMsg: 'Richtig! Drei Bücher von Addison-Wesley.',
+			okSub: 'Du musst die Nummer des Verlags nicht kennen.',
+			tip: "Die innere Abfrage sucht die id in publishers: SELECT id FROM publishers WHERE name = 'Addison-Wesley'."
+		},
+		{
+			kind: 'summary',
+			name: 'Fazit',
+			type: 'Zusammenfassung',
+			title: 'Das hast du gelernt',
+			points: [
+				'Eine Unterabfrage steht in Klammern in einer anderen Abfrage.',
+				'Die innere Abfrage läuft zuerst.',
+				'Liefert sie einen Wert, vergleichst du mit = oder >.',
+				'Liefert sie mehrere Werte, nimmst du IN.'
+			],
+			real: 'Welche Kunden haben mehr als der Durchschnitt bestellt? Welche Server sind langsamer als üblich? Solche Vergleiche mit einem berechneten Wert sind typische Unterabfragen.'
+		}
+	],
+	done: {
+		sub: 'Du hast die SQL-Grundlagen geschafft.',
+		points: ['Unterabfragen stehen in Klammern.', 'Die innere Abfrage läuft zuerst.', 'Mehrere Werte vergleichst du mit IN.']
 	}
 };
 
@@ -411,5 +711,9 @@ export const LESSONS: Record<string, Lesson> = {
 	[selectBasics.id]: selectBasics,
 	[selectColumns.id]: selectColumns,
 	[where.id]: where,
-	[orderLimit.id]: orderLimit
+	[orderLimit.id]: orderLimit,
+	[aggregates.id]: aggregates,
+	[groupBy.id]: groupBy,
+	[joins.id]: joins,
+	[subqueries.id]: subqueries
 };

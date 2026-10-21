@@ -15,7 +15,15 @@ const WRONG = {
 	'Bücher nach 2010': 'SELECT title, year FROM books WHERE year > 2010;',
 	'Bedingungen kombinieren': 'SELECT title FROM books WHERE publisher_id = 2;',
 	'Nach Titel sortieren': 'SELECT title, year FROM books ORDER BY year;',
-	'Das älteste Buch': 'SELECT title, year FROM books ORDER BY year DESC LIMIT 1;'
+	'Das älteste Buch': 'SELECT title, year FROM books ORDER BY year DESC LIMIT 1;',
+	'Neue Bücher zählen': 'SELECT COUNT(*) AS anzahl FROM books;',
+	'Durchschnittsjahr': 'SELECT MAX(year) AS schnitt FROM books;',
+	'Neuestes Buch pro Verlag': 'SELECT publisher_id, MIN(year) AS neuestes FROM books GROUP BY publisher_id;',
+	'Gruppen filtern': 'SELECT publisher_id FROM books GROUP BY publisher_id;',
+	'Neue Bücher mit Verlag': 'SELECT b.title, p.name FROM books b JOIN publishers p ON b.publisher_id = p.id;',
+	'Auch ohne Partner': 'SELECT p.name, b.title FROM publishers p JOIN books b ON b.publisher_id = p.id;',
+	'Das neueste Buch': 'SELECT title, year FROM books WHERE year = (SELECT MIN(year) FROM books);',
+	'Nach Verlagsname': 'SELECT title FROM books WHERE publisher_id = 2;'
 };
 for (const L of Object.values(LESSONS)) {
 	test(`${L.no} ${L.title}`, () => {
