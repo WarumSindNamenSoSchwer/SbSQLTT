@@ -12,6 +12,12 @@ export default defineConfig({
 				target: 'http://localhost:3001',
 				changeOrigin: true,
 			},
+			// Quiz-WebSocket: MUSS vor /api stehen (ws-Protokoll)
+			'/api/quiz/ws': {
+				target: `http://localhost:${process.env.API_PORT ?? '3005'}`,
+				changeOrigin: true,
+				ws: true,
+			},
 			'/api': {
 				target: `http://localhost:${process.env.API_PORT ?? '3005'}`,
 				changeOrigin: true,

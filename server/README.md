@@ -201,3 +201,49 @@ Beim Abmelden wird `localStorage['tabula-progress']` geleert. Damit sieht der na
 - [ ] E-Mail-Verifikation fuer Lehrkraefte (K7)
 - [ ] Quiz-Tabellen implementieren (Migration 0006 ist Platzhalter)
 - [ ] `ACCOUNTS_LIVE = true` in `src/lib/tabula/privacy.ts` nach Freigabe
+
+---
+
+## Quiz (P7b)
+
+Live-Multiple-Choice-Quiz fuer den Unterricht. Nur angemeldete Konten duerfen teilnehmen.
+
+### Endpunkte
+
+| Methode | Pfad | Beschreibung |
+|---------|------|--------------|
+| GET | `/api/teacher/quizzes` | Eigene Fragensaetze abrufen |
+| POST | `/api/teacher/quizzes` | Neuen Fragensatz erstellen |
+| GET | `/api/teacher/quizzes/:id` | Fragensatz mit Fragen laden |
+| PATCH | `/api/teacher/quizzes/:id` | Titel aendern |
+| DELETE | `/api/teacher/quizzes/:id` | Fragensatz loeschen |
+| POST | `/api/teacher/quizzes/:id/questions` | Frage hinzufuegen |
+| PATCH | `/api/teacher/quizzes/:id/questions/:qid` | Frage bearbeiten |
+| DELETE | `/api/teacher/quizzes/:id/questions/:qid` | Frage loeschen |
+| POST | `/api/teacher/quizzes/:id/sessions` | Sitzung starten (gibt PIN zurueck) |
+| DELETE | `/api/teacher/quiz-sessions/:sid` | Sitzung beenden |
+| GET | `/api/teacher/quiz-sessions/:sid/results` | Ergebnisse laden |
+
+### WebSocket `/api/quiz/ws`
+
+Verbindungsaufbau:
+```json
+{ "type": "join", "pin": "AB12", "role": "student" }
+{ "type": "join", "session_id": 42, "role": "teacher" }
+```
+
+Authentifizierung: HttpOnly-Cookie `tabula_session` wird beim WS-Upgrade mitgesendet.
+Gaeste ohne Konto erhalten `{ "type": "error", "code": "login_required" }`.
+Schueler ausserhalb der Klasse erhalten `{ "type": "error", "code": "not_in_class" }`.
+
+### Datenschutz (K5)
+
+- `display_name` und Punktedaten werden 24h nach Sitzungsende geloescht (nur Aggregat bleibt).
+- Keine IP-Spalten in Quiz-Tabellen (K10).
+- Konto loeschen entfernt alle `quiz_participants`-Eintraege (K8).
+
+### QR-Code-URL
+
+```
+https://www.tabulasql.de/quiz/PIN
+```
