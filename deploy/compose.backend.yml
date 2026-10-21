@@ -1,0 +1,47 @@
+# deploy/compose.backend.yml
+# Erweiterung fuer den API-Service.
+# Verwendung: docker compose -f compose.yml -f compose.backend.yml up -d
+#
+# Der api-Service laeuft NUR im internen Netz (kein Port nach aussen).
+# Caddy leitet /api/* per reverse_proxy weiter (siehe Caddyfile.api).
+
+services:
+  api:
+    build:
+      context: ../server
+      dockerfile: Dockerfile
+    image: tabula-api:latest
+    restart: unless-stopped
+    # Kein Port nach aussen - nur internes Netz
+    expose:
+      - "3000"
+    volumes:
+      - api_data:/data
+    environment:
+      DB_PATH: /data/tabula.db
+      PORT: "3000"
+      HOST: "0.0.0.0"
+      ALLOWED_ORIGIN: "https://www.tabulasql.de"
+      SITE_URL: "https://www.tabulasql.de"
+      LOG_LEVEL: "info"
+    networks:
+      - internal
+    # Konsolenausgabe klein halten
+    logging:
+      driver: local
+      options:
+        max-size: "5m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  api_data:
+
+networks:
+  internal:
+    internal: true

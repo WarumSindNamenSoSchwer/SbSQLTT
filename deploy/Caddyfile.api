@@ -1,0 +1,28 @@
+# deploy/Caddyfile.api
+# Ergaenzung zum Haupt-Caddyfile fuer den API-Reverse-Proxy.
+# Diese Datei nicht einkommentieren bis der api-Service laeuft.
+#
+# Einbinden: In der www.tabulasql.de {...} Sektion einfuegen:
+#   import /etc/caddy/Caddyfile.api
+# ODER den folgenden Block manuell in deploy/Caddyfile einfuegen.
+
+# Vorschlag fuer www.tabulasql.de:
+#
+# handle /api/* {
+#     # CSRF: Caddy prueft Origin nicht extra; das macht der API-Server selbst.
+#     # WebSocket-Verbindungen werden durchgereicht (fuer zukuenftiges Quiz-Feature).
+#     reverse_proxy api:3000 {
+#         header_up X-Real-IP {remote_host}
+#         # Wichtig: keine IP-Logs beim API-Server (K10)
+#         # Der API-Server loggt nur Methode + URL, keine IPs
+#     }
+# }
+
+# Einbindungsanweisung:
+# 1. compose.backend.yml zum Compose-Setup hinzufuegen
+# 2. Den handle-Block oben in deploy/Caddyfile unter www.tabulasql.de { ... } einfuegen
+# 3. docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+# WebSocket-Hinweis:
+# Caddy leitet WebSocket-Verbindungen automatisch durch wenn der
+# Upgrade-Header vorhanden ist. Keine weitere Konfiguration noetig.
