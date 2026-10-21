@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import TopNav from '$lib/tabula/TopNav.svelte';
 	import { session, sessionLogout } from '$lib/tabula/session.svelte.js';
-	import { apiPatchMe, apiDeleteMe, ApiError } from '$lib/tabula/api.js';
+	import { apiPatchMe, apiDeleteMe, apiChangePassword, ApiError } from '$lib/tabula/api.js';
 	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
 
 	let dark = $state(false);
@@ -30,6 +30,8 @@
 	let newPwRepeat = $state('');
 	let passwordErr = $state<string | null>(null);
 	let passwordBusy = $state(false);
+	/** Nach Passwort-Reset durch Lehrkraft: Änderung erzwingen */
+	let mustChange = $state(false);
 
 	// Konto löschen
 	let deleteOpen = $state(false);
@@ -63,6 +65,11 @@
 			}
 			if (!session.user) {
 				goto('/login?redirect=/profil');
+				return;
+			}
+			if (session.user.must_change_password || new URLSearchParams(location.search).has('pw')) {
+				mustChange = !!session.user.must_change_password;
+				startEdit('password');
 			}
 		};
 		checkAuth();
@@ -141,20 +148,14 @@
 		if (!currentPw) { passwordErr = 'Bitte gib dein aktuelles Passwort ein.'; return; }
 		if (newPw.length < 8) { passwordErr = 'Neues Passwort muss mindestens 8 Zeichen haben.'; return; }
 		if (newPw !== newPwRepeat) { passwordErr = 'Passwörter stimmen nicht überein.'; return; }
-		// Passwort ändern: Benutzername beibehalten, aber neu hashen via username-Change mit aktuellem Benutzernamen
-		// Da es keinen separaten Passwort-Endpunkt gibt, nutzen wir PATCH /me mit username = current username + current_password
 		passwordBusy = true;
 		passwordErr = null;
 		try {
-			// Benutzername-Change-Mechanismus: gleichen Benutzernamen senden + altes Passwort -> erzwingt Neu-Hash
-			await apiPatchMe({
-				username: session.user?.username ?? '',
-				current_password: currentPw,
-			});
-			// Hinweis: Das Backend hasht das Passwort bei Username-Change, aber hier wird das neue Passwort nicht übergeben.
-			// Korrekte Implementierung: neuer Endpunkt nötig oder wir merken das.
-			// Vorerst: Hinweis an Nutzer
-			passwordErr = 'Passwort-Änderung erfordert einen separaten Endpunkt – noch nicht implementiert. Bitte nutze "Passwort vergessen".';
+			await apiChangePassword(currentPw, newPw);
+			if (session.user) (session.user as { must_change_password?: number }).must_change_password = 0;
+			mustChange = false;
+			editing = null;
+			showToast('Passwort geändert. Andere Geräte wurden abgemeldet.');
 		} catch (err) {
 			passwordErr = err instanceof Error ? err.message : 'Fehler.';
 		} finally {
@@ -206,6 +207,10 @@
 	<main class="main">
 		<div class="content">
 			<h1>Profil</h1>
+
+			{#if mustChange}
+				<p class="must-change" role="alert">Deine Lehrkraft hat dein Passwort zurückgesetzt. Bitte wähle jetzt ein eigenes neues Passwort. Als aktuelles Passwort gibst du das Einmal-Passwort ein.</p>
+			{/if}
 
 			{#if session.user}
 				<!-- Profil-Tabelle -->
@@ -403,6 +408,7 @@
 	input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); border-width: 1.5px; }
 	input:disabled { opacity: 0.6; cursor: not-allowed; }
 	.field-err { font-size: 13px; color: var(--danger-ink); }
+	.must-change { margin: 0 0 20px; padding: 12px 16px; border-radius: 10px; background: var(--warn-bg, #fef3c7); color: var(--warn-ink, #92400e); font-size: 14px; line-height: 1.5; }
 	.edit-btns { display: flex; gap: 10px; }
 	.btn-save { height: 36px; padding: 0 14px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
 	.btn-save:hover:not(:disabled) { background: var(--accent-strong); }

@@ -87,6 +87,8 @@ export interface PublicUser {
   role: 'student' | 'teacher';
   created_day: string;
   last_login_at: number | null;
+  /** 1 nach Passwort-Reset durch Lehrkraft: muss beim nächsten Login geändert werden */
+  must_change_password?: number;
 }
 
 export interface ProgressItem {
@@ -140,6 +142,11 @@ export function apiPatchMe(body: {
 /** DELETE /api/me */
 export function apiDeleteMe(): Promise<{ ok: true }> {
   return request('DELETE', '/me');
+}
+
+/** POST /api/me/password */
+export function apiChangePassword(current_password: string, new_password: string): Promise<{ ok: true }> {
+  return request('POST', '/me/password', { current_password, new_password });
 }
 
 /** POST /api/password/forgot */

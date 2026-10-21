@@ -67,6 +67,11 @@ const patchMeSchema = z.object({
   current_password: z.string().optional(),
 })
 
+const changePasswordSchema = z.object({
+  current_password: z.string().min(1).max(128),
+  new_password: z.string().min(8).max(128),
+})
+
 // ---------------------------------------------------------------------------
 // Hilfsfunktionen
 // ---------------------------------------------------------------------------
@@ -85,7 +90,7 @@ function findUserByEmail(db: Db, email: string) {
 
 function findUserById(db: Db, id: number) {
   return db.prepare(
-    'SELECT id, username, display_name, email, name, school, role, created_day, last_login_at FROM users WHERE id = ?'
+    'SELECT id, username, display_name, email, name, school, role, created_day, last_login_at, must_change_password FROM users WHERE id = ?'
   ).get(id) as PublicUserRow | undefined
 }
 
@@ -113,6 +118,7 @@ interface PublicUserRow {
   role: 'student' | 'teacher'
   created_day: string
   last_login_at: number | null
+  must_change_password: number
 }
 
 // ---------------------------------------------------------------------------
@@ -304,6 +310,39 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
     if (display_name !== undefined) {
       db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(display_name, user.id)
     }
+
+    return reply.send({ ok: true })
+  })
+
+  // POST /api/me/password: Passwort aendern (aktuelles Passwort erforderlich).
+  // Neuer Hash mit unveraendertem Benutzernamen und Erstellungstag (K3),
+  // setzt must_change_password zurueck und beendet alle anderen Sitzungen.
+  fastify.post('/me/password', async (req, reply) => {
+    const token = req.cookies[SESSION_COOKIE_NAME]
+    if (!token) return reply.code(401).send({ fehler: 'Nicht angemeldet.' })
+
+    const session = validateSession(db, token)
+    if (!session) return reply.code(401).send({ fehler: 'Sitzung abgelaufen.' })
+
+    const parsed = changePasswordSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.code(400).send({ fehler: 'Neues Passwort muss mindestens 8 Zeichen haben.' })
+    }
+    const { current_password, new_password } = parsed.data
+
+    const user = db.prepare(
+      'SELECT id, username, password_hash, created_day FROM users WHERE id = ?'
+    ).get(session.user_id) as Pick<UserRow, 'id' | 'username' | 'password_hash' | 'created_day'> | undefined
+    if (!user) return reply.code(401).send({ fehler: 'Konto nicht gefunden.' })
+
+    const ok = await verifyPassword(user.password_hash, current_password, user.username, user.created_day)
+    if (!ok) return reply.code(403).send({ fehler: 'Aktuelles Passwort falsch.' })
+
+    const newHash = await hashPassword(new_password, user.username, user.created_day)
+    db.transaction(() => {
+      db.prepare('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?').run(newHash, user.id)
+      db.prepare('DELETE FROM sessions WHERE user_id = ? AND id_hash != ?').run(user.id, session.id_hash)
+    })()
 
     return reply.send({ ok: true })
   })

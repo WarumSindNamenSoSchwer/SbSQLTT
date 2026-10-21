@@ -20,7 +20,7 @@
  * Grundlage: progress.done=0, progress.attempts >= 3 ODER
  *            last_attempt.error_msg != '' UND last_attempt.updated_at < now - 300s.
  */
-import type { FastifyPluginAsync } from 'fastify'
+import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import { randomBytes } from 'node:crypto'
 import type { Db } from '../db.js'
@@ -58,7 +58,7 @@ interface TeacherSession {
 async function requireTeacher(
   db: Db,
   req: { cookies: Record<string, string | undefined> },
-  reply: { code: (c: number) => { send: (b: unknown) => Promise<void> } }
+  reply: FastifyReply
 ): Promise<TeacherSession | null> {
   const token = req.cookies[SESSION_COOKIE_NAME]
   if (!token) {
@@ -86,7 +86,7 @@ function requireOwnClass(
   db: Db,
   teacherId: number,
   classId: number,
-  reply: { code: (c: number) => { send: (b: unknown) => Promise<void> } }
+  reply: FastifyReply
 ): { id: number; name: string; join_code: string; focus_lesson: string | null; archived: number; created_at: number } | null {
   const cls = db.prepare(
     'SELECT id, name, join_code, focus_lesson, archived, created_at FROM classes WHERE id = ? AND teacher_id = ?'

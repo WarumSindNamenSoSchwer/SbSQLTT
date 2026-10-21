@@ -6,7 +6,7 @@
 	import TopNav from '$lib/tabula/TopNav.svelte';
 	import Edgar from '$lib/edgar/Edgar.svelte';
 	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
-	import { sessionLogin, sessionRegister } from '$lib/tabula/session.svelte.js';
+	import { session, sessionLogin, sessionRegister } from '$lib/tabula/session.svelte.js';
 	import { apiPasswordForgot, ApiError } from '$lib/tabula/api.js';
 
 	// ---- Theme ---------------------------------------------------------------
@@ -109,7 +109,7 @@
 		busy = true;
 		try {
 			await sessionLogin(loginIdent.trim(), loginPw);
-			goto(_redirect);
+			goto(session.user?.must_change_password ? '/profil?pw=1' : _redirect);
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 401) {
 				loginError = true;
@@ -232,7 +232,7 @@
 				{#if showNotice}
 					<div class="notice-box" role="status">
 						<span class="notice-ico">i</span>
-						<span>Konten sind in Kürze verfügbar. Bis dahin wird dein Fortschritt automatisch im Browser gespeichert – du brauchst kein Konto.</span>
+						<span>Konten sind in Kürze verfügbar. Bis dahin wird dein Fortschritt automatisch im Browser gespeichert, du brauchst kein Konto.</span>
 					</div>
 				{/if}
 
@@ -310,7 +310,7 @@
 				{#if showNotice}
 					<div class="notice-box" role="status">
 						<span class="notice-ico">i</span>
-						<span>Konten sind in Kürze verfügbar. Bis dahin {seg === 0 ? 'wird dein Fortschritt automatisch im Browser gespeichert – du brauchst kein Konto.' : 'wird Ihr Fortschritt automatisch im Browser gespeichert.'}</span>
+						<span>Konten sind in Kürze verfügbar. Bis dahin {seg === 0 ? 'wird dein Fortschritt automatisch im Browser gespeichert, du brauchst kein Konto.' : 'wird Ihr Fortschritt automatisch im Browser gespeichert.'}</span>
 					</div>
 				{/if}
 
