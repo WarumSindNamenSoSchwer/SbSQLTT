@@ -112,22 +112,20 @@ Zugriffskontrolle: Nur `role=teacher`. Fremde Klassen liefern 404 (nicht 403), u
    Den `handle /api/*`-Block aus `deploy/Caddyfile.api` in `deploy/Caddyfile`
    unter `www.tabulasql.de { ... }` einfuegen.
 
-4. **Backup-Key erzeugen (age empfohlen):**
+4. **Sicherung:** bereits eingerichtet (21.10.2026). `deploy/backup.sh` liegt als
+   `/opt/tabula/backup.sh` auf dem Server, systemd-Timer `tabula-backup.timer` täglich 03:15 UTC.
+   Verschlüsselt mit age an den öffentlichen Schlüssel in `/opt/tabula/secrets/backup_recipients`
+   (SSH-Schlüssel `~/.ssh/tabula.pub`), aufbewahrt 7 Tage in `/opt/tabula/backups`.
+   Wiederherstellen auf dem Laptop:
    ```bash
-   age-keygen -o /run/secrets/backup_key
-   chmod 600 /run/secrets/backup_key
-   ```
-
-5. **Backup-Cron einrichten:**
-   ```bash
-   # Im Container oder auf dem Host:
-   0 2 * * * docker exec <api-container> /app/scripts/backup.sh
+   scp tabula:/opt/tabula/backups/tabula-JJJJ-MM-TT.db.age .
+   age -d -i ~/.ssh/tabula -o tabula.db tabula-JJJJ-MM-TT.db.age
    ```
 
 ## Sicherheitshinweise
 
 - **Passwort-Hashing (K3):** Argon2id, 19 MiB RAM, 2 Iterationen. Der Hash ist
-  an Benutzername und Erstellungstag gebunden (Associated Data).
+  an Benutzername und Erstellungstag gebunden (Argon2-Parameter `secret`, siehe docs/BACKEND-DATENSCHUTZ.md K3).
 - **CSRF (K6):** Origin-Header-Pruefung fuer alle schreibenden Anfragen.
   Standard: `https://www.tabulasql.de` (konfigurierbar via `ALLOWED_ORIGIN`).
 - **Rate-Limiting (K10):** Nur im Arbeitsspeicher. Keine IP-Adressen gespeichert.
