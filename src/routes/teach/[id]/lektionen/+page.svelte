@@ -1,0 +1,263 @@
+<script lang="ts">
+	import { onMount, getContext } from 'svelte';
+	import { page } from '$app/state';
+	import {
+		apiTeacherGetLessons,
+		apiTeacherPutLessons,
+		type LessonSetting,
+	} from '$lib/tabula/api.js';
+	import { CATALOG, TRACK_INFO } from '$lib/tabula/lessons.js';
+
+	const ctx = getContext<{ cls: any; setFocus: (l: string | null) => void; reload: () => void }>('teachClass');
+	let classId = $derived(Number(page.params.id));
+
+	let settings = $state<LessonSetting[]>([]);
+	let loading = $state(true);
+	let saveBusy = $state(false);
+	let toast = $state<string | null>(null);
+	let toastTimer: ReturnType<typeof setTimeout> | null = null;
+	let searchQuery = $state('');
+
+	onMount(async () => {
+		await loadLessons();
+	});
+
+	async function loadLessons() {
+		loading = true;
+		try {
+			const res = await apiTeacherGetLessons(classId);
+			// Merge with CATALOG to ensure all lessons are represented
+			settings = CATALOG.map((c, i) => {
+				const existing = res.lessons.find(l => l.lesson_id === c.id);
+				return existing ?? {
+					lesson_id: c.id,
+					unlocked: c.track === 1, // default: SQL-Grundlagen freigeschaltet
+					sort_order: i,
+					is_focus: false,
+				};
+			});
+		} catch {
+			// If endpoint fails, use defaults
+			settings = CATALOG.map((c, i) => ({
+				lesson_id: c.id,
+				unlocked: c.track === 1,
+				sort_order: i,
+				is_focus: false,
+			}));
+		} finally {
+			loading = false;
+		}
+	}
+
+	function showToast(msg: string) {
+		toast = msg;
+		if (toastTimer) clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => (toast = null), 3000);
+	}
+
+	async function save(updatedSettings: LessonSetting[]) {
+		if (saveBusy) return;
+		saveBusy = true;
+		try {
+			await apiTeacherPutLessons(classId, updatedSettings);
+			settings = updatedSettings;
+			// Update focus in layout context
+			const focusLesson = updatedSettings.find(s => s.is_focus);
+			ctx?.setFocus(focusLesson?.lesson_id ?? null);
+			showToast('Gespeichert');
+		} catch (err) {
+			showToast(err instanceof Error ? err.message : 'Fehler beim Speichern.');
+		} finally {
+			saveBusy = false;
+		}
+	}
+
+	function toggleUnlocked(lessonId: string) {
+		const updated = settings.map(s =>
+			s.lesson_id === lessonId ? { ...s, unlocked: !s.unlocked } : s
+		);
+		save(updated);
+	}
+
+	function setFocus(lessonId: string) {
+		const updated = settings.map(s => ({
+			...s,
+			is_focus: s.lesson_id === lessonId,
+			// focus lesson is always unlocked
+			unlocked: s.lesson_id === lessonId ? true : s.unlocked,
+		}));
+		save(updated);
+	}
+
+	function unlockAll() {
+		const updated = settings.map(s => ({ ...s, unlocked: true }));
+		save(updated);
+	}
+
+	function unlockTrack(trackNum: 1 | 2 | 3) {
+		const updated = settings.map(s => {
+			const cat = CATALOG.find(c => c.id === s.lesson_id);
+			if (cat && cat.track === trackNum) return { ...s, unlocked: true };
+			return s;
+		});
+		save(updated);
+	}
+
+	// Group settings by track
+	const trackGroups = $derived(TRACK_INFO.map(track => {
+		const trackNum = parseInt(track.num) as 1 | 2 | 3;
+		const lessons = CATALOG.filter(c => c.track === trackNum);
+		const lessonSettings = lessons.map(c => ({
+			catalog: c,
+			setting: settings.find(s => s.lesson_id === c.id),
+		}));
+		const unlockedCount = lessonSettings.filter(l => l.setting?.unlocked).length;
+		return { track, trackNum, lessons: lessonSettings, unlockedCount };
+	}));
+
+	const filtered = $derived(searchQuery.trim()
+		? trackGroups.map(g => ({
+			...g,
+			lessons: g.lessons.filter(l =>
+				l.catalog.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+				l.catalog.n.toLowerCase().includes(searchQuery.toLowerCase())
+			)
+		})).filter(g => g.lessons.length > 0)
+		: trackGroups
+	);
+</script>
+
+<div class="lektionen-wrap">
+	<div class="toolbar">
+		<div class="search-field">
+			<span class="search-ico" aria-hidden="true">⌕</span>
+			<input
+				type="search"
+				placeholder="Lektion suchen"
+				bind:value={searchQuery}
+			/>
+		</div>
+		<span class="toolbar-hint">Die Fokus-Lektion ist immer freigeschaltet.</span>
+		<button class="btn-secondary" onclick={unlockAll}>Alle freischalten</button>
+	</div>
+
+	{#if loading}
+		<div class="spinner-wrap"><span class="spinner"></span></div>
+	{:else}
+		{#each filtered as group}
+			<div class="track-section">
+				<div class="track-header">
+					<span class="track-num mono">{group.track.num}</span>
+					<h2 class="track-name">{group.track.name}</h2>
+					<span class="track-status">{group.unlockedCount} von {group.lessons.length} freigeschaltet</span>
+					<span class="flex-1"></span>
+					<button class="track-unlock-all" onclick={() => unlockTrack(group.trackNum)}>Track freischalten</button>
+				</div>
+
+				<div class="lessons-table">
+					{#each group.lessons as { catalog, setting }}
+						{@const isFocus = setting?.is_focus ?? false}
+						{@const isUnlocked = setting?.unlocked ?? false}
+						<div class="lesson-row">
+							<span class="drag-handle" aria-hidden="true" title="Ziehen zum Sortieren">⋮⋮</span>
+							<span class="lesson-num mono">{catalog.n}</span>
+							<span class="lesson-title">{catalog.title}</span>
+							<span class="lesson-dur">{catalog.dur}</span>
+							<span class="lesson-prog"></span>
+							<span class="focus-cell">
+								{#if isFocus}
+									<span class="badge-focus">★ Fokus</span>
+								{:else}
+									<button
+										class="focus-set-btn"
+										title="Als Fokus setzen"
+										onclick={() => setFocus(catalog.id)}
+									>☆</button>
+								{/if}
+							</span>
+							<span class="toggle-cell">
+								<span class="toggle-label">{isUnlocked ? 'Frei' : 'Gesperrt'}</span>
+								<button
+									class="toggle-switch"
+									class:on={isUnlocked}
+									role="switch"
+									aria-checked={isUnlocked}
+									aria-label="{catalog.title} {isUnlocked ? 'sperren' : 'freischalten'}"
+									onclick={() => toggleUnlocked(catalog.id)}
+									disabled={isFocus}
+									title={isFocus ? 'Fokus-Lektion ist immer freigeschaltet' : undefined}
+								>
+									<span class="toggle-knob"></span>
+								</button>
+							</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+		{/each}
+	{/if}
+</div>
+
+{#if toast}
+	<div class="toast" role="status">
+		<span class="toast-icon" class:ok={toast === 'Gespeichert'} class:err={toast !== 'Gespeichert'}>
+			{toast === 'Gespeichert' ? '✓' : '!'}
+		</span>
+		{toast}
+	</div>
+{/if}
+
+<style>
+	.lektionen-wrap { padding: 28px 40px 96px; display: flex; flex-direction: column; gap: 24px; justify-content: flex-start; align-items: center; }
+	@media (max-width: 767px) { .lektionen-wrap { padding: 16px 16px 80px; } }
+
+	.toolbar { width: 100%; max-width: 1100px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+	.search-field { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; color: var(--ink-3); max-width: 360px; flex: 1; }
+	.search-field input { background: none; border: none; outline: none; font: inherit; color: var(--ink); flex: 1; }
+	.search-ico { flex: none; }
+	.toolbar-hint { flex: 1; font-size: 13px; color: var(--ink-3); text-align: right; }
+	.btn-secondary { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+	.btn-secondary:hover { background: var(--subtle); }
+
+	.track-section { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 10px; }
+	.track-header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+	.track-num { font-family: var(--mono); font-size: 13px; color: var(--accent-strong); }
+	.track-name { font-size: 20px; font-weight: 600; }
+	.track-status { font-size: 13px; color: var(--ink-3); }
+	.flex-1 { flex: 1; }
+	.track-unlock-all { font-size: 14px; font-weight: 500; color: var(--accent-strong); cursor: pointer; background: none; border: none; padding: 0; }
+	.track-unlock-all:hover { text-decoration: underline; }
+
+	.lessons-table { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+	.lesson-row { display: grid; grid-template-columns: 28px 36px minmax(0,1fr) 72px 1fr 96px 160px; align-items: center; gap: 8px; min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--line); }
+	@media (max-width: 900px) { .lesson-row { grid-template-columns: minmax(0,1fr) 96px 140px; } }
+	.lesson-row:last-child { border-bottom: none; }
+
+	.drag-handle { color: var(--ink-3); font-size: 14px; letter-spacing: -2px; cursor: grab; }
+	.lesson-num { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
+	.lesson-title { font-size: 15px; font-weight: 500; }
+	.lesson-dur { font-size: 13px; color: var(--ink-3); }
+	.lesson-prog { flex: 1; }
+	.focus-cell { display: flex; justify-content: center; }
+	.badge-focus { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; }
+	.focus-set-btn { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px; color: var(--ink-3); font-size: 12px; cursor: pointer; }
+	.focus-set-btn:hover { background: var(--subtle); color: var(--ink); }
+
+	.toggle-cell { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+	.toggle-label { font-size: 12px; color: var(--ink-2); width: 52px; text-align: right; }
+	.toggle-switch { width: 40px; height: 22px; border-radius: 999px; background: var(--line-strong); position: relative; cursor: pointer; flex: none; transition: background 0.15s; }
+	.toggle-switch.on { background: var(--accent); }
+	.toggle-switch:disabled { opacity: 0.5; cursor: default; }
+	.toggle-knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 999px; background: #fff; transition: left 0.15s; }
+	.toggle-switch.on .toggle-knob { left: 21px; }
+
+	.spinner-wrap { display: grid; place-items: center; padding: 80px; }
+	.spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: tb-spin 0.8s linear infinite; }
+
+	.mono { font-family: var(--mono); }
+
+	.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 18px; border-radius: 10px; background: #0f172a; color: #fff; font-size: 14px; font-weight: 500; box-shadow: var(--shadow-pop); z-index: 30; white-space: nowrap; }
+	.toast-icon { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex: none; }
+	.toast-icon.ok { background: var(--ok); color: #fff; }
+	.toast-icon.err { background: var(--danger); color: #fff; }
+</style>
