@@ -1,52 +1,49 @@
-# Design-Status (Stand v11, 2026-10-21)
+# Design-Status (Stand Review 2, 2026-10-21)
 
-Abgleich der Designer-Lieferung (`Website v11`, Design-System v3, Eule) mit [`DESIGN-SPEC.md`](./DESIGN-SPEC.md).
+Abgleich der Designer-Lieferung mit [`DESIGN-SPEC.md`](./DESIGN-SPEC.md).
 
 ## Fertig
 
-- [x] Design-System v3: Farben, Typo (IBM Plex), Radien, Schatten, Buttons, Badges, Tabs, Code, Hell/Dunkel (`sbsqltt-theme.css`)
-- [x] Eule: 23 Posen + 24 Animationen als SVG (hell/dunkel), Icon in 5 Größen
-- [x] **A1 Startseite** (v11), inkl. Für-Lehrkräfte-, Datenschutz-, Kosten- und FAQ-Abschnitt
-- [x] **B2 Lektionsseite** (`Lektion B2`, Entwurf 1): alle 15 Desktop-Frames, Dunkel 1/3/8, Mobil 8 Frames. Kleinigkeiten offen: Schema-Bottom-Sheet mobil (geöffnet) und Tablet fehlen noch
+- [x] Design-System v3, Eule (23 Posen, 24 Animationen, Icons)
+- [x] A1 Startseite (v11)
+- [x] A2 Lektionsübersicht: Erstbesuch, Fortgeschritten mit Fokus + gesperrt, Dunkel, Mobil
+- [x] B2 Lektionsseite: alle Desktop-Frames, Dunkel, Mobil, Bottom-Sheet, Tablet
+- [x] A3 Datensätze (Liste, Detail), B3 Python-Lektion, B4 Sandbox
+- [x] C1–C5 Konto: Login (+Fehler, mobil über QR), Registrieren (Schüler/Lehrkraft/mobil), Passwort vergessen, Beitreten (5 Zustände, Handy), Profil
+- [x] D1–D6 Lehrerbereich: Klassen (+leer), Dashboard (Fokus, Matrix, leer, dunkel, Seitenpanel), Lektionen, Neue Klasse + QR-Vollbild, Schüler + Passwort-Reset, Einstellungen + Dialoge
+- [x] D7 Quiz wählen, D8 Fragensatz-Editor, Auswertung
+- [x] E1–E5 Quiz: Beamer + Handy, inkl. Verbindung unterbrochen, Pausiert
+- [x] A5 Textseite, F 404 / 500 / Offline
 
-## Noch zu designen
+## Noch offen (klein)
 
-**Must (Demo)**
-- [ ] A2 Lektionsübersicht (Fokus-Banner, gesperrte Lektion, Erstbesuch vs. „Weiter mit …“)
-- [ ] A3 Datensätze (Liste + Detail mit Schema, Vorschau, Download, Python-Snippet)
-- [ ] C1 Login, C2 Registrieren (Schüler/Lehrkraft), C3 Klasse beitreten (QR-Flow, Handy)
-- [ ] D1 Klassenübersicht (inkl. leer), D3 Klassen-Dashboard (Fokus, Liste, Seitenpanel, Matrix, leer), D4 Lektionen
+- [ ] **Lehrerbereich mobil/Tablet** (mind. D1 + D3; Lehrkräfte schauen im Unterricht oft aufs Tablet)
+- [ ] **A3 Datensätze mobil**
+- [ ] **Startseite mobil** (v11 als 390-px-Frame)
+- [ ] **Navigation vereinheitlichen:** Startseite hat „Für Lehrkräfte · Lernpfad · Datenschutz · FAQ“, App hat „Lernen · Datensätze · Für Lehrkräfte“. Ein Header für beide oder bewusst zwei?
+- [ ] Avatar-Menü offen (Schüler / Lehrkraft) als Frame
+- [ ] Toast-Beispiel im Kontext (z. B. D4 „Gespeichert“)
 
-**Should**
-- [ ] E1–E5 Live-Quiz, je Beamer (16:9) **und** Handy
-- [ ] D7 Quiz wählen, D2 Neue Klasse (+ QR-Vollbild), B3 Python-Lektion, B4 Sandbox
+## Zu klären (Muri)
 
-**Could**
-- [ ] D8 Fragensatz-Editor, D5 Schüler, D6 Einstellungen, C4 Profil, C5 Passwort vergessen, F 404/500/Offline
+- [ ] Domain: QR zeigt `sbsqltt.jmestudio.de/join`, Kontakt ist `kontakt@sbsqltt.de`. Eine Domain festlegen.
+- [ ] A4 „Für Lehrkräfte“: eigene Seite oder Abschnitt auf Startseite reicht? (aktuell nur Abschnitt)
 
-## Zu klären
-
-- [ ] Eule: welche Pose für welchen Zustand? (Vorschlag unten)
-- [ ] A4 „Für Lehrkräfte“: eigene Seite oder reicht der Abschnitt auf der Startseite?
-- [ ] Kontaktadresse `kontakt@sbsqltt.de`: Domain vorhanden? (aktuell `sbsqltt.jmestudio.de`)
-- [ ] Animationen: `prefers-reduced-motion` beachten (Eule still stellen)
-
-### Vorschlag: Eule ↔ Zustand
+### Eule ↔ Zustand
 
 | Zustand | Eule |
 |---|---|
 | Lädt | `loading` |
-| Übung neu / wartet | `idle` |
+| Übung neu | `idle` |
 | SQL-Fehler | `error` |
-| Falsch, aber läuft | `thinking` |
-| Tipp | `hint` |
+| Falsch | `thinking` |
+| Tipp verfügbar / offen | `raisehand` / `hint` |
 | Richtig | `success` |
 | Lektion fertig | `celebrate` |
-| Track fertig | `levelup` / `graduate` |
-| Leerer Zustand | `curious` / `point` |
-| Hängt fest (Lehrer-Sicht) | `raisehand` |
-| Quiz | `quiz`, Ende `trophy` |
-| Willkommen / Login | `wave` |
+| Track fertig | `graduate` |
+| Leer | `curious` / `point` |
+| Quiz / Ende | `quiz` / `trophy` |
+| Login | `wave` |
 | 404 | `surprised` |
-| Offline | `sleep` |
-| Python-Lektion | `laptop` / `typing` |
+| Offline / DB lädt nicht | `sleep` |
+| Python | `laptop` |
