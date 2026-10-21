@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import LoginModal from '$lib/components/LoginModal.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import { initSession } from '$lib/tabula/session.svelte.js';
 
 	let { children } = $props();
@@ -37,6 +38,7 @@
 	<div class="min-h-screen text-ink-900 bg-ink-0">
 		<Navbar onOpenLogin={() => (loginOpen = true)} />
 		{@render children()}
+		<Footer />
 		<LoginModal open={loginOpen} onClose={() => (loginOpen = false)} />
 	</div>
 {/if}
