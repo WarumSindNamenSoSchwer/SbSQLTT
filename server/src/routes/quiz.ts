@@ -69,6 +69,8 @@ async function requireTeacher(
 
 const questionSchema = z.object({
   question: z.string().min(1).max(512),
+  /** Optionaler SQL-Codeblock fuer Beamer/Handy-Anzeige */
+  code: z.string().max(2048).optional(),
   options: z.array(z.string().min(1).max(256)).min(2).max(4),
   correct_idx: z.number().int().min(0).max(3),
   time_limit: z.number().int().min(1).max(120).default(20),
@@ -107,6 +109,7 @@ interface QuestionRow {
   set_id: number
   position: number
   question: string
+  code: string | null
   options: string
   correct_idx: number
   time_limit: number
@@ -160,7 +163,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const { id } = req.params as { id: string }
     const quizId = parseInt(id, 10)
-    if (isNaN(quizId)) return reply.code(400).send({ fehler: 'Ungueltige ID.' })
+    if (isNaN(quizId)) return reply.code(400).send({ fehler: 'Ungültige ID.' })
 
     const quiz = db.prepare(
       'SELECT id, teacher_id, title, source, created_at FROM quiz_question_sets WHERE id = ?'
@@ -171,7 +174,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
     }
 
     const questions = db.prepare(
-      'SELECT id, position, question, options, correct_idx, time_limit FROM quiz_questions WHERE set_id = ? ORDER BY position'
+      'SELECT id, position, question, code, options, correct_idx, time_limit FROM quiz_questions WHERE set_id = ? ORDER BY position'
     ).all(quizId) as QuestionRow[]
 
     return {
@@ -183,6 +186,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
         id: q.id,
         position: q.position,
         question: q.question,
+        ...(q.code ? { code: q.code } : {}),
         options: JSON.parse(q.options) as string[],
         correct_idx: q.correct_idx,
         time_limit: q.time_limit,
@@ -197,7 +201,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const parsed = createQuizSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
     const { title, questions } = parsed.data
 
@@ -210,8 +214,8 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i]
         db.prepare(
-          'INSERT INTO quiz_questions (set_id, position, question, options, correct_idx, time_limit) VALUES (?, ?, ?, ?, ?, ?)'
-        ).run(setId, i + 1, q.question, JSON.stringify(q.options), q.correct_idx, q.time_limit)
+          'INSERT INTO quiz_questions (set_id, position, question, code, options, correct_idx, time_limit) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).run(setId, i + 1, q.question, q.code ?? null, JSON.stringify(q.options), q.correct_idx, q.time_limit)
       }
 
       return setId
@@ -227,7 +231,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const { id } = req.params as { id: string }
     const quizId = parseInt(id, 10)
-    if (isNaN(quizId)) return reply.code(400).send({ fehler: 'Ungueltige ID.' })
+    if (isNaN(quizId)) return reply.code(400).send({ fehler: 'Ungültige ID.' })
 
     const quiz = db.prepare(
       'SELECT id, teacher_id FROM quiz_question_sets WHERE id = ?'
@@ -239,7 +243,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const parsed = patchQuizSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
     const { title, questions } = parsed.data
 
@@ -252,8 +256,8 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
         for (let i = 0; i < questions.length; i++) {
           const q = questions[i]
           db.prepare(
-            'INSERT INTO quiz_questions (set_id, position, question, options, correct_idx, time_limit) VALUES (?, ?, ?, ?, ?, ?)'
-          ).run(quizId, i + 1, q.question, JSON.stringify(q.options), q.correct_idx, q.time_limit)
+            'INSERT INTO quiz_questions (set_id, position, question, code, options, correct_idx, time_limit) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ).run(quizId, i + 1, q.question, q.code ?? null, JSON.stringify(q.options), q.correct_idx, q.time_limit)
         }
       }
     })()
@@ -268,7 +272,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const { id } = req.params as { id: string }
     const quizId = parseInt(id, 10)
-    if (isNaN(quizId)) return reply.code(400).send({ fehler: 'Ungueltige ID.' })
+    if (isNaN(quizId)) return reply.code(400).send({ fehler: 'Ungültige ID.' })
 
     const quiz = db.prepare(
       'SELECT id, teacher_id FROM quiz_question_sets WHERE id = ?'
@@ -293,7 +297,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const parsed = startSessionSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
     const { quiz_id, class_id } = parsed.data
 
@@ -328,7 +332,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
       }
     }
     if (!pin) {
-      return reply.code(503).send({ fehler: 'Kein PIN verfuegbar. Bitte erneut versuchen.' })
+      return reply.code(503).send({ fehler: 'Kein PIN verfügbar. Bitte erneut versuchen.' })
     }
 
     // Sitzung anlegen (class_id kann NULL sein - Gast-Modus)
@@ -348,7 +352,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const { id } = req.params as { id: string }
     const roomId = parseInt(id, 10)
-    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungueltige ID.' })
+    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungültige ID.' })
 
     const room = db.prepare(
       `SELECT r.id, r.set_id, r.state, r.current_q, r.pin, r.ended_at,
@@ -391,7 +395,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const { id } = req.params as { id: string }
     const roomId = parseInt(id, 10)
-    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungueltige ID.' })
+    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungültige ID.' })
 
     const room = db.prepare(
       `SELECT r.id, r.set_id, r.state, r.current_q, qs.teacher_id
@@ -453,7 +457,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const { id } = req.params as { id: string }
     const roomId = parseInt(id, 10)
-    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungueltige ID.' })
+    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungültige ID.' })
 
     const room = db.prepare(
       `SELECT r.id, r.set_id, r.state, r.current_q, r.current_question_id, qs.teacher_id
@@ -467,7 +471,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
     }
 
     if (room.state !== 'question') {
-      return reply.code(409).send({ fehler: 'Keine laufende Frage zum Aufloesen.' })
+      return reply.code(409).send({ fehler: 'Keine laufende Frage zum Auflösen.' })
     }
 
     db.prepare("UPDATE quiz_rooms SET state = 'reveal' WHERE id = ?").run(roomId)
@@ -515,7 +519,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const { id } = req.params as { id: string }
     const roomId = parseInt(id, 10)
-    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungueltige ID.' })
+    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungültige ID.' })
 
     const room = db.prepare(
       `SELECT r.id, r.set_id, r.state, qs.teacher_id
@@ -545,7 +549,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const { id } = req.params as { id: string }
     const roomId = parseInt(id, 10)
-    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungueltige ID.' })
+    if (isNaN(roomId)) return reply.code(400).send({ fehler: 'Ungültige ID.' })
 
     const room = db.prepare(
       `SELECT r.id, r.set_id, r.state, r.ended_at, qs.teacher_id

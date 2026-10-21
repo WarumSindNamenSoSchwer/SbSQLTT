@@ -204,7 +204,7 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
 
     const parsed = createClassSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
 
     // Join-Code generieren (Eindeutigkeit sicherstellen)
@@ -259,7 +259,7 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
 
     const parsed = patchClassSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
 
     const { name, archived } = parsed.data
@@ -515,7 +515,7 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const classId = Number((req.params as { id: string; uid: string }).id)
     const userId = Number((req.params as { id: string; uid: string }).uid)
     if (!Number.isInteger(classId) || classId <= 0) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
-    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     const cls = requireOwnClass(db, session.user_id, classId, reply)
     if (!cls) return
@@ -524,7 +524,7 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const member = db.prepare(
       'SELECT id FROM memberships WHERE class_id = ? AND user_id = ?'
     ).get(classId, userId)
-    if (!member) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     // Letzte Versuche (K4: nur letzte Abfrage + Fehler, kein Abfragetext ausser fuer Debugging)
     const attempts = db.prepare(
@@ -549,7 +549,7 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
 
     const parsed = putLessonsSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
 
     const { lessons } = parsed.data
@@ -615,17 +615,17 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const classId = Number((req.params as { id: string; uid: string }).id)
     const userId = Number((req.params as { id: string; uid: string }).uid)
     if (!Number.isInteger(classId) || classId <= 0) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
-    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     const cls = requireOwnClass(db, session.user_id, classId, reply)
     if (!cls) return
 
     const member = db.prepare('SELECT id FROM memberships WHERE class_id = ? AND user_id = ?').get(classId, userId)
-    if (!member) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     const parsed = patchStudentSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
 
     db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(parsed.data.display_name, userId)
@@ -644,13 +644,13 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const classId = Number((req.params as { id: string; uid: string }).id)
     const userId = Number((req.params as { id: string; uid: string }).uid)
     if (!Number.isInteger(classId) || classId <= 0) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
-    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     const cls = requireOwnClass(db, session.user_id, classId, reply)
     if (!cls) return
 
     const member = db.prepare('SELECT id FROM memberships WHERE class_id = ? AND user_id = ?').get(classId, userId)
-    if (!member) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     // K8: Mitgliedschaft + klassenbezogener Fortschritt loeschen
     db.transaction(() => {
@@ -676,17 +676,17 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const classId = Number((req.params as { id: string; uid: string }).id)
     const userId = Number((req.params as { id: string; uid: string }).uid)
     if (!Number.isInteger(classId) || classId <= 0) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
-    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     const cls = requireOwnClass(db, session.user_id, classId, reply)
     if (!cls) return
 
     const member = db.prepare('SELECT id FROM memberships WHERE class_id = ? AND user_id = ?').get(classId, userId)
-    if (!member) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     const parsed = passwordResetSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
 
     // Schuelerdaten laden (Benutzername + Erstellungstag fuer K3-Hash)
@@ -694,9 +694,9 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
       'SELECT username, created_day, role FROM users WHERE id = ?'
     ).get(userId) as { username: string; created_day: string; role: string } | undefined
 
-    if (!student) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!student) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
     if (student.role !== 'student') {
-      return reply.code(400).send({ fehler: 'Passwort-Reset nur fuer Schueler moeglich.' })
+      return reply.code(400).send({ fehler: 'Passwort-Reset nur für Schüler möglich.' })
     }
 
     // K3: Hash mit demselben Benutzernamen und Tag (der Schueler bleibt als secret-Basis)
@@ -731,7 +731,7 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const classId = Number((req.params as { id: string; uid: string }).id)
     const userId = Number((req.params as { id: string; uid: string }).uid)
     if (!Number.isInteger(classId) || classId <= 0) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
-    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     const cls = requireOwnClass(db, session.user_id, classId, reply)
     if (!cls) return
@@ -740,11 +740,11 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const member = db.prepare(
       'SELECT id FROM memberships WHERE class_id = ? AND user_id = ?'
     ).get(classId, userId)
-    if (!member) return reply.code(404).send({ fehler: 'Schueler nicht gefunden.' })
+    if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
     const parsed = completeSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
 
     const { lesson_id, step } = parsed.data

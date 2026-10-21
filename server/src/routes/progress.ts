@@ -66,7 +66,7 @@ const progressRoutes: FastifyPluginAsync<ProgressPluginOptions> = async (fastify
 
     const parsed = putProgressSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
     const { progress, last_attempts } = parsed.data
 

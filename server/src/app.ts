@@ -84,7 +84,7 @@ export async function buildApp(cfg: AppConfig) {
 
       const origin = request.headers['origin']
       if (!origin || origin !== allowedOrigin) {
-        reply.code(403).send({ fehler: 'Ungueltige Herkunft (Origin).' })
+        reply.code(403).send({ fehler: 'Ungültige Herkunft (Origin).' })
       }
     })
   }

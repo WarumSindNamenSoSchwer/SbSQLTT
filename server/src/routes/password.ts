@@ -97,7 +97,7 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
   fastify.post('/reset', async (req, reply) => {
     const parsed = resetSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.' })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
     }
     const { token: rawToken, password } = parsed.data
 
@@ -109,7 +109,7 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
     ).get(tokenHash, nowTs) as { token_hash: string; user_id: number; expires_at: number; used: number } | undefined
 
     if (!reset) {
-      return reply.code(400).send({ fehler: 'Link ungueltig oder abgelaufen.' })
+      return reply.code(400).send({ fehler: 'Link ungültig oder abgelaufen.' })
     }
 
     const user = db.prepare(

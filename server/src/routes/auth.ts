@@ -138,7 +138,7 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
   fastify.post('/register', async (req, reply) => {
     const parsed = registerSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
     const data = parsed.data
     const username = normalizeUsername(data.username)
@@ -203,7 +203,7 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
   fastify.post('/login', async (req, reply) => {
     const parsed = loginSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.' })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
     }
     const { login: loginInput, password } = parsed.data
     const normalized = normalizeUsername(loginInput)
@@ -278,7 +278,7 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
 
     const parsed = patchMeSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.', details: parsed.error.flatten() })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
     const { display_name, username: newUsername, current_password } = parsed.data
 
@@ -291,7 +291,7 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
     // Benutzername aendern: nur mit aktuellem Passwort (K3)
     if (newUsername !== undefined) {
       if (!current_password) {
-        return reply.code(400).send({ fehler: 'Aktuelles Passwort erforderlich zum Aendern des Benutzernamens.' })
+        return reply.code(400).send({ fehler: 'Zum Ändern des Benutzernamens ist das aktuelle Passwort nötig.' })
       }
       const ok = await verifyPassword(user.password_hash, current_password, user.username, user.created_day)
       if (!ok) {

@@ -28,7 +28,7 @@ const classesRoutes: FastifyPluginAsync<ClassesPluginOptions> = async (fastify, 
 
     const parsed = joinClassSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungueltige Eingabe.' })
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
     }
     const { code } = parsed.data
 

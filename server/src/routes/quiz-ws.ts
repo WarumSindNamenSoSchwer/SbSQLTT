@@ -1,14 +1,18 @@
 /**
  * Quiz-WebSocket-Handler unter /api/quiz/ws
  *
- * Protokoll:
+ * PROTOKOLL
  *
  * VERBINDUNGSAUFBAU
- * Jeder Client sendet nach dem Upgrade sofort eine join-Nachricht:
+ * Jeder Client sendet nach dem Upgrade sofort eine Join-Nachricht.
+ * Die Sitzung wird ausschliesslich ueber den HttpOnly-Cookie tabula_session
+ * beim WS-Upgrade geprueft. Gaeste werden abgelehnt.
  *
- *   Lehrkraft: { type: "teacher_join", room_id: number }   (Auth über Cookie tabula_session beim Upgrade)
- *   Schueler:  { type: "student_join", pin: string, display_name: string }
- *              (token optional: Session-Cookie des registrierten Nutzers)
+ *   Lehrkraft: { type: "teacher_join", room_id: number }
+ *              Auth: Cookie tabula_session beim Upgrade-Request
+ *   Schueler:  { type: "student_join", pin: string }
+ *              Auth: Cookie tabula_session (Pflicht, kein Gast-Beitritt)
+ *              display_name kommt aus dem Konto, Feld im Join entfaellt.
  *
  * NACHRICHTEN LEHRKRAFT -> SERVER
  *   { type: "next_question" }         Naechste Frage zeigen
@@ -16,9 +20,10 @@
  *   { type: "end_quiz" }              Sitzung beenden
  *
  * NACHRICHTEN SERVER -> CLIENT (alle)
- *   { type: "lobby_state", participants: string[], count: number }
+ *   { type: "lobby_state", participants: string[], count: number,
+ *           expected?: number }       expected = Anzahl Klassenmitglieder (nur bei Klassensitzung)
  *   { type: "question_start", question_index: number, question_id: number,
- *           question: string, options: string[], time_limit: number,
+ *           question: string, code?: string, options: string[], time_limit: number,
  *           started_at: number }
  *   { type: "answer_progress", count: number, total: number }
  *   { type: "reveal", correct_idx: number, answer_counts: number[],
@@ -35,14 +40,28 @@
  * NACHRICHTEN SCHUELER -> SERVER
  *   { type: "answer", question_id: number, chosen_idx: number }
  *
+ * FEHLER-CODES (code-Feld im error-Typ)
+ *   login_required   Schueler ohne gueltige Sitzung
+ *   not_in_class     Schueler ist nicht Mitglied der angegebenen Klasse
+ *   invalid_pin      PIN nicht gefunden oder Sitzung beendet
+ *   not_in_lobby     Quiz laeuft bereits
+ *   name_taken       Anzeigename bereits vergeben
+ *   unauthorized     Lehrkraft ohne gueltige Sitzung
+ *   forbidden        Nutzer ist keine Lehrkraft
+ *   not_found        Sitzung gehoert nicht dieser Lehrkraft
+ *   already_ended    Sitzung bereits beendet
+ *   rate_limited     Zu viele Beitrittsversuche
+ *   not_joined       Nachricht vor Join-Nachricht gesendet
+ *   invalid_json     Ungueltige JSON-Nachricht
+ *
  * PUNKTE
  * Max. 1000 Punkte pro Frage. Schnellere Antworten geben mehr Punkte:
- *   points = round(1000 * (1 - (answer_ms / (time_limit_ms * 0.5 * 2)))^0.5)
+ *   points = round(1000 * sqrt(1 - answerMs / timeLimitMs))
  * Mindestpunkte bei richtiger Antwort: 100
  *
  * SICHERHEIT
  * - Origin-Check gegen ALLOWED_ORIGIN (wie CSRF)
- * - Rate-Limit fuer student_join (max. 10 Versuche pro Displayname in 1 Min.)
+ * - Rate-Limit fuer student_join (max. 10 Versuche je Rate-Key in 1 Min.)
  * - Keine Antworten/Spielernamen in Logs (K5)
  * - Server ist Quelle der Wahrheit fuer Zeit und Punkte
  */
@@ -52,6 +71,7 @@ import type { WebSocket as WsSocket } from 'ws'
 import type { Db } from '../db.js'
 import { validateSession, SESSION_COOKIE_NAME } from '../session.js'
 import { RateLimiter } from '../plugins/ratelimit.js'
+
 // ---------------------------------------------------------------------------
 // Typen fuer eingehende Nachrichten
 // ---------------------------------------------------------------------------
@@ -59,14 +79,15 @@ import { RateLimiter } from '../plugins/ratelimit.js'
 interface TeacherJoin {
   type: 'teacher_join'
   room_id: number
-  token?: string // nur Fallback; Browser authentifiziert per HttpOnly-Cookie beim Upgrade
+  /** Nur Fallback fuer Tests/Nicht-Browser-Clients; Browser sendet Cookie automatisch */
+  token?: string
 }
 
 interface StudentJoin {
   type: 'student_join'
   pin: string
-  display_name: string
-  token?: string // optional: Session-Cookie-Wert des registrierten Nutzers
+  /** Nur Fallback fuer Tests; Browser sendet Cookie automatisch */
+  token?: string
 }
 
 interface NextQuestion {
@@ -102,13 +123,13 @@ interface ParticipantConn {
 interface RoomState {
   teacherWs: WsSocket | null
   students: Map<WsSocket, ParticipantConn>
-  // Wenn eine Frage laeuft: Endzeitpunkt in ms
+  /** Endzeitpunkt der laufenden Frage in ms */
   questionDeadlineMs: number | null
   currentQuestionId: number | null
   currentTimeLimitMs: number | null
 }
 
-// Globale Map: room_id -> RoomState
+/** Globale Map: room_id -> RoomState */
 const rooms = new Map<number, RoomState>()
 
 function getOrCreateRoom(roomId: number): RoomState {
@@ -158,12 +179,11 @@ function broadcastToRoom(room: RoomState, data: object, excludeWs?: WsSocket): v
 }
 
 // ---------------------------------------------------------------------------
-// Punkte-Berechnung (serversseitig, K5)
+// Punkte-Berechnung (serverseitig, K5)
 // ---------------------------------------------------------------------------
 
 function calculatePoints(answerMs: number, timeLimitMs: number): number {
   if (answerMs > timeLimitMs) return 0
-  // Punkte sinken mit der Zeit: sqrt-Abfall, Min. 100
   const ratio = Math.max(0, 1 - answerMs / timeLimitMs)
   const points = Math.round(1000 * Math.sqrt(ratio))
   return Math.max(100, Math.min(1000, points))
@@ -177,6 +197,7 @@ interface QuestionRow {
   id: number
   position: number
   question: string
+  code: string | null
   options: string
   correct_idx: number
   time_limit: number
@@ -185,6 +206,7 @@ interface QuestionRow {
 interface RoomRow {
   id: number
   set_id: number
+  class_id: number | null
   state: string
   current_q: number
   pin: string | null
@@ -195,7 +217,7 @@ interface RoomRow {
 
 function handleNextQuestion(db: Db, roomId: number, room: RoomState): void {
   const roomRow = db.prepare(
-    `SELECT id, set_id, state, current_q, current_question_id FROM quiz_rooms WHERE id = ?`
+    `SELECT id, set_id, class_id, state, current_q, current_question_id FROM quiz_rooms WHERE id = ?`
   ).get(roomId) as RoomRow | undefined
   if (!roomRow) return
 
@@ -205,7 +227,7 @@ function handleNextQuestion(db: Db, roomId: number, room: RoomState): void {
   }
 
   const questions = db.prepare(
-    'SELECT id, position, question, options, correct_idx, time_limit FROM quiz_questions WHERE set_id = ? ORDER BY position'
+    'SELECT id, position, question, code, options, correct_idx, time_limit FROM quiz_questions WHERE set_id = ? ORDER BY position'
   ).all(roomRow.set_id) as QuestionRow[]
 
   const nextIdx = roomRow.state === 'lobby' ? 0 : roomRow.current_q
@@ -232,7 +254,7 @@ function handleNextQuestion(db: Db, roomId: number, room: RoomState): void {
   room.currentQuestionId = nextQuestion.id
   room.currentTimeLimitMs = timeLimitMs
 
-  broadcastToRoom(room, {
+  const msg: Record<string, unknown> = {
     type: 'question_start',
     question_index: newIndex,
     question_id: nextQuestion.id,
@@ -240,7 +262,10 @@ function handleNextQuestion(db: Db, roomId: number, room: RoomState): void {
     options: JSON.parse(nextQuestion.options) as string[],
     time_limit: nextQuestion.time_limit,
     started_at: nowS,
-  })
+  }
+  if (nextQuestion.code) msg['code'] = nextQuestion.code
+
+  broadcastToRoom(room, msg)
 }
 
 function handleReveal(db: Db, roomId: number, room: RoomState): void {
@@ -255,7 +280,7 @@ function handleReveal(db: Db, roomId: number, room: RoomState): void {
   }
 
   db.prepare("UPDATE quiz_rooms SET state = 'reveal' WHERE id = ?").run(roomId)
-  room.questionDeadlineMs = null // Timer stoppen
+  room.questionDeadlineMs = null
 
   const question = db.prepare(
     'SELECT correct_idx, options FROM quiz_questions WHERE id = ?'
@@ -279,15 +304,13 @@ function handleReveal(db: Db, roomId: number, room: RoomState): void {
     }
   }
 
-  const revealMsg = {
+  broadcastToRoom(room, {
     type: 'reveal',
     correct_idx: question.correct_idx,
     answer_counts: counts,
     correct_ratio: totalAnswers > 0 ? correctCount / totalAnswers : 0,
-  }
-  broadcastToRoom(room, revealMsg)
+  })
 
-  // Rangliste senden
   sendLeaderboard(db, roomId, room)
 }
 
@@ -328,7 +351,7 @@ export interface QuizWsOptions {
   skipOriginCheck?: boolean
 }
 
-// Rate-Limiter fuer Student-Join (in-memory, keine IPs - K10)
+/** Rate-Limiter fuer Student-Join (in-memory, keine IPs - K10) */
 const joinRateLimiter = new RateLimiter(10, 60 * 1000)
 
 // ---------------------------------------------------------------------------
@@ -345,7 +368,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
     if (!skipOriginCheck) {
       const origin = req.headers['origin']
       if (!origin || origin !== allowedOrigin) {
-        socket.close(1008, 'Ungueltige Herkunft.')
+        socket.close(1008, 'Ungültige Herkunft.')
         return
       }
     }
@@ -353,8 +376,11 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
     let roomId: number | null = null
     let isTeacher = false
     let participantWsEntry: ParticipantConn | null = null
-    // Sitzung aus dem HttpOnly-Cookie des Upgrade-Requests (Browser sendet es automatisch mit).
-    // msg.token bleibt nur als Fallback für Tests/Nicht-Browser-Clients.
+
+    /**
+     * cookieToken: HttpOnly-Cookie aus dem WS-Upgrade-Request.
+     * Browser sendet es automatisch mit. Fuer Tests kann msg.token als Fallback genutzt werden.
+     */
     const cookieToken = (req.cookies?.[SESSION_COOKIE_NAME] as string | undefined) ?? ''
 
     socket.on('message', (rawData) => {
@@ -362,7 +388,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       try {
         msg = JSON.parse(rawData.toString()) as IncomingMsg
       } catch {
-        sendJson(socket, { type: 'error', code: 'invalid_json', message: 'Ungueltige JSON-Nachricht.' })
+        sendJson(socket, { type: 'error', code: 'invalid_json', message: 'Ungültige JSON-Nachricht.' })
         return
       }
 
@@ -409,8 +435,8 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
         room.teacherWs = null
       } else {
         room.students.delete(socket)
-        // Lobby-Update senden
-        sendLobbyState(room)
+        // DB koennte bereits geschlossen sein (Tests: teardown vor close-Event)
+        try { sendLobbyState(db, roomId, room) } catch { /* ignorieren */ }
       }
       cleanupRoom(roomId)
     })
@@ -418,20 +444,20 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
     // ---- Innere Hilfsfunktionen ----
 
     function handleTeacherJoin(msg: TeacherJoin): void {
-      const session = validateSession(db, cookieToken || msg.token || '')
+      const token = cookieToken || msg.token || ''
+      const session = validateSession(db, token)
       if (!session) {
-        sendJson(socket, { type: 'error', code: 'unauthorized', message: 'Ungueltige Sitzung.' })
+        sendJson(socket, { type: 'error', code: 'unauthorized', message: 'Ungültige Sitzung.' })
         socket.close(1008, 'Unauthorized.')
         return
       }
       const user = db.prepare('SELECT role FROM users WHERE id = ?').get(session.user_id) as { role: string } | undefined
       if (!user || user.role !== 'teacher') {
-        sendJson(socket, { type: 'error', code: 'forbidden', message: 'Nur Lehrkraefte.' })
+        sendJson(socket, { type: 'error', code: 'forbidden', message: 'Nur Lehrkräfte.' })
         socket.close(1008, 'Forbidden.')
         return
       }
 
-      // Eigentuemerschaft pruefen
       const roomRow = db.prepare(
         `SELECT r.id, r.state, qs.teacher_id
          FROM quiz_rooms r
@@ -456,73 +482,86 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       const room = getOrCreateRoom(roomId)
       room.teacherWs = socket
 
-      // Aktuellen Zustand senden
-      sendLobbyState(room)
+      sendLobbyState(db, roomId, room)
       sendJson(socket, { type: 'joined', role: 'teacher', room_id: roomId })
     }
 
     function handleStudentJoin(msg: StudentJoin): void {
-      // Rate-Limit fuer Beitritt (verhindert PIN-Raten, K10)
-      const limitKey = `join:${msg.display_name.slice(0, 32)}`
+      // Schritt 1: Sitzung pruefen - NUR mit Konto (K4, Datenschutz quiz)
+      const studentToken = cookieToken || msg.token || ''
+      const session = validateSession(db, studentToken)
+      if (!session) {
+        sendJson(socket, { type: 'error', code: 'login_required', message: 'Quiz erfordert ein Konto. Bitte melde dich an.' })
+        socket.close(1008, 'Login required.')
+        return
+      }
+
+      // display_name aus dem Konto holen
+      const userRow = db.prepare(
+        'SELECT id, display_name FROM users WHERE id = ?'
+      ).get(session.user_id) as { id: number; display_name: string } | undefined
+      if (!userRow) {
+        sendJson(socket, { type: 'error', code: 'login_required', message: 'Konto nicht gefunden.' })
+        socket.close(1008, 'Login required.')
+        return
+      }
+
+      // Rate-Limit (verhindert PIN-Raten, K10)
+      const limitKey = `join:${session.user_id}`
       if (!joinRateLimiter.check(limitKey)) {
-        sendJson(socket, { type: 'error', code: 'rate_limited', message: 'Zu viele Beitrittsversuche.' })
+        sendJson(socket, { type: 'error', code: 'rate_limited', message: 'Zu viele Beitrittsversuche. Bitte warte einen Moment.' })
         socket.close(1008, 'Rate limited.')
         return
       }
 
-      // Validierung - display_name: 1-32 Zeichen
-      const name = msg.display_name?.trim()
-      if (!name || name.length < 1 || name.length > 32) {
-        sendJson(socket, { type: 'error', code: 'invalid_name', message: 'Anzeigename: 1-32 Zeichen.' })
-        return
-      }
-
-      // PIN pruefen (nur aktive Sitzungen)
+      // Schritt 2: PIN pruefen
       const roomRow = db.prepare(
-        `SELECT id, state, pin FROM quiz_rooms WHERE pin = ? AND state != 'ended'`
-      ).get(msg.pin?.toUpperCase()) as { id: number; state: string; pin: string } | undefined
+        `SELECT id, class_id, state, pin FROM quiz_rooms WHERE pin = ? AND state != 'ended'`
+      ).get(msg.pin?.toUpperCase()) as { id: number; class_id: number | null; state: string; pin: string } | undefined
 
       if (!roomRow) {
-        sendJson(socket, { type: 'error', code: 'invalid_pin', message: 'Ungueltiger PIN.' })
+        sendJson(socket, { type: 'error', code: 'invalid_pin', message: 'Ungültiger PIN.' })
         return
       }
 
-      // Nur in Lobby beitreten (waehrend Frage: kein Beitritt)
       if (roomRow.state !== 'lobby') {
-        sendJson(socket, { type: 'error', code: 'not_in_lobby', message: 'Quiz laeuft bereits.' })
+        sendJson(socket, { type: 'error', code: 'not_in_lobby', message: 'Quiz läuft bereits.' })
         return
       }
 
-      // Registrierten Nutzer ermitteln (optional)
-      let userId: number | null = null
-      let displayName = name
+      // Schritt 3: Klassen-Check (falls Sitzung eine Klasse hat)
+      if (roomRow.class_id !== null) {
+        const membership = db.prepare(
+          'SELECT id FROM memberships WHERE class_id = ? AND user_id = ?'
+        ).get(roomRow.class_id, session.user_id) as { id: number } | undefined
 
-      const studentToken = cookieToken || msg.token || ''
-      if (studentToken) {
-        const session = validateSession(db, studentToken)
-        if (session) {
-          const userRow = db.prepare(
-            'SELECT id, display_name FROM users WHERE id = ?'
-          ).get(session.user_id) as { id: number; display_name: string } | undefined
-          if (userRow) {
-            userId = userRow.id
-            displayName = userRow.display_name
-          }
+        if (!membership) {
+          sendJson(socket, { type: 'error', code: 'not_in_class', message: 'Du bist kein Mitglied dieser Klasse.' })
+          return
         }
       }
 
-      // Teilnehmer anlegen (UNIQUE-Verletzung = Name vergeben)
+      const displayName = userRow.display_name
+
+      // Schritt 4: Teilnehmer anlegen (UNIQUE-Verletzung = doppelter Beitritt)
       let participantId: number
       try {
         const result = db.prepare(
           `INSERT INTO quiz_participants (room_id, user_id, display_name)
            VALUES (?, ?, ?)`
-        ).run(roomRow.id, userId, displayName)
+        ).run(roomRow.id, session.user_id, displayName)
         participantId = result.lastInsertRowid as number
       } catch {
-        // Name bereits vergeben
-        sendJson(socket, { type: 'error', code: 'name_taken', message: 'Name bereits vergeben.' })
-        return
+        // Doppelter Beitritt (user_id UNIQUE je Raum) -> als Wiederverbindung behandeln
+        const existing = db.prepare(
+          'SELECT id FROM quiz_participants WHERE room_id = ? AND user_id = ?'
+        ).get(roomRow.id, session.user_id) as { id: number } | undefined
+        if (existing) {
+          participantId = existing.id
+        } else {
+          sendJson(socket, { type: 'error', code: 'name_taken', message: 'Name bereits vergeben.' })
+          return
+        }
       }
 
       roomId = roomRow.id
@@ -532,13 +571,12 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       room.students.set(socket, participantWsEntry)
 
       sendJson(socket, { type: 'joined', role: 'student', display_name: displayName, participant_id: participantId })
-      sendLobbyState(room)
+      sendLobbyState(db, roomId, room)
     }
 
     function handleStudentAnswer(msg: StudentAnswer, room: RoomState): void {
       if (!participantWsEntry) return
 
-      // Raumstatus pruefen
       const roomRow = db.prepare(
         'SELECT state, current_question_id, current_question_started_at FROM quiz_rooms WHERE id = ?'
       ).get(roomId) as { state: string; current_question_id: number | null; current_question_started_at: number | null } | undefined
@@ -548,23 +586,19 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
         return
       }
 
-      // Frage muss die aktuelle sein
       if (msg.question_id !== roomRow.current_question_id) {
         sendJson(socket, { type: 'answer_too_late' })
         return
       }
 
-      // Timer-Check: Server prueft Deadline
       if (room.questionDeadlineMs !== null && Date.now() > room.questionDeadlineMs) {
         sendJson(socket, { type: 'answer_too_late' })
         return
       }
 
-      // Antwortzeit berechnen
       const startedAtMs = (roomRow.current_question_started_at ?? 0) * 1000
       const answerMs = Date.now() - startedAtMs
 
-      // Duplikat-Check
       const existing = db.prepare(
         'SELECT id FROM quiz_answers WHERE room_id = ? AND participant_id = ? AND question_id = ?'
       ).get(roomId, participantWsEntry.participantId, msg.question_id)
@@ -574,7 +608,6 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
         return
       }
 
-      // Korrektheit und Punkte berechnen
       const question = db.prepare(
         'SELECT correct_idx, time_limit FROM quiz_questions WHERE id = ?'
       ).get(msg.question_id) as { correct_idx: number; time_limit: number } | undefined
@@ -603,7 +636,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
         'UPDATE quiz_participants SET total_points = ? WHERE id = ?'
       ).run(newTotal, participantWsEntry.participantId)
 
-      // Bestaetigung nur an diesen Schueler (Richtige Antwort NICHT senden - K5)
+      // Bestaetigung nur an diesen Schueler (richtige Antwort NICHT senden - K5)
       sendJson(socket, {
         type: 'answer_ack',
         correct: isCorrect,
@@ -624,20 +657,34 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
         })
       }
     }
-
-    function sendLobbyState(room: RoomState): void {
-      const participants = db.prepare(
-        'SELECT display_name FROM quiz_participants WHERE room_id = ? ORDER BY joined_at'
-      ).all(roomId) as { display_name: string }[]
-
-      const lobbyMsg = {
-        type: 'lobby_state',
-        participants: participants.map(p => p.display_name),
-        count: participants.length,
-      }
-      broadcastToRoom(room, lobbyMsg)
-    }
   })
+}
+
+/**
+ * Sendet den aktuellen Lobby-Zustand an alle Teilnehmenden.
+ * Bei Klassensitzungen wird expected (Anzahl Klassenmitglieder) ergaenzt.
+ */
+function sendLobbyState(db: Db, roomId: number, room: RoomState): void {
+  const participants = db.prepare(
+    'SELECT display_name FROM quiz_participants WHERE room_id = ? ORDER BY joined_at'
+  ).all(roomId) as { display_name: string }[]
+
+  const roomRow = db.prepare('SELECT class_id FROM quiz_rooms WHERE id = ?').get(roomId) as { class_id: number | null } | undefined
+
+  const lobbyMsg: Record<string, unknown> = {
+    type: 'lobby_state',
+    participants: participants.map(p => p.display_name),
+    count: participants.length,
+  }
+
+  if (roomRow?.class_id !== null && roomRow?.class_id !== undefined) {
+    const memberCount = (db.prepare(
+      'SELECT COUNT(*) as cnt FROM memberships WHERE class_id = ?'
+    ).get(roomRow.class_id) as { cnt: number }).cnt
+    lobbyMsg['expected'] = memberCount
+  }
+
+  broadcastToRoom(room, lobbyMsg)
 }
 
 export default quizWsPlugin
