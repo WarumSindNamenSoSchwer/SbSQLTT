@@ -52,7 +52,7 @@ Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geände
 ## K7 E-Mails
 - Nur Systemmails: Passwort zurücksetzen (Link 1 Stunde gültig, einmalig nutzbar), Bestätigung der E-Mail-Adresse von Lehrkräften.
 - Versand über den Mailserver von Hetzner (Absender noreply@tabulasql.de, Port 587 mit STARTTLS). Keine Newsletter, keine Werbung.
-- **Offen:** Bestätigung der E-Mail-Adresse von Lehrkräften ist noch nicht gebaut, die Datenschutzerklärung nennt sie aber. Vor dem Start bauen oder den Satz streichen.
+- Umgesetzt (21.10.2026): Bestätigungslink 24 Stunden gültig, einmalig, nur SHA-256 des Tokens gespeichert, abgelaufene Token löscht der Aufräumjob. Belegt durch `tests/email-verify.test.ts`.
 
 ## K8 Löschung
 - Konto jederzeit selbst löschbar (Einstellungen), Löschung sofort mit allen Fortschritts- und Quizdaten.
