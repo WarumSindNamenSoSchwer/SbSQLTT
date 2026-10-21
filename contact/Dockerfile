@@ -17,7 +17,7 @@ FROM node:22-alpine AS production
 WORKDIR /app
 
 # Nicht als root laufen
-RUN addgroup -S tabula && adduser -S tabula -G tabula
+RUN addgroup -S -g 10001 tabula && adduser -S -u 10001 tabula -G tabula
 
 # Nur Produktionsabhaengigkeiten
 COPY package.json package-lock.json* ./
@@ -36,6 +36,6 @@ ENV NODE_ENV=production \
 EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost:3001/api/contact || exit 1
+    CMD wget -qO- http://localhost:3001/healthz || exit 1
 
 CMD ["node", "dist/index.js"]

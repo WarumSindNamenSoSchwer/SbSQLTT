@@ -1,15 +1,16 @@
 # deploy/compose.contact.yml
-# Erweiterung fuer den Kontaktformular-Dienst.
-# Verwendung: docker compose -f compose.yml -f compose.contact.yml up -d
-# (oder zusaetzlich -f compose.backend.yml falls der API-Service laeuft)
+# Kontaktformular-Dienst. Auf dem Server in /opt/tabula zusammen mit compose.yml:
+#   docker compose -f compose.yml -f compose.contact.yml up -d --build
 #
-# Der contact-Service laeuft NUR im internen Netz (kein Port nach aussen).
-# Caddy leitet /api/contact per reverse_proxy weiter (siehe Caddyfile).
+# Kein Port nach außen; Caddy erreicht den Dienst über das gemeinsame Compose-Netz
+# (tabula_default) unter contact:3001. Ausgehend braucht der Dienst nur SMTP (587).
+# Secret-Datei /opt/tabula/secrets/smtp_formular muss UID 10001 gehören (chmod 400),
+# da der Container nicht als root läuft.
 
 services:
   contact:
     build:
-      context: ../contact
+      context: ./contact
       dockerfile: Dockerfile
     image: tabula-contact:latest
     restart: unless-stopped
@@ -22,18 +23,20 @@ services:
       LOG_LEVEL: "info"
     secrets:
       - smtp_formular
-    networks:
-      - internal
-    # Arbeitsspeicher klein halten (kein Datenbankzugriff, kein groses Heap)
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
     mem_limit: 128m
-    # Konsolenausgabe klein halten
     logging:
       driver: local
       options:
         max-size: "1m"
         max-file: "2"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/contact"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/healthz"]
       interval: 30s
       timeout: 5s
       start_period: 15s
@@ -42,7 +45,3 @@ services:
 secrets:
   smtp_formular:
     file: /opt/tabula/secrets/smtp_formular
-
-networks:
-  internal:
-    internal: true

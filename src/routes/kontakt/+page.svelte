@@ -120,7 +120,7 @@
 				<!-- Formular -->
 				<div class="title-block">
 					<h1>Kontakt</h1>
-					<p class="sub">Schreib uns – wir antworten per E-Mail.</p>
+					<p class="sub">Schreib uns, wir antworten per E-Mail.</p>
 				</div>
 
 				{#if serverError}
@@ -206,7 +206,7 @@
 					</div>
 
 					<p class="privacy-hint">
-						Mit dem Absenden stimmst du zu, dass deine Angaben zur Bearbeitung deiner Anfrage verarbeitet werden.
+						Deine Angaben werden nur zur Beantwortung deiner Anfrage per E-Mail an uns weitergeleitet und nicht auf dem Webserver gespeichert.
 						Mehr dazu in der <a href="/datenschutz#kontaktformular">Datenschutzerklärung</a>.
 					</p>
 

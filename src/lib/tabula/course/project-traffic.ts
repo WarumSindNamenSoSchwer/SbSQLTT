@@ -56,7 +56,7 @@ export const projectTraffic: Lesson = {
 			'Wann war Server 1 am stärksten ausgelastet?',
 			'Zeige ts, users und avg_ms der fünf Stunden mit den meisten Nutzern auf server_id = 1. Stärkste zuerst.',
 			"SELECT ts, users, avg_ms\nFROM traffic\nWHERE server_id = 1\nORDER BY users DESC\nLIMIT 5;",
-			'Der Abend-Peak liegt bei 67 Nutzern – fast am Limit von 70.',
+			'Der Abend-Peak liegt bei 67 Nutzern, also fast am Limit von 70.',
 			'WHERE server_id = 1, dann ORDER BY users DESC, dann LIMIT 5.',
 			"SELECT ts, users, avg_ms FROM traffic WHERE server_id = 2 ORDER BY users DESC LIMIT 5;"
 		),
@@ -119,7 +119,7 @@ export const projectTraffic: Lesson = {
 			'Wie viel langsamer ist die App nach v2.4, wenn man die gleiche Last vergleicht?',
 			"Berechne den Durchschnitt von avg_ms als avg_ms, aufgeteilt in zwei Phasen: Zeilen mit ts < '2026-01-26 00:00' heißen 'vor v2.4', alle anderen 'nach v2.4'. Filtere nur Stunden mit users BETWEEN 20 AND 40 (gleiche Last). Sortiere nach phase.",
 			"SELECT CASE WHEN ts < '2026-01-26 00:00' THEN 'vor v2.4'\n            ELSE 'nach v2.4' END AS phase,\n       ROUND(AVG(avg_ms)) AS avg_ms\nFROM traffic\nWHERE users BETWEEN 20 AND 40\nGROUP BY phase\nORDER BY phase;",
-			'Bei 20–40 gleichzeitigen Nutzern: 303 ms nach v2.4, nur 101 ms davor. Faktor 3 – der Unterschied kommt vom Code, nicht von der Last.',
+			'Bei 20–40 gleichzeitigen Nutzern: 303 ms nach v2.4, nur 101 ms davor. Faktor 3: Der Unterschied kommt vom Code, nicht von der Last.',
 			"CASE WHEN ts < '2026-01-26 00:00' teilt die Zeitreihe am Release-Datum. BETWEEN 20 AND 40 schränkt auf vergleichbare Lastbereiche ein.",
 			"SELECT CASE WHEN ts < '2026-01-26 00:00' THEN 'vor v2.4' ELSE 'nach v2.4' END AS phase, ROUND(AVG(avg_ms)) AS avg_ms FROM traffic GROUP BY phase ORDER BY phase;"
 		),
@@ -137,7 +137,7 @@ export const projectTraffic: Lesson = {
 			'Wie viele Stunden traten Fehler auf, und auf welchem Server?',
 			"Zähle je Server die Stunden mit errors > 0 als stunden_mit_fehlern und den Durchschnitt der Fehlerzahl als avg_fehler (gerundet). Nur Messungen ab '2026-01-26 00:00'. Verbinde traffic und servers. Stärkste zuerst.",
 			"SELECT s.name,\n       COUNT(*) AS stunden_mit_fehlern,\n       ROUND(AVG(t.errors)) AS avg_fehler\nFROM traffic t\nJOIN servers s ON t.server_id = s.id\nWHERE t.errors > 0\n  AND t.ts >= '2026-01-26 00:00'\nGROUP BY t.server_id\nORDER BY stunden_mit_fehlern DESC;",
-			'eu-west-1: 259 Stunden mit Fehlern, eu-central-1: 234. Beide Server zeigen das Problem – es liegt am Code, nicht am einzelnen Server.',
+			'eu-west-1: 259 Stunden mit Fehlern, eu-central-1: 234. Beide Server zeigen das Problem. Es liegt am Code, nicht am einzelnen Server.',
 			"WHERE t.errors > 0 filtert Stunden ohne Fehler aus. AND t.ts >= '2026-01-26 00:00' begrenzt auf die Zeit nach v2.4.",
 			"SELECT s.name, COUNT(*) AS stunden_mit_fehlern, ROUND(AVG(t.errors)) AS avg_fehler FROM traffic t JOIN servers s ON t.server_id = s.id WHERE t.errors > 0 GROUP BY t.server_id ORDER BY stunden_mit_fehlern DESC;"
 		),
@@ -156,7 +156,7 @@ export const projectTraffic: Lesson = {
 			type: 'Erklärung',
 			title: 'Load Balancer oder App-Rework?',
 			paras: [
-				'Die Daten zeigen zwei Probleme mit unterschiedlicher Ursache. Erstens: Die Antwortzeit hat sich mit v2.4 verdreifacht (101 ms auf 303 ms), auch bei identischer Last. Das ist kein Kapazitätsproblem – mehr Server würden daran nichts ändern. Die Ursache liegt im Code der Migration.',
+				'Die Daten zeigen zwei Probleme mit unterschiedlicher Ursache. Erstens: Die Antwortzeit hat sich mit v2.4 verdreifacht (101 ms auf 303 ms), auch bei identischer Last. Das ist kein Kapazitätsproblem, mehr Server würden daran nichts ändern. Die Ursache liegt im Code der Migration.',
 				'Zweitens: eu-central-1 war 60 Stunden über 85 % Auslastung. Ein zweiter Server (Load Balancer) würde die Last verteilen und diese Spitzen abpuffern. Das ist aber ein separates, langfristiges Problem.',
 				'Fazit: Kurzfristig ist App-Rework dringend (v2.4 rückgängig machen oder fixen), weil der Fehler jede Abfrage betrifft. Langfristig empfiehlt sich ein zweiter Server für eu-central-1, aber erst nach dem Fix, damit der neue Server nicht genauso langsam ist.'
 			],

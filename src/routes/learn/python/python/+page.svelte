@@ -270,15 +270,15 @@
 								<ol class="install-steps">
 									<li>Gehe zu <span class="mono">python.org/downloads</span> und lade den Installer herunter.</li>
 									<li>Starte den Installer und aktiviere <strong>Add Python to PATH</strong>.</li>
-									<li>Oeffne die Eingabeaufforderung (cmd) und fuehre aus: <span class="mono">pip install pandas matplotlib</span></li>
+									<li>Öffne die Eingabeaufforderung (cmd) und führe aus: <span class="mono">pip install pandas matplotlib</span></li>
 								</ol>
 							</div>
 							<div class="install-section">
 								<span class="install-os lbl">MACOS</span>
 								<ol class="install-steps">
-									<li>Oeffne das Terminal.</li>
-									<li>Fuehre aus: <span class="mono">python3 --version</span> — ist Python nicht installiert, erscheint ein Dialog mit dem Installer-Link.</li>
-									<li>Fuehre aus: <span class="mono">pip3 install pandas matplotlib</span></li>
+									<li>Öffne das Terminal.</li>
+									<li>Führe aus: <span class="mono">python3 --version</span>. Ist Python nicht installiert, erscheint ein Dialog mit dem Installer-Link.</li>
+									<li>Führe aus: <span class="mono">pip3 install pandas matplotlib</span></li>
 								</ol>
 							</div>
 						</div>

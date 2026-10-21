@@ -60,6 +60,8 @@ export async function buildApp(config: AppConfig) {
     },
   })
 
+  app.get('/healthz', async () => ({ ok: true }))
+
   app.post('/api/contact', async (request, reply) => {
     // 1. Origin-Check
     const origin = request.headers['origin'] ?? ''
