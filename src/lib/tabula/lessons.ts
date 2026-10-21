@@ -180,4 +180,236 @@ export function saveProgress(id: string, patch: Progress[string]) {
 	}
 }
 
-export const LESSONS: Record<string, Lesson> = { [where.id]: where };
+const DB = { name: 'books.db', seed: BOOKS_SEED, mainTable: 'books' };
+const base = { track: 'beginner', trackLabel: 'SQL-GRUNDLAGEN', of: 8, db: DB };
+
+const selectBasics: Lesson = {
+	...base,
+	id: 'select-basics',
+	no: 1,
+	title: 'Erste Abfrage mit SELECT',
+	steps: [
+		{
+			kind: 'explain',
+			name: 'Was ist eine Tabelle?',
+			type: 'Erklärung',
+			title: 'Was ist eine Tabelle?',
+			paras: [
+				'Eine Datenbank speichert Daten in Tabellen. Jede Zeile ist ein Datensatz, zum Beispiel ein Buch. Jede Spalte ist eine Eigenschaft, zum Beispiel der Titel oder das Erscheinungsjahr.',
+				'Mit SELECT fragst du Daten ab. Nach FROM steht, aus welcher Tabelle die Daten kommen. Der Stern * bedeutet: alle Spalten.',
+				'Die Abfrage verändert nichts an der Tabelle. Sie zeigt dir nur, was drinsteht.'
+			],
+			example: 'SELECT *\nFROM books;'
+		},
+		{
+			kind: 'example',
+			name: 'Alle Bücher anzeigen',
+			type: 'Beispiel',
+			task: 'So sieht deine erste Abfrage aus.',
+			taskSub: 'Die Abfrage ist schon da. Führe sie aus und sieh dir alle Spalten an.',
+			code: 'SELECT *\nFROM books;',
+			msg: (r) => `Die Tabelle books hat ${r.rows.length} Zeilen und ${r.columns.length} Spalten.`,
+			sub: 'Links im Schema siehst du dieselben Spalten.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Alle Verlage',
+			type: 'Übung',
+			task: 'Welche Verlage gibt es?',
+			taskSub: 'Zeige alle Spalten der Tabelle publishers.',
+			starter: 'SELECT *\nFROM ',
+			solution: 'SELECT *\nFROM publishers;',
+			ordered: false,
+			okMsg: 'Richtig! Das sind alle Verlage.',
+			okSub: 'Du hast deine erste eigene Abfrage geschrieben.',
+			tip: 'Der Tabellenname kommt nach FROM. Im Schema links stehen beide Tabellen.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Nur eine Spalte',
+			type: 'Übung',
+			task: 'Wie heißen alle Bücher?',
+			taskSub: 'Zeige nur die Spalte title aus books.',
+			starter: 'SELECT \nFROM books;',
+			solution: 'SELECT title\nFROM books;',
+			ordered: false,
+			okMsg: 'Richtig! Nur die Titel, sonst nichts.',
+			okSub: 'Statt * kannst du einzelne Spalten nennen.',
+			tip: 'Ersetze den Stern durch den Namen der Spalte, die du sehen willst.'
+		},
+		{
+			kind: 'summary',
+			name: 'Fazit',
+			type: 'Zusammenfassung',
+			title: 'Das hast du gelernt',
+			points: [
+				'Daten liegen in Tabellen aus Zeilen und Spalten.',
+				'SELECT wählt aus, was du sehen willst. FROM sagt, woher.',
+				'* steht für alle Spalten.',
+				'Eine Abfrage ändert die Daten nicht.'
+			],
+			real: 'Jede App mit einer Liste, ob Musik, Nachrichten oder Noten, lädt ihre Einträge mit einer Abfrage wie SELECT … FROM aus einer Datenbank.'
+		}
+	],
+	done: {
+		sub: 'Du kannst jetzt Daten aus einer Tabelle abfragen.',
+		points: ['SELECT und FROM bilden jede Abfrage.', '* zeigt alle Spalten.', 'Einzelne Spalten nennst du mit Namen.']
+	},
+	next: { id: 'select-columns', title: 'Spalten auswählen und umbenennen' }
+};
+
+const selectColumns: Lesson = {
+	...base,
+	id: 'select-columns',
+	no: 2,
+	title: 'Spalten auswählen und umbenennen',
+	steps: [
+		{
+			kind: 'explain',
+			name: 'Gezielt auswählen',
+			type: 'Erklärung',
+			title: 'Gezielt auswählen',
+			paras: [
+				'Meistens brauchst du nicht alle Spalten. Nach SELECT kannst du mehrere Spalten nennen, getrennt durch Kommas. Die Reihenfolge bestimmst du selbst.',
+				'Mit AS gibst du einer Spalte im Ergebnis einen neuen Namen. Das hilft, wenn der Spaltenname technisch ist oder du das Ergebnis weitergeben willst.',
+				'Der neue Name gilt nur im Ergebnis. In der Tabelle heißt die Spalte weiter wie vorher.'
+			],
+			example: 'SELECT title AS titel, year AS jahr\nFROM books;'
+		},
+		{
+			kind: 'example',
+			name: 'Spalten umbenennen',
+			type: 'Beispiel',
+			task: 'So benennst du Spalten im Ergebnis um.',
+			taskSub: 'Führe die Abfrage aus und achte auf die Spaltenköpfe.',
+			code: 'SELECT title AS titel, year AS jahr\nFROM books;',
+			msg: (r) => `Die Spalten heißen jetzt ${r.columns.join(' und ')}.`,
+			sub: 'Ändere die Namen hinter AS und führe die Abfrage noch einmal aus.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Zwei Spalten',
+			type: 'Übung',
+			task: 'Wann ist welches Buch erschienen?',
+			taskSub: 'Zeige die Spalten title und year aus books.',
+			starter: 'SELECT \nFROM books;',
+			solution: 'SELECT title, year\nFROM books;',
+			ordered: false,
+			okMsg: 'Richtig! Titel und Jahr.',
+			okSub: 'Mehrere Spalten trennst du mit Kommas.',
+			tip: 'Schreibe beide Spaltennamen hinter SELECT und trenne sie mit einem Komma.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Deutsche Namen',
+			type: 'Übung',
+			task: 'Verlage mit deutschen Spaltennamen',
+			taskSub: 'Zeige id als nummer und name als verlag aus publishers.',
+			starter: 'SELECT id AS , name AS \nFROM publishers;',
+			solution: 'SELECT id AS nummer, name AS verlag\nFROM publishers;',
+			ordered: false,
+			okMsg: 'Richtig! Beide Spalten sind umbenannt.',
+			okSub: 'AS ändert nur den Namen im Ergebnis.',
+			tip: 'Hinter jedes AS gehört der neue Name: nummer und verlag.'
+		},
+		{
+			kind: 'summary',
+			name: 'Fazit',
+			type: 'Zusammenfassung',
+			title: 'Das hast du gelernt',
+			points: [
+				'Mehrere Spalten trennst du mit Kommas.',
+				'Die Reihenfolge nach SELECT bestimmt die Reihenfolge im Ergebnis.',
+				'Mit AS gibst du einer Spalte einen neuen Namen.',
+				'Der neue Name gilt nur im Ergebnis.'
+			],
+			real: 'Ein Export für die Schulverwaltung braucht oft feste Spaltennamen wie „Nachname“ oder „Klasse“. Mit AS passt du das Ergebnis an, ohne die Datenbank zu ändern.'
+		}
+	],
+	done: {
+		sub: 'Du kannst jetzt genau die Spalten zeigen, die du brauchst.',
+		points: ['Spalten mit Kommas auswählen.', 'Reihenfolge selbst bestimmen.', 'Mit AS umbenennen.']
+	},
+	next: { id: 'where-filters', title: 'Mit WHERE filtern' }
+};
+
+const orderLimit: Lesson = {
+	...base,
+	id: 'order-limit',
+	no: 4,
+	title: 'Ergebnisse sortieren',
+	steps: [
+		{
+			kind: 'explain',
+			name: 'Ordnung ins Ergebnis',
+			type: 'Erklärung',
+			title: 'Ordnung ins Ergebnis',
+			paras: [
+				'Ohne Angabe liefert die Datenbank Zeilen in keiner festen Reihenfolge. Mit ORDER BY sortierst du nach einer Spalte.',
+				'ASC sortiert aufsteigend, also von klein nach groß oder von A nach Z. Das ist der Standard. DESC sortiert absteigend.',
+				'Mit LIMIT begrenzt du die Anzahl der Zeilen. Zusammen mit ORDER BY bekommst du so zum Beispiel die drei neuesten Bücher.'
+			],
+			example: 'SELECT title, year\nFROM books\nORDER BY year DESC\nLIMIT 3;'
+		},
+		{
+			kind: 'example',
+			name: 'Die neuesten Bücher',
+			type: 'Beispiel',
+			task: 'So bekommst du die drei neuesten Bücher.',
+			taskSub: 'Führe die Abfrage aus. Probiere danach ASC statt DESC.',
+			code: 'SELECT title, year\nFROM books\nORDER BY year DESC\nLIMIT 3;',
+			msg: (r) => `Die ${r.rows.length} neuesten Bücher, das neueste zuerst.`,
+			sub: 'Ändere DESC zu ASC und führe die Abfrage noch einmal aus.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Nach Titel sortieren',
+			type: 'Übung',
+			task: 'Alle Bücher alphabetisch',
+			taskSub: 'Zeige title und year, sortiert nach dem Titel von A bis Z.',
+			starter: 'SELECT title, year\nFROM books\n',
+			solution: 'SELECT title, year\nFROM books\nORDER BY title;',
+			ordered: true,
+			okMsg: 'Richtig! Von A bis Z.',
+			okSub: 'ORDER BY sortiert ohne Angabe aufsteigend.',
+			tip: 'Hänge ORDER BY und den Spaltennamen an, nach dem sortiert werden soll.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Das älteste Buch',
+			type: 'Übung',
+			task: 'Welches ist das älteste Buch?',
+			taskSub: 'Zeige title und year, aber nur eine Zeile.',
+			starter: 'SELECT title, year\nFROM books\n',
+			solution: 'SELECT title, year\nFROM books\nORDER BY year\nLIMIT 1;',
+			ordered: true,
+			okMsg: 'Richtig! Das älteste Buch ist von 1999.',
+			okSub: 'Erst sortieren, dann mit LIMIT abschneiden.',
+			tip: 'Sortiere nach year aufsteigend und begrenze das Ergebnis mit LIMIT 1.'
+		},
+		{
+			kind: 'summary',
+			name: 'Fazit',
+			type: 'Zusammenfassung',
+			title: 'Das hast du gelernt',
+			points: [
+				'ORDER BY sortiert das Ergebnis nach einer Spalte.',
+				'ASC ist aufsteigend und der Standard, DESC ist absteigend.',
+				'LIMIT begrenzt die Anzahl der Zeilen.',
+				'Die Reihenfolge lautet: SELECT, FROM, WHERE, ORDER BY, LIMIT.'
+			],
+			real: 'Bestenlisten, „Neueste zuerst“ im Feed oder die fünf meistverkauften Produkte: Dahinter steckt fast immer ORDER BY mit LIMIT.'
+		}
+	],
+	done: {
+		sub: 'Du kannst Ergebnisse jetzt sortieren und begrenzen.',
+		points: ['ORDER BY sortiert.', 'ASC und DESC bestimmen die Richtung.', 'LIMIT schneidet nach n Zeilen ab.']
+	}
+};
+
+export const LESSONS: Record<string, Lesson> = {
+	[selectBasics.id]: selectBasics,
+	[selectColumns.id]: selectColumns,
+	[where.id]: where,
+	[orderLimit.id]: orderLimit
+};
