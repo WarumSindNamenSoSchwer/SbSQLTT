@@ -31,7 +31,16 @@
 	};
 
 	let cur = $state(0);
+	/** Weitester erreichter Schritt. Spaetere Schritte sind gesperrt, bis die Uebungen davor geloest sind. */
+	let reached = $state(0);
 	let finished = $state(false);
+	function goto(i: number) {
+		if (i > reached) return;
+		cur = i;
+		finished = false;
+		stepMenu = false;
+		menu = false;
+	}
 	let db = $state<Database | null>(null);
 	let dbState = $state<'loading' | 'ok' | 'fail'>('loading');
 	let schema = $state<Schema>([]);
@@ -95,7 +104,8 @@
 			guestHint = false;
 		}
 		const p = loadProgress()[lesson.id];
-		if (p?.step && !p.done) cur = Math.min(p.step - 1, lesson.steps.length - 1);
+		if (p?.done) reached = lesson.steps.length - 1;
+		else if (p?.step) cur = reached = Math.min(p.step - 1, lesson.steps.length - 1);
 		return () => mo.disconnect();
 	});
 
@@ -155,8 +165,10 @@
 	}
 
 	function next() {
+		if (!canNext) return;
 		if (cur < lesson.steps.length - 1) {
 			cur += 1;
+			reached = Math.max(reached, cur);
 			stepMenu = false;
 			if (!loadProgress()[lesson.id]?.done) saveProgress(lesson.id, { step: cur + 1, of: lesson.steps.length });
 		} else {
@@ -170,7 +182,7 @@
 	}
 	function tryExample(code: string) {
 		const i = lesson.steps.findIndex((x) => x.kind === 'example');
-		if (i >= 0) {
+		if (i >= 0 && i <= reached) {
 			st[i].code = code;
 			cur = i;
 		}
@@ -231,7 +243,6 @@
 	});
 
 	const canNext = $derived(!isWork || step.kind === 'example' || s.state === 'solved' || s.state === 'shown');
-	const showSkip = $derived(step.kind === 'exercise' && !canNext);
 	const tipBtn = $derived(step.kind === 'exercise' && s.state === 'wrong' && s.attempts >= 3 && !s.tipOpen);
 	const runLabel = $derived(s && (s.state === 'solved' || s.state === 'shown') ? 'secondary' : 'primary');
 	const nextLabel = $derived(step.kind === 'summary' ? 'Lektion abschließen' : 'Weiter');
@@ -283,7 +294,7 @@
 	<header class="top">
 		<a class="back-link" href="/learn"><span class="arr back"></span><span class="hide-sm hide-md">Lektionen</span></a>
 		<span class="sep hide-sm hide-md"></span>
-		<span class="ltitle hide-sm"><span class="hide-md">Lektion {lesson.no}&nbsp;· </span>{lesson.title}</span>
+		<span class="ltitle hide-sm"><span class="hide-md">Lektion {lesson.no}&nbsp;·{' '}</span>{lesson.title}</span>
 		<div class="progress">
 			<div class="dots">
 				{#each dots as d}<span class="pdot {d}"></span>{/each}
@@ -295,8 +306,8 @@
 			{#if stepMenu}
 				<div class="dd" role="menu">
 					{#each lesson.steps as x, i}
-						<button role="menuitem" class="dd-item" class:on={i === cur} onclick={() => { cur = i; finished = false; stepMenu = false; }}>
-							<span class="mk">{i < cur ? '✓' : i === cur ? '●' : '○'}</span><span>{x.name}</span>
+						<button role="menuitem" class="dd-item" class:on={i === cur} disabled={i > reached} onclick={() => goto(i)}>
+							<span class="mk">{i === cur ? '●' : i < reached || finished ? '✓' : '○'}</span><span>{x.name}</span>
 						</button>
 					{/each}
 				</div>
@@ -309,8 +320,8 @@
 			<div class="dd right sm-only" role="menu">
 				<button class="dd-item" onclick={() => { download(); menu = false; }}>⬇ Datenbank herunterladen (.db)</button>
 				{#each lesson.steps as x, i}
-					<button class="dd-item" class:on={i === cur} onclick={() => { cur = i; finished = false; menu = false; }}>
-						<span class="mk">{i < cur ? '✓' : i === cur ? '●' : '○'}</span>{x.name}
+					<button class="dd-item" class:on={i === cur} disabled={i > reached} onclick={() => goto(i)}>
+						<span class="mk">{i === cur ? '●' : i < reached || finished ? '✓' : '○'}</span>{x.name}
 					</button>
 				{/each}
 			</div>
@@ -346,9 +357,9 @@
 			<nav class="rail" aria-label="Schritte">
 				<span class="lbl rail-lbl">SCHRITTE</span>
 				{#each lesson.steps as x, i}
-					<button class="rstep" class:cur={i === cur} onclick={() => (cur = i)}>
-						<span class="rmk" class:muted={i > cur}>{i < cur ? '✓' : i === cur ? '●' : '○'}</span>
-						<span class="rtxt"><span class="rname" class:open={i > cur}>{x.name}</span><span class="rtype">{x.type}</span></span>
+					<button class="rstep" class:cur={i === cur} disabled={i > reached} title={i > reached ? 'Erst die Schritte davor abschließen' : undefined} onclick={() => goto(i)}>
+						<span class="rmk" class:muted={i > reached}>{i === cur ? '●' : i <= reached ? '✓' : '○'}</span>
+						<span class="rtxt"><span class="rname" class:open={i > reached}>{x.name}</span><span class="rtype">{x.type}</span></span>
 					</button>
 				{/each}
 				<span class="grow"></span>
@@ -553,7 +564,6 @@
 			{/if}
 			<div class="fb-btns">
 				{#if tipBtn}<button class="btn tipbtn" onclick={() => (s.tipOpen = true)}>Tipp anzeigen</button>{/if}
-				{#if showSkip}<button class="skip hide-sm" onclick={next}>Überspringen</button>{/if}
 				<button class="btn secondary hide-sm" onclick={back} disabled={cur === 0}><span class="arr back"></span><span class="hide-md">Zurück</span></button>
 				{#if canNext}
 					<button class="btn primary hide-sm" onclick={next}>{nextLabel}<span class="arr"></span></button>
@@ -660,7 +670,9 @@
 	.rail { border-right: 1px solid var(--line); background: var(--surface); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow: auto; }
 	.rail-lbl { padding: 0 10px 8px; }
 	.rstep { display: flex; gap: 10px; padding: 8px 10px; border-radius: 6px; }
-	.rstep:hover:not(.cur) { background: var(--subtle) !important; }
+	.rstep:hover:not(.cur):not(:disabled) { background: var(--subtle) !important; }
+	.rstep:disabled { cursor: not-allowed; }
+	.dd-item:disabled { color: var(--ink-3); cursor: not-allowed; }
 	.rstep.cur { background: var(--accent-soft) !important; }
 	.rmk { width: 18px; flex: none; color: var(--accent); font-size: 13px; line-height: 22px; }
 	.rmk.muted { color: var(--ink-3); }
