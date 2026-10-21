@@ -1,0 +1,11 @@
+[Unit]
+Description=Tabula: verschlüsselte Datenbank-Sicherung (K8)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/tabula/backup.sh
+# Ausgabe nur ins Journal (max. 14 Tage), keine personenbezogenen Daten
+StandardOutput=journal
+StandardError=journal
