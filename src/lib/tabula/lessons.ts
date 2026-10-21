@@ -127,7 +127,7 @@ const where: Lesson = {
 				'Vergleichen kannst du mit =, <>, <, >, <= und >=.',
 				'Mit AND und OR verbindest du mehrere Bedingungen.'
 			],
-			real: 'Ein Onlineshop zeigt dir nur Produkte, die auf Lager sind. Eine Schule sucht alle Lernenden einer Klasse. Hinter beidem steckt eine Abfrage mit WHERE.'
+			real: 'Ein Onlineshop zeigt dir nur Produkte, die auf Lager sind. Eine Schule sucht alle Schüler einer Klasse. Hinter beidem steckt eine Abfrage mit WHERE.'
 		}
 	],
 	done: {

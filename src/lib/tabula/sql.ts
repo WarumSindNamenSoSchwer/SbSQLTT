@@ -32,6 +32,16 @@ export function run(db: Database, sql: string): Result {
 	return { columns: last.columns, rows: last.values as Result['rows'] };
 }
 
+/** Wie run, aber alle Aenderungen (CREATE, INSERT, UPDATE ...) werden danach zurueckgerollt. */
+export function runIsolated(db: Database, sql: string): Result {
+	db.run('SAVEPOINT tb_iso');
+	try {
+		return run(db, sql);
+	} finally {
+		db.run('ROLLBACK TO tb_iso; RELEASE tb_iso');
+	}
+}
+
 export function exportDb(db: Database, name: string) {
 	const blob = new Blob([db.export() as BlobPart], { type: 'application/vnd.sqlite3' });
 	const a = document.createElement('a');

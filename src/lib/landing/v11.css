@@ -164,3 +164,5 @@
 }
 
 @media(max-width:760px){.t-owl,.j-owl{top:-4px!important;right:10px!important;width:50px!important;height:45px!important}.t-scroll-pin .join-demo-layout,.join-scroll-pin .join-demo-layout{padding-top:0!important}.t-visual .join-preview-label,.j-visual .join-preview-label{display:none!important}.t-visual .join-visual-header,.j-visual .join-visual-header{padding-right:68px!important}}
+/* Echter QR-Code: immer dunkle Module auf hellem Grund, auch im Dark Mode (scannbar) */
+.t-qr.t-qr-real{background:#fff;opacity:1;padding:8px;box-sizing:border-box;display:block}.t-qr-svg{width:100%;height:100%;display:block}

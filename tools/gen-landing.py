@@ -19,10 +19,18 @@ rep = {
  'href="#datenschutzerklaerung"': 'href="/datenschutz"',
 }
 for a, b in rep.items(): html = html.replace(a, b)
+# Wortwahl: "Schueler" statt "Lernende" (Dativ Plural: "den Schuelern")
+html = html.replace('den Lernenden', 'den Schülern').replace('Lernende', 'Schüler')
+assert 'Lernend' not in html
+# Echter QR-Code (SVG, zeigt auf die Website) statt Schachbrett-Platzhalter
+qr = open(R + 'static/qr-tabula.svg', encoding='utf-8').read()
+qr = qr[qr.index('<svg'):].replace('<svg ', '<svg class="t-qr-svg" role="img" aria-label="QR-Code zu www.tabulasql.de" ', 1)
+html = html.replace('<span class="t-qr" aria-hidden="true"></span>', '<span class="t-qr t-qr-real">' + qr + '</span>')
+assert 't-qr-real' in html
 html = re.sub(r'href="[^"#/:]+\.dc\.html"', 'href="/learn"', html)
 assert '.dc.html' not in html, re.findall(r'.{40}\.dc\.html', html)[:3]
 open(R + 'src/lib/landing/v11.html', 'w', encoding='utf-8').write(html)
-open(R + 'src/lib/landing/v11.css', 'w', encoding='utf-8').write(css)
+open(R + 'src/lib/landing/v11.css', 'w', encoding='utf-8').write(css + '\n/* Echter QR-Code: immer dunkle Module auf hellem Grund, auch im Dark Mode (scannbar) */\n.t-qr.t-qr-real{background:#fff;opacity:1;padding:8px;box-sizing:border-box;display:block}.t-qr-svg{width:100%;height:100%;display:block}\n')
 open(R + 'src/lib/landing/v11-site.js', 'w', encoding='utf-8').write('// @ts-nocheck\n// Startseite v11, Verhalten 1:1 aus der Designer-Lieferung (website-v11.js).\n' + js)
 print(len(html), len(css), len(js))
 open(R + 'src/lib/landing/v11-site.js','a').write('\nexport {};\n')

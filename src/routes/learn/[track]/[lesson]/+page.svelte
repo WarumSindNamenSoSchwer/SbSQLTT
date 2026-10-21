@@ -7,7 +7,7 @@
 	import CodeEditor from '$lib/tabula/CodeEditor.svelte';
 	import { tok } from '$lib/tabula/highlight';
 	import { LESSONS, saveProgress, loadProgress, type Step } from '$lib/tabula/lessons';
-	import { openDb, run, readSchema, explainError, compare, exportDb, type Result, type Schema } from '$lib/tabula/sql';
+	import { openDb, run, runIsolated, readSchema, explainError, compare, exportDb, type Result, type Schema } from '$lib/tabula/sql';
 
 	const lesson = $derived(LESSONS[page.params.lesson ?? ''] ?? LESSONS['where-filters']);
 
@@ -140,7 +140,7 @@
 			return;
 		}
 		if (step.kind === 'exercise') {
-			const want = run(db, step.solution);
+			const want = runIsolated(db, step.solution);
 			const c = compare(out!, want, step.ordered);
 			if (c.ok) {
 				x.state = wasShown ? 'shown' : 'solved';
@@ -185,7 +185,7 @@
 		s.errLine = null;
 		dialog = null;
 		s.state = 'shown';
-		if (db) s.result = run(db, step.solution);
+		if (db) s.result = runIsolated(db, step.solution);
 	}
 	function closeGuest() {
 		guestHint = false;

@@ -18,6 +18,8 @@
 		"@sveltejs/kit": "^2.57.0",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"@types/sql.js": "^1.4.11",
+		"jsqr": "^1.4.0",
+		"qrcode": "^1.5.4",
 		"svelte": "^5.55.2",
 		"svelte-check": "^4.4.6",
 		"typescript": "^6.0.2",
