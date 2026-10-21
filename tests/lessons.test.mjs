@@ -23,19 +23,32 @@ const WRONG = {
 	'Neue Bücher mit Verlag': 'SELECT b.title, p.name FROM books b JOIN publishers p ON b.publisher_id = p.id;',
 	'Auch ohne Partner': 'SELECT p.name, b.title FROM publishers p JOIN books b ON b.publisher_id = p.id;',
 	'Das neueste Buch': 'SELECT title, year FROM books WHERE year = (SELECT MIN(year) FROM books);',
-	'Nach Verlagsname': 'SELECT title FROM books WHERE publisher_id = 2;'
+	'Nach Verlagsname': 'SELECT title FROM books WHERE publisher_id = 2;',
+	'Tabelle schueler': 'CREATE TABLE schueler (id INTEGER PRIMARY KEY, name TEXT, klasse_id INTEGER);',
+	'Schüler eintragen': "CREATE TABLE schueler (id INTEGER PRIMARY KEY, name TEXT NOT NULL, klasse_id INTEGER REFERENCES klassen(id)); INSERT INTO schueler VALUES (1, 'Mia', 1), (2, 'Jonas', 2);"
+};
+const exec = (db, q, check) => {
+	db.run('SAVEPOINT t');
+	try {
+		const a = run(db, q);
+		return check ? run(db, check) : a;
+	} finally {
+		db.run('ROLLBACK TO t; RELEASE t');
+	}
 };
 for (const L of Object.values(LESSONS)) {
 	test(`${L.no} ${L.title}`, () => {
 		const db = new SQL.Database(); db.run(L.db.seed);
 		for (const s of L.steps) {
-			if (s.kind === 'example') assert.ok(s.msg(run(db, s.code), 6).length > 0);
+			if (s.kind === 'example') assert.ok(s.msg(exec(db, s.code), 6).length > 0);
 			if (s.kind === 'exercise') {
-				const want = run(db, s.solution);
+				const want = exec(db, s.solution, s.check);
 				assert.ok(want.rows.length > 0, `${s.name}: Loesung leer`);
-				assert.equal(compare(run(db, s.solution), want, s.ordered).ok, true, `${s.name}: Loesung abgelehnt`);
+				assert.equal(compare(exec(db, s.solution, s.check), want, s.ordered).ok, true, `${s.name}: Loesung abgelehnt`);
+				// Zweimal hintereinander ausfuehren darf nicht scheitern (keine Reste in der DB)
+				assert.equal(compare(exec(db, s.solution, s.check), want, s.ordered).ok, true, `${s.name}: zweiter Lauf abgelehnt`);
 				assert.ok(WRONG[s.name], `${s.name}: kein Negativtest`);
-				assert.equal(compare(run(db, WRONG[s.name]), want, s.ordered).ok, false, `${s.name}: falsche Abfrage akzeptiert`);
+				assert.equal(compare(exec(db, WRONG[s.name], s.check), want, s.ordered).ok, false, `${s.name}: falsche Abfrage akzeptiert`);
 			}
 		}
 	});

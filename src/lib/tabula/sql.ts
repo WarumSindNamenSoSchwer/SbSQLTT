@@ -42,6 +42,20 @@ export function runIsolated(db: Database, sql: string): Result {
 	}
 }
 
+/**
+ * Fuehrt sql aus und danach (im selben Zustand) die Pruefabfrage check. Alles wird zurueckgerollt.
+ * Gibt das Ergebnis von sql (fuer die Anzeige) und von check (fuer den Vergleich) zurueck.
+ */
+export function runChecked(db: Database, sql: string, check?: string): { shown: Result; checked: Result } {
+	db.run('SAVEPOINT tb_chk');
+	try {
+		const shown = run(db, sql);
+		return { shown, checked: check ? run(db, check) : shown };
+	} finally {
+		db.run('ROLLBACK TO tb_chk; RELEASE tb_chk');
+	}
+}
+
 export function exportDb(db: Database, name: string) {
 	const blob = new Blob([db.export() as BlobPart], { type: 'application/vnd.sqlite3' });
 	const a = document.createElement('a');
@@ -73,7 +87,7 @@ export function readSchema(db: Database): Schema {
 
 // ---- Fehlermeldungen verstaendlich machen -------------------------------
 
-const KEYWORDS = ['SELECT', 'FROM', 'WHERE', 'ORDER', 'BY', 'GROUP', 'HAVING', 'JOIN', 'ON', 'LIMIT', 'AND', 'OR', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'TABLE'];
+const KEYWORDS = ['SELECT', 'FROM', 'WHERE', 'ORDER', 'BY', 'GROUP', 'HAVING', 'JOIN', 'ON', 'LIMIT', 'AND', 'OR', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'DELETE', 'CREATE', 'TABLE', 'PRIMARY', 'KEY', 'INTEGER', 'TEXT', 'REFERENCES'];
 
 function lev(a: string, b: string) {
 	const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
@@ -106,6 +120,16 @@ export function explainError(sql: string, err: unknown): Explained {
 	if (m) return { msg: `Die Spalte „${m[1]}“ gibt es nicht. Schau ins Schema.`, line: lineOf(m[1]), orig };
 	m = orig.match(/no such table: (\w+)/);
 	if (m) return { msg: `Die Tabelle „${m[1]}“ gibt es nicht. Schau ins Schema.`, line: lineOf(m[1]), orig };
+	m = orig.match(/table (\w+) already exists/);
+	if (m) return { msg: `Die Tabelle „${m[1]}“ gibt es schon. Wähle einen anderen Namen.`, line: lineOf(m[1]), orig };
+	m = orig.match(/table (\w+) has (\d+) columns but (\d+) values were supplied/);
+	if (m) return { msg: `Die Tabelle „${m[1]}“ hat ${m[2]} Spalten, du gibst aber ${m[3]} Werte an.`, line: lineOf('VALUES'), orig };
+	m = orig.match(/(\d+) values for (\d+) columns/);
+	if (m) return { msg: `${m[1]} Werte für ${m[2]} Spalten. Die Anzahl muss gleich sein.`, line: lineOf('VALUES'), orig };
+	m = orig.match(/UNIQUE constraint failed: (\w+)\.(\w+)/);
+	if (m) return { msg: `Der Wert in „${m[2]}“ ist schon vergeben. Ein Primärschlüssel muss eindeutig sein.`, line: null, orig };
+	m = orig.match(/NOT NULL constraint failed: (\w+)\.(\w+)/);
+	if (m) return { msg: `„${m[2]}“ darf nicht leer sein.`, line: null, orig };
 	m = orig.match(/near "([^"]+)": syntax error/);
 	if (m) {
 		const l = lineOf(m[1]);
@@ -126,7 +150,27 @@ export function sqlHint(sql: string): string | null {
 	return null;
 }
 
+/** Vergleicht Tabellenstrukturen (Pruefabfrage mit spalte, typ, primaer, pflicht, verweis) und sagt konkret, was fehlt. */
+export function compareSchema(got: Result, want: Result): Check | null {
+	if (want.columns.join() !== 'spalte,typ,primaer,pflicht,verweis') return null;
+	const no = 'Noch nicht ganz.';
+	const g = new Map(got.rows.map((r) => [String(r[0]).toLowerCase(), r]));
+	if (!got.rows.length) return { ok: false, msg: no, sub: 'Die Tabelle wurde nicht angelegt. Prüfe den Tabellennamen.' };
+	for (const [name, typ, pk, nn, ref] of want.rows) {
+		const r = g.get(String(name).toLowerCase());
+		if (!r) return { ok: false, msg: no, sub: `Es fehlt die Spalte ${name}.` };
+		if (r[1] !== typ) return { ok: false, msg: no, sub: `Die Spalte ${name} braucht den Typ ${String(typ).toUpperCase()}.` };
+		if (pk && !r[2]) return { ok: false, msg: no, sub: `${name} soll der Primärschlüssel sein (PRIMARY KEY).` };
+		if (nn && !r[3]) return { ok: false, msg: no, sub: `${name} darf nicht leer sein. Ergänze NOT NULL.` };
+		if (ref && r[4] !== ref) return { ok: false, msg: no, sub: `${name} soll auf ${ref} verweisen (REFERENCES).` };
+	}
+	if (got.rows.length > want.rows.length) return { ok: false, msg: no, sub: 'Die Tabelle hat mehr Spalten als verlangt.' };
+	return { ok: true };
+}
+
 export function compare(got: Result, want: Result, ordered: boolean): Check {
+	const sc = compareSchema(got, want);
+	if (sc) return sc;
 	const no = 'Noch nicht ganz.';
 	const missing = want.columns.filter((c) => !got.columns.map((x) => x.toLowerCase()).includes(c.toLowerCase()));
 	const extra = got.columns.filter((c) => !want.columns.map((x) => x.toLowerCase()).includes(c.toLowerCase()));
@@ -143,6 +187,10 @@ export function compare(got: Result, want: Result, ordered: boolean): Check {
 		const d = got.rows.length - want.rows.length;
 		if (d > 0) return `${d} ${d === 1 ? 'Zeile' : 'Zeilen'} zu viel.`;
 		if (d < 0) return `${-d} ${d === -1 ? 'Zeile' : 'Zeilen'} zu wenig.`;
+		// Gleiche Anzahl: erste abweichende Zeile benennen
+		const gs = new Set(g);
+		const miss = proj(want, shared).find((r) => !gs.has(key(r)));
+		if (miss) return `Die Anzahl stimmt, aber diese Zeile fehlt: ${miss.map((v) => (v === null ? 'NULL' : String(v))).join(', ')}.`;
 		return 'Die Zeilen stimmen noch nicht.';
 	};
 	if (missing.length) {

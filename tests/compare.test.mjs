@@ -25,3 +25,21 @@ test('JOIN ohne ON wird erkannt', () => {
 	assert.equal(sqlHint('SELECT * FROM books b JOIN publishers p;'), 'Nach JOIN fehlt die Bedingung mit ON.');
 	assert.equal(sqlHint('SELECT * FROM books b JOIN publishers p ON b.publisher_id = p.id'), null);
 });
+
+test('CREATE TABLE: konkrete Rueckmeldung zur Struktur', async () => {
+	const { LESSONS } = await import('../src/lib/tabula/lessons.ts');
+	const { runChecked } = await import('../src/lib/tabula/sql.ts');
+	const L = LESSONS.ddl;
+	const d = new SQL.Database();
+	d.run(L.db.seed);
+	const ex = L.steps.find((s) => s.name === 'Tabelle schueler');
+	const want = runChecked(d, ex.solution, ex.check).checked;
+	const fb = (q) => compare(runChecked(d, q, ex.check).checked, want, true).sub;
+	assert.equal(fb('CREATE TABLE schuler (id INTEGER PRIMARY KEY)'), 'Die Tabelle wurde nicht angelegt. Prüfe den Tabellennamen.');
+	assert.equal(fb('CREATE TABLE schueler (id INTEGER PRIMARY KEY, name TEXT NOT NULL)'), 'Es fehlt die Spalte klasse_id.');
+	assert.equal(fb('CREATE TABLE schueler (id INTEGER, name TEXT NOT NULL, klasse_id INTEGER REFERENCES klassen(id))'), 'id soll der Primärschlüssel sein (PRIMARY KEY).');
+	assert.equal(fb('CREATE TABLE schueler (id INTEGER PRIMARY KEY, name TEXT, klasse_id INTEGER REFERENCES klassen(id))'), 'name darf nicht leer sein. Ergänze NOT NULL.');
+	assert.equal(fb('CREATE TABLE schueler (id INTEGER PRIMARY KEY, name TEXT NOT NULL, klasse_id INTEGER)'), 'klasse_id soll auf klassen.id verweisen (REFERENCES).');
+	assert.equal(fb('CREATE TABLE schueler (id INTEGER PRIMARY KEY, name INTEGER NOT NULL, klasse_id INTEGER REFERENCES klassen(id))'), 'Die Spalte name braucht den Typ TEXT.');
+	assert.equal(compare(runChecked(d, ex.solution.toLowerCase(), ex.check).checked, want, true).ok, true);
+});

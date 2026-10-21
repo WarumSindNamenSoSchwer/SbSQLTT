@@ -40,6 +40,8 @@ export type Step =
 			starter: string;
 			solution: string;
 			ordered: boolean;
+			/** Pruefabfrage nach der Schueler-Abfrage (fuer CREATE/INSERT). Ohne: Ergebnis wird direkt verglichen. */
+			check?: string;
 			okMsg: string;
 			okSub: string;
 			tip: string;
@@ -704,6 +706,99 @@ const subqueries: Lesson = {
 	done: {
 		sub: 'Du hast die SQL-Grundlagen geschafft.',
 		points: ['Unterabfragen stehen in Klammern.', 'Die innere Abfrage läuft zuerst.', 'Mehrere Werte vergleichst du mit IN.']
+	},
+	next: { id: 'ddl', title: 'Eigene Datenbank entwerfen' }
+};
+
+// Lektion 9: Schueler bauen eine eigene Schul-Datenbank. Startet mit einer Tabelle klassen.
+export const SCHOOL_SEED = `
+CREATE TABLE klassen (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  raum TEXT
+);
+INSERT INTO klassen VALUES (1,'10a','A104'),(2,'10b','A105'),(3,'Q1 Informatik','B201');
+`;
+
+const ddl: Lesson = {
+	id: 'ddl',
+	track: 'database',
+	trackLabel: 'EIGENE DATENBANK',
+	no: 9,
+	of: 9,
+	title: 'Eigene Datenbank entwerfen',
+	db: { name: 'schule.db', seed: SCHOOL_SEED, mainTable: 'klassen' },
+	steps: [
+		{
+			kind: 'explain',
+			name: 'Tabellen selbst anlegen',
+			type: 'Erklärung',
+			title: 'Tabellen selbst anlegen',
+			paras: [
+				'Bisher hast du Daten abgefragt. Jetzt baust du die Tabellen selbst. Mit CREATE TABLE legst du eine neue Tabelle an und bestimmst ihre Spalten und deren Datentypen, zum Beispiel INTEGER für ganze Zahlen und TEXT für Wörter.',
+				'Jede Tabelle braucht einen Primärschlüssel: eine Spalte, die jede Zeile eindeutig macht. Meist heißt sie id und ist INTEGER PRIMARY KEY.',
+				'Ein Fremdschlüssel verweist auf den Primärschlüssel einer anderen Tabelle. So weiß ein Schüler, zu welcher Klasse er gehört, ohne dass der Klassenname doppelt gespeichert wird. Mit INSERT INTO füllst du die Tabelle danach mit Zeilen.'
+			],
+			example: 'CREATE TABLE schueler (\n  id INTEGER PRIMARY KEY,\n  name TEXT NOT NULL,\n  klasse_id INTEGER REFERENCES klassen(id)\n);'
+		},
+		{
+			kind: 'example',
+			name: 'Zeilen einfügen',
+			type: 'Beispiel',
+			task: 'So legst du eine Tabelle an und füllst sie.',
+			taskSub: 'Führe alles zusammen aus. Die letzte Zeile zeigt, was in der neuen Tabelle steht.',
+			code: "CREATE TABLE faecher (\n  id INTEGER PRIMARY KEY,\n  name TEXT NOT NULL\n);\nINSERT INTO faecher VALUES (1, 'Informatik'), (2, 'Mathe');\nSELECT * FROM faecher;",
+			msg: (r) => `Die neue Tabelle faecher hat ${r.rows.length} Zeilen.`,
+			sub: 'Füge ein drittes Fach hinzu und führe noch einmal aus.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Tabelle schueler',
+			type: 'Übung',
+			task: 'Lege die Tabelle schueler an.',
+			taskSub: 'Spalten: id (INTEGER, Primärschlüssel), name (TEXT, nicht leer) und klasse_id (INTEGER, verweist auf klassen.id).',
+			starter: 'CREATE TABLE schueler (\n  \n);',
+			solution: 'CREATE TABLE schueler (\n  id INTEGER PRIMARY KEY,\n  name TEXT NOT NULL,\n  klasse_id INTEGER REFERENCES klassen(id)\n);',
+			check:
+				"SELECT p.name AS spalte, lower(p.type) AS typ, p.pk AS primaer, p.\"notnull\" AS pflicht, coalesce(f.\"table\" || '.' || f.\"to\", '') AS verweis FROM pragma_table_info('schueler') p LEFT JOIN pragma_foreign_key_list('schueler') f ON f.\"from\" = p.name ORDER BY p.cid",
+			ordered: true,
+			okMsg: 'Richtig! Die Tabelle schueler steht.',
+			okSub: 'Primärschlüssel, Pflichtfeld und Fremdschlüssel sind gesetzt.',
+			tip: 'Pro Spalte: Name, Typ, Zusatz. id INTEGER PRIMARY KEY, name TEXT NOT NULL, klasse_id INTEGER REFERENCES klassen(id). Spalten mit Kommas trennen.'
+		},
+		{
+			kind: 'exercise',
+			name: 'Schüler eintragen',
+			type: 'Übung',
+			task: 'Trage zwei Schüler in die Klasse 10b ein.',
+			taskSub: 'Die Tabelle schueler ist schon angelegt. Trage Mia (id 1) und Jonas (id 2) ein. Die 10b hat die id 2.',
+			starter:
+				'CREATE TABLE schueler (\n  id INTEGER PRIMARY KEY,\n  name TEXT NOT NULL,\n  klasse_id INTEGER REFERENCES klassen(id)\n);\nINSERT INTO schueler VALUES\n  ',
+			solution:
+				"CREATE TABLE schueler (\n  id INTEGER PRIMARY KEY,\n  name TEXT NOT NULL,\n  klasse_id INTEGER REFERENCES klassen(id)\n);\nINSERT INTO schueler VALUES\n  (1, 'Mia', 2),\n  (2, 'Jonas', 2);",
+			check: 'SELECT s.id, s.name, k.name AS klasse FROM schueler s JOIN klassen k ON s.klasse_id = k.id ORDER BY s.id',
+			ordered: true,
+			okMsg: 'Richtig! Mia und Jonas sind in der 10b.',
+			okSub: 'Über klasse_id findet der JOIN die passende Klasse.',
+			tip: "Jede Zeile in Klammern: (id, 'Name', klasse_id). Text steht in einfachen Anführungszeichen, Zeilen trennst du mit Kommas."
+		},
+		{
+			kind: 'summary',
+			name: 'Fazit',
+			type: 'Zusammenfassung',
+			title: 'Das hast du gelernt',
+			points: [
+				'CREATE TABLE legt eine Tabelle mit Spalten und Datentypen an.',
+				'Der Primärschlüssel macht jede Zeile eindeutig.',
+				'Ein Fremdschlüssel verweist auf eine Zeile in einer anderen Tabelle.',
+				'INSERT INTO füllt die Tabelle mit Daten.'
+			],
+			real: 'Jede App beginnt mit diesem Schritt: Bevor es Nutzer, Bestellungen oder Nachrichten gibt, legt jemand die Tabellen und ihre Beziehungen fest. Ein guter Entwurf erspart später viel Ärger.'
+		}
+	],
+	done: {
+		sub: 'Du kannst jetzt eine eigene Datenbank entwerfen und füllen.',
+		points: ['CREATE TABLE legt Tabellen an.', 'Primär- und Fremdschlüssel verbinden Tabellen.', 'INSERT INTO füllt sie mit Daten.']
 	}
 };
 
@@ -715,5 +810,6 @@ export const LESSONS: Record<string, Lesson> = {
 	[aggregates.id]: aggregates,
 	[groupBy.id]: groupBy,
 	[joins.id]: joins,
-	[subqueries.id]: subqueries
+	[subqueries.id]: subqueries,
+	[ddl.id]: ddl
 };

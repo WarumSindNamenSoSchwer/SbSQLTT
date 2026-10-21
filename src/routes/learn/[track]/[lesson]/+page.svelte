@@ -9,7 +9,7 @@
 	import { explainQuery } from '$lib/tabula/explain';
 	import { tok } from '$lib/tabula/highlight';
 	import { LESSONS, saveProgress, loadProgress, type Step } from '$lib/tabula/lessons';
-	import { openDb, run, runIsolated, readSchema, explainError, compare, sqlHint, exportDb, type Result, type Schema } from '$lib/tabula/sql';
+	import { openDb, run, runChecked, readSchema, explainError, compare, sqlHint, exportDb, type Result, type Schema } from '$lib/tabula/sql';
 
 	const lesson = $derived(LESSONS[page.params.lesson ?? ''] ?? LESSONS['where-filters']);
 
@@ -110,19 +110,15 @@
 		x.attempts += step.kind === 'exercise' ? 1 : 0;
 		const t0 = performance.now();
 		let out: Result | null = null;
+		let checked: Result | null = null;
 		let err: unknown = null;
 		try {
-			// Schreibende Abfragen nicht dauerhaft wirken lassen
-			db.run('SAVEPOINT tb');
-			out = run(db, sql);
+			// Schreibende Abfragen nicht dauerhaft wirken lassen; bei DDL-Übungen die Prüfabfrage im selben Zustand
+			const r = runChecked(db, sql, step.kind === 'exercise' ? step.check : undefined);
+			out = r.shown;
+			checked = r.checked;
 		} catch (e) {
 			err = e;
-		} finally {
-			try {
-				db.run('ROLLBACK TO tb; RELEASE tb');
-			} catch {
-				/* ignore */
-			}
 		}
 		const wait = 300 - (performance.now() - t0);
 		if (wait > 0) await new Promise((r) => setTimeout(r, Math.min(wait, 180)));
@@ -138,15 +134,16 @@
 			return;
 		}
 		x.errLine = null;
-		x.result = out;
-		x.lastSql = sql;
+		// DDL ohne eigenes Ergebnis: Prüfabfrage zeigen, damit sichtbar ist, was entstanden ist
+		x.result = step.kind === 'exercise' && step.check && !out!.columns.length ? checked : out;
+		x.lastSql = step.kind === 'exercise' && step.check && !out!.columns.length ? step.check : sql;
 		if (step.kind === 'example') {
 			x.state = 'solved';
 			return;
 		}
 		if (step.kind === 'exercise') {
-			const want = runIsolated(db, step.solution);
-			const c = compare(out!, want, step.ordered);
+			const want = runChecked(db, step.solution, step.check).checked;
+			const c = compare(checked!, want, step.ordered);
 			if (c.ok) {
 				x.state = wasShown ? 'shown' : 'solved';
 				x.sub = '';
@@ -190,8 +187,8 @@
 		s.errLine = null;
 		dialog = null;
 		s.state = 'shown';
-		s.lastSql = step.solution;
-		if (db) s.result = runIsolated(db, step.solution);
+		s.lastSql = step.check ?? step.solution;
+		if (db) s.result = runChecked(db, step.solution, step.check).checked;
 	}
 	function closeGuest() {
 		guestHint = false;
