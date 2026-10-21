@@ -15,6 +15,7 @@ import { groupBy } from './course/l6-group.ts';
 import { joins } from './course/l7-joins.ts';
 import { subqueries } from './course/l8-subqueries.ts';
 import { ddl } from './course/l9-ddl.ts';
+import { projectTraffic } from './course/project-traffic.ts';
 
 export type CatalogEntry = { n: string; id: string; title: string; dur: string; track: 1 | 2 | 3 };
 
@@ -50,7 +51,8 @@ export const LESSONS: Record<string, Lesson> = {
 	[groupBy.id]: groupBy,
 	[joins.id]: joins,
 	[subqueries.id]: subqueries,
-	[ddl.id]: ddl
+	[ddl.id]: ddl,
+	[projectTraffic.id]: projectTraffic
 };
 
 /** Lektions-IDs die spielbar sind, aber eine eigene Route haben (kein LESSONS-Eintrag). */
