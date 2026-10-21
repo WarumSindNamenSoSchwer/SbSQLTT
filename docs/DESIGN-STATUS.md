@@ -1,4 +1,6 @@
-# Design-Status (Stand Review 2, 2026-10-21)
+# Design-Status (Stand Review 3, 2026-10-21)
+
+> **Neuer Name:** Projekt heißt jetzt **Tabula**, die Eule heißt **Edgar**.
 
 Abgleich der Designer-Lieferung mit [`DESIGN-SPEC.md`](./DESIGN-SPEC.md).
 
@@ -15,18 +17,21 @@ Abgleich der Designer-Lieferung mit [`DESIGN-SPEC.md`](./DESIGN-SPEC.md).
 - [x] E1–E5 Quiz: Beamer + Handy, inkl. Verbindung unterbrochen, Pausiert
 - [x] A5 Textseite, F 404 / 500 / Offline
 
-## Noch offen (klein)
+## Erledigt in Review 3
 
-- [ ] **Lehrerbereich mobil/Tablet** (mind. D1 + D3; Lehrkräfte schauen im Unterricht oft aufs Tablet)
-- [ ] **A3 Datensätze mobil**
-- [ ] **Startseite mobil** (v11 als 390-px-Frame)
-- [ ] **Navigation vereinheitlichen:** Startseite hat „Für Lehrkräfte · Lernpfad · Datenschutz · FAQ“, App hat „Lernen · Datensätze · Für Lehrkräfte“. Ein Header für beide oder bewusst zwei?
-- [ ] Avatar-Menü offen (Schüler / Lehrkraft) als Frame
-- [ ] Toast-Beispiel im Kontext (z. B. D4 „Gespeichert“)
+- [x] Lehrerbereich Tablet + Handy (D1, D3, Detail)
+- [x] A3 Datensätze mobil
+- [x] Startseite mobil + Tablet
+- [x] Navigation vereinheitlicht (Lernen · Datensätze · Für Lehrkräfte · Anmelden)
+- [x] Avatar-Menü offen + Toast (A2-04)
+
+## Noch offen
+
+- [ ] **Domain uneinheitlich:** `kontakt@sbsqltt.de`, `sbsqltt.de/join` und `sbsqltt.jmestudio.de/join` gemischt. Mit neuem Namen Tabula: Ziel-Domain festlegen
+- [ ] Favicon / Logo-Wortmarke „Tabula“ final (Repo, Meta-Tags, llms.txt, README umbenennen)
 
 ## Zu klären (Muri)
 
-- [ ] Domain: QR zeigt `sbsqltt.jmestudio.de/join`, Kontakt ist `kontakt@sbsqltt.de`. Eine Domain festlegen.
 - [ ] A4 „Für Lehrkräfte“: eigene Seite oder Abschnitt auf Startseite reicht? (aktuell nur Abschnitt)
 
 ### Eule ↔ Zustand
