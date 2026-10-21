@@ -4,4 +4,4 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 npm run build
 rsync -az --delete --rsync-path="sudo rsync" build/ tabula:/opt/tabula/site/
-echo "Live: https://tabulasql.de"
+echo "Live: https://www.tabulasql.de"
