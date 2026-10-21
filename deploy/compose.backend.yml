@@ -1,18 +1,19 @@
 # deploy/compose.backend.yml
-# Erweiterung fuer den API-Service.
-# Verwendung: docker compose -f compose.yml -f compose.backend.yml up -d
+# API-Dienst (Konten, Klassen, Fortschritt, Quiz). Auf dem Server in /opt/tabula:
+#   docker compose -f compose.yml -f compose.contact.yml -f compose.backend.yml up -d --build api
 #
-# Der api-Service laeuft NUR im internen Netz (kein Port nach aussen).
-# Caddy leitet /api/* per reverse_proxy weiter (siehe Caddyfile.api).
+# Kein Port nach außen. Caddy erreicht den Dienst im gemeinsamen Compose-Netz unter api:3000.
+# Ausgehend braucht der Dienst nur SMTP (587) für Systemmails von noreply@.
+# Secret /opt/tabula/secrets/smtp_noreply muss UID 10001 gehören (chmod 400).
+# Erst starten, wenn die Freigabe-Checkliste in docs/BACKEND-DATENSCHUTZ.md erfüllt ist.
 
 services:
   api:
     build:
-      context: ../server
+      context: ./server
       dockerfile: Dockerfile
     image: tabula-api:latest
     restart: unless-stopped
-    # Kein Port nach aussen - nur internes Netz
     expose:
       - "3000"
     volumes:
@@ -26,14 +27,18 @@ services:
       LOG_LEVEL: "info"
     secrets:
       - smtp_noreply
-    networks:
-      - internal
-    # Konsolenausgabe klein halten
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    mem_limit: 384m
     logging:
       driver: local
       options:
-        max-size: "5m"
-        max-file: "3"
+        max-size: "1m"
+        max-file: "2"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 30s
@@ -47,7 +52,3 @@ volumes:
 secrets:
   smtp_noreply:
     file: /opt/tabula/secrets/smtp_noreply
-
-networks:
-  internal:
-    internal: true

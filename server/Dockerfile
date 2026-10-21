@@ -20,7 +20,7 @@ FROM node:22-alpine AS production
 WORKDIR /app
 
 # Nicht als root laufen (K10/Sicherheit)
-RUN addgroup -S tabula && adduser -S tabula -G tabula
+RUN addgroup -S -g 10001 tabula && adduser -S -u 10001 tabula -G tabula
 
 # Nur Produktionsabhaengigkeiten (keine devDeps)
 COPY package.json package-lock.json* ./
@@ -33,7 +33,9 @@ RUN apk add --no-cache python3 make g++ && \
 COPY --from=builder /build/dist ./dist
 COPY migrations/ ./migrations/
 
-# Volume fuer Datenbankdatei
+# Volume fuer Datenbankdatei (Ordner gehoert tabula, damit ein neues Docker-Volume
+# diese Rechte uebernimmt und der Dienst ohne root schreiben kann)
+RUN mkdir -p /data && chown tabula:tabula /data
 VOLUME /data
 
 # Benutzer wechseln
