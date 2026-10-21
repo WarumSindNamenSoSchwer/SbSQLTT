@@ -7,6 +7,7 @@ const { compare, run, sqlHint } = await import('../src/lib/tabula/sql.ts');
 const SQL = await initSqlJs();
 const db = new SQL.Database();
 db.run(BOOKS_SEED);
+// year > 2010 ORDER BY year: 23 Zeilen im neuen Datensatz
 const want = run(db, 'SELECT title, year FROM books WHERE year > 2010 ORDER BY year');
 const chk = (q, ordered = true) => compare(run(db, q), want, ordered);
 
@@ -18,7 +19,8 @@ test('ganz andere Tabelle behauptet nicht "Zeilen stimmen"', () => {
 	assert.doesNotMatch(r.sub, /Zeilen stimmen\./);
 	assert.match(r.sub, /Es fehlt die Spalte title, year/);
 });
-test('zu viele Zeilen', () => assert.equal(chk('SELECT title, year FROM books WHERE year > 2000 ORDER BY year').sub, '2 Zeilen zu viel.'));
+// year > 2000: 28 Zeilen -> 28 - 23 = 5 zu viel
+test('zu viele Zeilen', () => assert.equal(chk('SELECT title, year FROM books WHERE year > 2000 ORDER BY year').sub, '5 Zeilen zu viel.'));
 test('falsche Reihenfolge', () => assert.equal(chk('SELECT title, year FROM books WHERE year > 2010 ORDER BY year DESC').sub, 'Die Zeilen stimmen. Die Reihenfolge noch nicht.'));
 test('Spalte zu viel', () => assert.match(chk('SELECT title, year, id FROM books WHERE year > 2010 ORDER BY year').sub, /id ist zu viel/));
 test('JOIN ohne ON wird erkannt', () => {

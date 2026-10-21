@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import TopNav from '$lib/tabula/TopNav.svelte';
 	import Edgar from '$lib/edgar/Edgar.svelte';
-	import { CATALOG, TRACK_INFO, LESSONS, loadProgress, type Progress } from '$lib/tabula/lessons';
+	import { CATALOG, TRACK_INFO, LESSONS, EXTRA_PLAYABLE, loadProgress, type Progress } from '$lib/tabula/lessons';
 
 	// Klassen-Fokus und Sperren kommen spaeter vom Server. Gast = alles offen.
 	type Klasse = { name: string; focus?: { id: string; by: string }; locked: string[] } | null;
@@ -38,7 +38,7 @@
 	});
 	const trackOf = (t: number) => TRACK_INFO[t - 1].id;
 	const href = (l: (typeof CATALOG)[number]) => `/learn/${trackOf(l.track)}/${l.id}`;
-	const playable = (id: string) => !!LESSONS[id];
+	const playable = (id: string) => !!LESSONS[id] || EXTRA_PLAYABLE.includes(id);
 
 	const tracks = $derived(
 		TRACK_INFO.map((t, i) => {

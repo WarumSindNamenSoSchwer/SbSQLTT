@@ -25,19 +25,47 @@
    2007
   ]
  ],
- "keepYear": 2010,
+ "keepYear": 2020,
  "result": [
   [
-   "Data-Intensive Apps",
-   2017
+   "Die Stadt unter dem Eis",
+   2021
   ],
   [
-   "Refactoring",
-   2018
+   "Code lesen lernen",
+   2021
   ],
   [
-   "Database Internals",
-   2019
+   "Wie Daten die Welt verändern",
+   2022
+  ],
+  [
+   "Pixelherz 2",
+   2022
+  ],
+  [
+   "Das Rätsel von Haus 9",
+   2023
+  ],
+  [
+   "Python für Einsteiger",
+   2023
+  ],
+  [
+   "Klima in Zahlen",
+   2024
+  ],
+  [
+   "Das Netz der Lügen",
+   2024
+  ],
+  [
+   "Mord im Lesesaal",
+   2025
+  ],
+  [
+   "Mondstaub",
+   2025
   ]
  ],
  "schemaBooks": [
@@ -51,8 +79,24 @@
    "type": "text"
   },
   {
+   "name": "author",
+   "type": "text"
+  },
+  {
    "name": "year",
    "type": "int"
+  },
+  {
+   "name": "pages",
+   "type": "int"
+  },
+  {
+   "name": "price",
+   "type": "real"
+  },
+  {
+   "name": "genre",
+   "type": "text"
   },
   {
    "name": "publisher_id",
@@ -61,12 +105,12 @@
   }
  ],
  "studio": {
-  "task": "Welche Bücher sind nach 2010 erschienen?",
-  "taskSub": "Zeige Titel und Jahr. Sortiere die ältesten zuerst.",
+  "task": "Welche Bücher sind nach 2020 erschienen?",
+  "taskSub": "Zeige title und year.",
   "stepNo": 3,
-  "stepOf": 5,
+  "stepOf": 17,
   "lessonNo": 3,
-  "tip": "Schau dir die Jahreszahl in deiner Bedingung an. Welche Bücher sollen laut Aufgabe gerade nicht mehr dabei sein?"
+  "tip": "Schau dir die Jahreszahl in deiner Bedingung an. Sollen Bücher aus 2020 selbst dabei sein?"
  },
  "lessons": [
   {
@@ -87,7 +131,7 @@
   }
  ],
  "hint": {
-  "query": "SELECT title\nFROM books\nWHERE year > 2010;",
+  "query": "SELECT title\nFROM books\nWHERE year > 2020;",
   "sub": "Die Zeilen stimmen. Es fehlt die Spalte year.",
   "lesson": 3
  },
@@ -103,6 +147,86 @@
   [
    "Data-Intensive Apps",
    2
+  ],
+  [
+   "Die Stadt unter dem Eis",
+   4
+  ],
+  [
+   "Nachtzug nach Riga",
+   4
+  ],
+  [
+   "Das Rätsel von Haus 9",
+   5
+  ],
+  [
+   "Kalte Spur",
+   5
+  ],
+  [
+   "Wie Daten die Welt verändern",
+   4
+  ],
+  [
+   "Klima in Zahlen",
+   5
+  ],
+  [
+   "Pixelherz",
+   6
+  ],
+  [
+   "Pixelherz 2",
+   6
+  ],
+  [
+   "Roboter im Garten",
+   6
+  ],
+  [
+   "Python für Einsteiger",
+   4
+  ],
+  [
+   "Algorithmen verstehen",
+   5
+  ],
+  [
+   "Der letzte Sommer am See",
+   5
+  ],
+  [
+   "Mord im Lesesaal",
+   5
+  ],
+  [
+   "Die Geschichte des Internets",
+   2
+  ],
+  [
+   "Sterne zählen",
+   4
+  ],
+  [
+   "Mondstaub",
+   6
+  ],
+  [
+   "Das Netz der Lügen",
+   4
+  ],
+  [
+   "Learning SQL",
+   2
+  ],
+  [
+   "Code lesen lernen",
+   1
+  ],
+  [
+   "Schattenspiel",
+   4
   ]
  ],
  "publishers": [
@@ -117,6 +241,18 @@
   [
    3,
    "No Starch Press"
+  ],
+  [
+   4,
+   "Nordlicht Verlag"
+  ],
+  [
+   5,
+   "Kranich Verlag"
+  ],
+  [
+   6,
+   "Leuchtturm Comics"
   ]
  ],
  "joinResult": [
@@ -131,10 +267,90 @@
   [
    "Data-Intensive Apps",
    "O'Reilly Media"
+  ],
+  [
+   "Die Stadt unter dem Eis",
+   "Nordlicht Verlag"
+  ],
+  [
+   "Nachtzug nach Riga",
+   "Nordlicht Verlag"
+  ],
+  [
+   "Das Rätsel von Haus 9",
+   "Kranich Verlag"
+  ],
+  [
+   "Kalte Spur",
+   "Kranich Verlag"
+  ],
+  [
+   "Wie Daten die Welt verändern",
+   "Nordlicht Verlag"
+  ],
+  [
+   "Klima in Zahlen",
+   "Kranich Verlag"
+  ],
+  [
+   "Pixelherz",
+   "Leuchtturm Comics"
+  ],
+  [
+   "Pixelherz 2",
+   "Leuchtturm Comics"
+  ],
+  [
+   "Roboter im Garten",
+   "Leuchtturm Comics"
+  ],
+  [
+   "Python für Einsteiger",
+   "Nordlicht Verlag"
+  ],
+  [
+   "Algorithmen verstehen",
+   "Kranich Verlag"
+  ],
+  [
+   "Der letzte Sommer am See",
+   "Kranich Verlag"
+  ],
+  [
+   "Mord im Lesesaal",
+   "Kranich Verlag"
+  ],
+  [
+   "Die Geschichte des Internets",
+   "O'Reilly Media"
+  ],
+  [
+   "Sterne zählen",
+   "Nordlicht Verlag"
+  ],
+  [
+   "Mondstaub",
+   "Leuchtturm Comics"
+  ],
+  [
+   "Das Netz der Lügen",
+   "Nordlicht Verlag"
+  ],
+  [
+   "Learning SQL",
+   "O'Reilly Media"
+  ],
+  [
+   "Code lesen lernen",
+   "Addison-Wesley"
+  ],
+  [
+   "Schattenspiel",
+   "Nordlicht Verlag"
   ]
  ],
  "teacherHelp": {
-  "task": "Von welchen Verlagen sind die Bücher nach 2010?",
+  "task": "Aus welchem Land kommt jedes Buch?",
   "query": "SELECT b.title, p.name\nFROM books b\nJOIN publishers p;",
   "msg": "Nach JOIN fehlt die Bedingung mit ON."
  },

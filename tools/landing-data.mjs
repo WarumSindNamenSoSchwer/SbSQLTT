@@ -8,14 +8,17 @@ const db = new SQL.Database();
 db.run(BOOKS_SEED);
 const q = (s) => run(db, s).rows;
 const where = LESSONS['where-filters'];
-const ex = where.steps.find((s) => s.name === 'Bücher nach 2010');
-const wrongWhere = 'SELECT title\nFROM books\nWHERE year > 2010;';
+// Erste Uebung in Lektion 3: 'Neue Buecher' (year > 2020)
+const ex = where.steps.find((s) => s.name === 'Neue Bücher');
+// wrongWhere: fehlende Spalte year (typischer Fehler)
+const wrongWhere = 'SELECT title\nFROM books\nWHERE year > 2020;';
 const c1 = compare(run(db, wrongWhere), run(db, ex.solution), ex.ordered);
 const wrongJoin = 'SELECT b.title, p.name\nFROM books b\nJOIN publishers p;';
 const out = {
-	books: q('SELECT title, year FROM books ORDER BY id'),
-	keepYear: 2010,
-	result: q('SELECT title, year FROM books WHERE year > 2010 ORDER BY year'),
+	// Hero: nur erste 6 Buecher nach ID (damit das Layout nicht platzt)
+	books: q('SELECT title, year FROM books ORDER BY id LIMIT 6'),
+	keepYear: 2020,
+	result: q('SELECT title, year FROM books WHERE year > 2020 ORDER BY year'),
 	schemaBooks: readSchema(db).find((t) => t.table === 'books').cols,
 	studio: { task: ex.task, taskSub: ex.taskSub, stepNo: where.steps.indexOf(ex) + 1, stepOf: where.steps.length, lessonNo: where.no, tip: ex.tip },
 	lessons: ['select-basics', 'select-columns', 'where-filters', 'order-limit'].map((id) => ({ no: LESSONS[id].no, title: LESSONS[id].title })),
