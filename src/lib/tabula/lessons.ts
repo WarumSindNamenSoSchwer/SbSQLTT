@@ -80,6 +80,46 @@ export function saveProgress(id: string, patch: Progress[string]) {
 	_scheduleSyncToServer(id, patch);
 }
 
+/**
+ * Lokalen Fortschritt loeschen (beim Abmelden: K4-Datenschutz).
+ * Damit sieht der naechste Schueler am selben Schulrechner nicht den Stand des vorherigen.
+ */
+export function clearProgress() {
+	try {
+		localStorage.removeItem(KEY);
+	} catch {
+		/* ignore */
+	}
+}
+
+/**
+ * Lokalen Fortschritt mit Server-Daten zusammenfuehren (nach Login / initSession).
+ * Regel: done gewinnt, sonst hoehere Schritt-Zahl.
+ */
+export function mergeServerProgress(serverProgress: { lesson_id: string; step: number; done: boolean }[]): void {
+	try {
+		const local = loadProgress();
+		for (const row of serverProgress) {
+			const lid = row.lesson_id;
+			const local_ = local[lid];
+			if (row.done) {
+				// Server sagt fertig -> lokal auch fertig setzen
+				local[lid] = { ...local_, done: true };
+			} else {
+				// Schritt-Zahl: hoeherer Wert gewinnt (0-basiert vom Server -> +1 fuer step-in-progress)
+				const serverStep = row.step + 1;
+				const localStep = local_?.step ?? 0;
+				if (serverStep > localStep) {
+					local[lid] = { ...local_, step: serverStep };
+				}
+			}
+		}
+		localStorage.setItem(KEY, JSON.stringify(local));
+	} catch {
+		/* ignore */
+	}
+}
+
 // ---- Entprellter Server-Sync -----------------------------------------------
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 const _pendingSync: Map<string, Progress[string]> = new Map();
@@ -118,6 +158,84 @@ async function _flushSyncToServer() {
 		if (items.length > 0) {
 			await apiPutProgress(items).catch(() => {/* ignore */});
 		}
+	} catch {
+		// ignore
+	}
+}
+
+// ---- Entprellter Per-Schritt-Sync (neues Vertragsformat, aus Lektions-Seite) ----
+
+type StepSyncEntry = {
+	lesson_id: string;
+	/** 0-basierter Index des Uebungsschritts in lesson.steps (nur kind==='exercise') */
+	step: number;
+	done: boolean;
+	attempts: number;
+	/** Letzte SQL-Abfrage (leer wenn kein Fehler) */
+	lastQuery: string;
+	/** Fehlermeldung; leer wenn kein Fehler, 'Ergebnis stimmt nicht' bei wrong */
+	errorMsg: string;
+};
+
+let _stepSyncTimer: ReturnType<typeof setTimeout> | null = null;
+// Map key: `${lesson_id}:${step}`
+const _pendingStepSync: Map<string, StepSyncEntry> = new Map();
+
+/**
+ * Entprellter Sync eines einzelnen Uebungsschritts zum Server.
+ * Vertrag: pro Uebungsschritt eine Zeile, step = 0-basierter Index,
+ * done=true wenn geloest, attempts = Anzahl Ausfuehrungen dieser Uebung,
+ * last_attempts mit letzter Abfrage + Fehlermeldung.
+ * Nur wenn ACCOUNTS_LIVE und angemeldet.
+ */
+export function syncExerciseStep(entry: StepSyncEntry) {
+	const key = `${entry.lesson_id}:${entry.step}`;
+	const existing = _pendingStepSync.get(key);
+	// Aktuellsten Stand mergen: attempts aufaddieren, done bleibt true wenn einmal true
+	_pendingStepSync.set(key, {
+		...entry,
+		done: existing?.done || entry.done,
+		attempts: entry.attempts, // ueberschreiben, nicht addieren (immer aktueller Wert)
+	});
+	if (_stepSyncTimer) clearTimeout(_stepSyncTimer);
+	_stepSyncTimer = setTimeout(_flushStepSyncToServer, 2000);
+}
+
+async function _flushStepSyncToServer() {
+	_stepSyncTimer = null;
+	if (_pendingStepSync.size === 0) return;
+
+	try {
+		const { ACCOUNTS_LIVE } = await import('./flags.js');
+		if (!ACCOUNTS_LIVE) return;
+		const { session } = await import('./session.svelte.js');
+		if (!session.user) return;
+		const { apiPutProgress } = await import('./api.js');
+
+		const nowTs = Math.floor(Date.now() / 1000);
+		const progress = [];
+		const last_attempts = [];
+
+		for (const e of _pendingStepSync.values()) {
+			progress.push({
+				lesson_id: e.lesson_id,
+				step: e.step,
+				done: e.done,
+				attempts: e.attempts,
+				updated_at: nowTs,
+			});
+			// last_attempt immer senden (auch bei Erfolg mit leerem error_msg)
+			last_attempts.push({
+				lesson_id: e.lesson_id,
+				step: e.step,
+				query: e.lastQuery,
+				error_msg: e.errorMsg,
+			});
+		}
+
+		_pendingStepSync.clear();
+
+		await apiPutProgress(progress, last_attempts).catch(() => {/* ignore */});
 	} catch {
 		// ignore
 	}

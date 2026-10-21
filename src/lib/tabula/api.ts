@@ -164,6 +164,18 @@ export function apiJoinClass(code: string): Promise<{ ok: true; class_name: stri
   return request('POST', '/classes/join', { code });
 }
 
+/** GET /api/classes/mine */
+export function apiGetClasses(): Promise<{
+  classes: {
+    id: number;
+    name: string;
+    focus_lesson: string | null;
+    lessons: { lesson_id: string; unlocked: boolean; sort_order: number; is_focus: boolean }[];
+  }[];
+}> {
+  return request('GET', '/classes/mine');
+}
+
 /** GET /api/progress */
 export function apiGetProgress(): Promise<{
   progress: ProgressItem[];
@@ -178,4 +190,154 @@ export function apiPutProgress(
   last_attempts?: AttemptItem[],
 ): Promise<{ ok: true }> {
   return request('PUT', '/progress', { progress, last_attempts });
+}
+
+// ---------------------------------------------------------------------------
+// Lehrkraft-API Typen
+// ---------------------------------------------------------------------------
+
+export interface TeacherClass {
+  id: number;
+  name: string;
+  join_code: string;
+  focus_lesson: string | null;
+  archived: number;
+  created_at: number;
+  student_count?: number;
+  stuck_count?: number;
+}
+
+export interface TeacherStudent {
+  id: number;
+  display_name: string;
+  username: string;
+  joined_at: number;
+}
+
+export interface DashboardStudent {
+  user_id: number;
+  display_name: string;
+  status: 'done' | 'in_progress' | 'stuck' | 'not_started';
+  step: number | null;
+  total_steps: number | null;
+  attempts: number;
+  last_active: number | null;
+}
+
+export interface MatrixRow {
+  user_id: number;
+  display_name: string;
+  cells: Array<{ status: 'done' | 'started' | 'stuck' | 'open' | 'locked' }>;
+  progress: string;
+}
+
+export interface LessonSetting {
+  lesson_id: string;
+  unlocked: boolean;
+  sort_order: number;
+  is_focus: boolean;
+}
+
+export interface LastAttempt {
+  lesson_id: string;
+  step: number;
+  query: string;
+  error_msg: string;
+  updated_at: number;
+}
+
+// ---------------------------------------------------------------------------
+// Lehrkraft-API Funktionen
+// ---------------------------------------------------------------------------
+
+/** GET /api/teacher/classes */
+export function apiTeacherGetClasses(): Promise<{ classes: TeacherClass[] }> {
+  return request('GET', '/teacher/classes');
+}
+
+/** POST /api/teacher/classes */
+export function apiTeacherCreateClass(name: string): Promise<{ ok: true; class: TeacherClass }> {
+  return request('POST', '/teacher/classes', { name });
+}
+
+/** GET /api/teacher/classes/:id */
+export function apiTeacherGetClass(id: number): Promise<{ class: TeacherClass }> {
+  return request('GET', `/teacher/classes/${id}`);
+}
+
+/** PATCH /api/teacher/classes/:id */
+export function apiTeacherPatchClass(
+  id: number,
+  body: { name?: string; archived?: boolean },
+): Promise<{ ok: true; class: TeacherClass }> {
+  return request('PATCH', `/teacher/classes/${id}`, body);
+}
+
+/** DELETE /api/teacher/classes/:id */
+export function apiTeacherDeleteClass(id: number): Promise<{ ok: true }> {
+  return request('DELETE', `/teacher/classes/${id}`);
+}
+
+/** POST /api/teacher/classes/:id/code */
+export function apiTeacherNewCode(id: number): Promise<{ ok: true; join_code: string }> {
+  return request('POST', `/teacher/classes/${id}/code`);
+}
+
+/** GET /api/teacher/classes/:id/dashboard */
+export function apiTeacherDashboard(id: number): Promise<{ students: DashboardStudent[]; focus_lesson: string | null; updated_at: number }> {
+  return request('GET', `/teacher/classes/${id}/dashboard`);
+}
+
+/** GET /api/teacher/classes/:id/matrix */
+export function apiTeacherMatrix(id: number): Promise<{ rows: MatrixRow[]; lesson_ids: string[] }> {
+  return request('GET', `/teacher/classes/${id}/matrix`);
+}
+
+/** GET /api/teacher/classes/:id/students */
+export function apiTeacherGetStudents(id: number): Promise<{ students: TeacherStudent[] }> {
+  return request('GET', `/teacher/classes/${id}/students`);
+}
+
+/** PATCH /api/teacher/classes/:id/students/:uid */
+export function apiTeacherRenameStudent(
+  classId: number,
+  userId: number,
+  display_name: string,
+): Promise<{ ok: true }> {
+  return request('PATCH', `/teacher/classes/${classId}/students/${userId}`, { display_name });
+}
+
+/** DELETE /api/teacher/classes/:id/students/:uid */
+export function apiTeacherRemoveStudent(classId: number, userId: number): Promise<{ ok: true }> {
+  return request('DELETE', `/teacher/classes/${classId}/students/${userId}`);
+}
+
+/** GET /api/teacher/classes/:id/students/:uid/last-attempt */
+export function apiTeacherLastAttempt(
+  classId: number,
+  userId: number,
+): Promise<{ last_attempt: LastAttempt | null }> {
+  return request('GET', `/teacher/classes/${classId}/students/${userId}/last-attempt`);
+}
+
+/** PUT /api/teacher/classes/:id/lessons */
+export function apiTeacherPutLessons(
+  classId: number,
+  lessons: LessonSetting[],
+): Promise<{ ok: true }> {
+  return request('PUT', `/teacher/classes/${classId}/lessons`, { lessons });
+}
+
+/** GET /api/teacher/classes/:id/lessons */
+export function apiTeacherGetLessons(classId: number): Promise<{ lessons: LessonSetting[] }> {
+  return request('GET', `/teacher/classes/${classId}/lessons`);
+}
+
+/** POST /api/teacher/classes/:id/students/:uid/password-reset */
+export function apiTeacherPasswordReset(
+  classId: number,
+  userId: number,
+  new_password: string,
+): Promise<{ ok: true }> {
+  return request('POST', `/teacher/classes/${classId}/students/${userId}/password-reset`, { new_password });
 }

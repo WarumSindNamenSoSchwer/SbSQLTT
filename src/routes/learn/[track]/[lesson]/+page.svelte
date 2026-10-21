@@ -8,7 +8,7 @@
 	import QueryViz from '$lib/tabula/QueryViz.svelte';
 	import { explainQuery } from '$lib/tabula/explain';
 	import { tok } from '$lib/tabula/highlight';
-	import { LESSONS, saveProgress, loadProgress, type Step } from '$lib/tabula/lessons';
+	import { LESSONS, saveProgress, loadProgress, syncExerciseStep, type Step } from '$lib/tabula/lessons';
 	import { openDb, run, runChecked, readSchema, explainError, compare, sqlHint, exportDb, type Result, type Schema } from '$lib/tabula/sql';
 
 	const lesson = $derived(LESSONS[page.params.lesson ?? ''] ?? LESSONS['where-filters']);
@@ -161,6 +161,15 @@
 				x.state = 'wrong';
 				x.sub = sqlHint(sql) ?? c.sub;
 			}
+			// Entprellter Sync: je Uebungsschritt eine Zeile (neuer Vertrag)
+			syncExerciseStep({
+				lesson_id: lesson.id,
+				step: cur,
+				done: x.state === 'solved' || x.state === 'shown',
+				attempts: x.attempts,
+				lastQuery: sql,
+				errorMsg: x.state === 'wrong' ? 'Ergebnis stimmt nicht' : '',
+			});
 		}
 	}
 
@@ -174,6 +183,21 @@
 		} else {
 			finished = true;
 			saveProgress(lesson.id, { done: true });
+			// Alle Uebungsschritte als done markieren (Lektion abgeschlossen)
+			const exerciseSteps = lesson.steps
+				.map((s, i) => ({ s, i }))
+				.filter(({ s }) => s.kind === 'exercise');
+			for (const { i } of exerciseSteps) {
+				const state = st[i];
+				syncExerciseStep({
+					lesson_id: lesson.id,
+					step: i,
+					done: true,
+					attempts: state?.attempts ?? 0,
+					lastQuery: state?.lastSql ?? '',
+					errorMsg: '',
+				});
+			}
 		}
 	}
 	function back() {

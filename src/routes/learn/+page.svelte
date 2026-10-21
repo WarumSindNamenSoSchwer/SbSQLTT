@@ -4,10 +4,13 @@
 	import TopNav from '$lib/tabula/TopNav.svelte';
 	import Edgar from '$lib/edgar/Edgar.svelte';
 	import { CATALOG, TRACK_INFO, LESSONS, EXTRA_PLAYABLE, loadProgress, type Progress } from '$lib/tabula/lessons';
+	import { ACCOUNTS_LIVE } from '$lib/tabula/flags';
+	import { session } from '$lib/tabula/session.svelte';
+	import { apiGetClasses } from '$lib/tabula/api';
 
-	// Klassen-Fokus und Sperren kommen spaeter vom Server. Gast = alles offen.
-	type Klasse = { name: string; focus?: { id: string; by: string }; locked: string[] } | null;
-	const klasse = null as Klasse;
+	// Klassen-Fokus und Sperren: vom Server laden wenn angemeldet und Schueler.
+	type KlasseInfo = { name: string; focus?: { id: string }; locked: string[] } | null;
+	let klasse = $state<KlasseInfo>(null);
 
 	let progress = $state<Progress>({});
 	let dark = $state(false);
@@ -19,8 +22,39 @@
 		sync();
 		const mo = new MutationObserver(sync);
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+		// Klassen-Info laden (nur wenn angemeldet und ACCOUNTS_LIVE)
+		if (ACCOUNTS_LIVE && session.user && session.user.role === 'student') {
+			apiGetClasses().then(({ classes }) => {
+				if (classes.length === 0) return;
+				// Erste aktive Klasse verwenden
+				const cls = classes[0];
+				// Gesperrte Lektionen: lesson_settings vorhanden und unlocked=false
+				const hasSettings = cls.lessons.length > 0;
+				const locked = hasSettings
+					? cls.lessons.filter(l => !l.unlocked).map(l => l.lesson_id)
+					: [];
+				// Fokus-Lektion
+				const focusLesson = cls.lessons.find(l => l.is_focus);
+				klasse = {
+					name: cls.name,
+					focus: focusLesson ? { id: focusLesson.lesson_id } : cls.focus_lesson ? { id: cls.focus_lesson } : undefined,
+					locked,
+				};
+			}).catch(() => { /* Netzwerkfehler ignorieren */ });
+		}
+
 		return () => mo.disconnect();
 	});
+
+	// Fortschritt reaktiv aktualisieren wenn sich der Session-State aendert
+	// (z.B. nach Login mit Server-Merge)
+	$effect(() => {
+		if (session.user !== undefined) {
+			progress = loadProgress();
+		}
+	});
+
 
 	type St = 'done' | 'started' | 'open' | 'locked';
 	const status = (id: string): St => {
@@ -80,13 +114,13 @@
 				<span class="sub">Von der ersten Abfrage bis zur eigenen Datenanalyse mit Python.</span>
 			</div>
 
-			{#if !klasse}
+			{#if !session.user}
 				<div class="guest">
 					<span class="gi">i</span>
 					<span class="gt">Dein Fortschritt wird nur in diesem Browser gespeichert. Melde dich an, um ihn zu sichern.</span>
 					<a class="ga" href="/login">Anmelden</a>
 				</div>
-			{:else if klasse.focus}
+			{:else if klasse?.focus}
 				{@const f = CATALOG.find((l) => l.id === klasse.focus?.id)}
 				{#if f}
 					<div class="focus">
@@ -94,7 +128,7 @@
 						<div class="ftxt">
 							<span class="lbl" style="color:var(--accent-ink)">FOKUS · KLASSE {klasse.name.toUpperCase()}</span>
 							<span class="ft">Deine Klasse arbeitet gerade an: {f.title}</span>
-							<span class="fs">Lektion {f.n} · ca. {f.dur} · festgelegt von {klasse.focus.by}</span>
+							<span class="fs">Lektion {f.n} · ca. {f.dur} · Klasse {klasse.name}</span>
 						</div>
 						<a class="btn primary" href={href(f)}>Öffnen<span class="arr"></span></a>
 					</div>

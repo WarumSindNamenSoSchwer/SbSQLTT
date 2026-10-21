@@ -12,12 +12,13 @@ import {
   apiLogin,
   apiLogout,
   apiRegister,
+  apiGetProgress,
   apiPutProgress,
   type PublicUser,
   type RegisterStudentBody,
   type RegisterTeacherBody,
 } from './api.js';
-import { loadProgress } from './lessons.js';
+import { loadProgress, clearProgress, mergeServerProgress } from './lessons.js';
 
 // ---------------------------------------------------------------------------
 // Reaktiver Zustand
@@ -51,6 +52,10 @@ export async function initSession(): Promise<void> {
   try {
     const { user } = await apiMe();
     _user = user;
+    // Fortschritt vom Server laden und mit lokalem Stand zusammenfuehren
+    if (user) {
+      await _downloadAndMergeProgress();
+    }
   } catch {
     // Nicht angemeldet oder Fehler: kein Problem
     _user = null;
@@ -69,6 +74,8 @@ export async function sessionLogin(loginInput: string, password: string): Promis
   _user = user;
   // Einmalige Uebernahme lokaler Fortschrittsdaten (K4)
   await _uploadLocalProgress();
+  // Server-Stand laden und zusammenfuehren (zweites Geraet sieht sofort den Stand)
+  await _downloadAndMergeProgress();
 }
 
 // ---------------------------------------------------------------------------
@@ -78,6 +85,9 @@ export async function sessionLogin(loginInput: string, password: string): Promis
 export async function sessionLogout(): Promise<void> {
   await apiLogout();
   _user = null;
+  // Lokalen Fortschritt loeschen (K4: Schulrechner-Datenschutz).
+  // Damit sieht der naechste Schueler am selben Geraet nicht den Stand des vorherigen.
+  clearProgress();
 }
 
 // ---------------------------------------------------------------------------
@@ -92,6 +102,21 @@ export async function sessionRegister(
   _user = user;
   // Einmalige Uebernahme lokaler Fortschrittsdaten (K4)
   await _uploadLocalProgress();
+  // Server-Stand laden und zusammenfuehren
+  await _downloadAndMergeProgress();
+}
+
+// ---------------------------------------------------------------------------
+// Hilfsfunktion: Fortschritt vom Server laden und mit lokalem Stand zusammenfuehren
+// ---------------------------------------------------------------------------
+
+async function _downloadAndMergeProgress(): Promise<void> {
+  try {
+    const { progress } = await apiGetProgress();
+    mergeServerProgress(progress);
+  } catch {
+    // Fehlschlag ignorieren, kein Showstopper
+  }
 }
 
 // ---------------------------------------------------------------------------

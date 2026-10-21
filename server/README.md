@@ -134,7 +134,66 @@ Zugriffskontrolle: Nur `role=teacher`. Fremde Klassen liefern 404 (nicht 403), u
 - **Sessions (K6):** SHA-256 des Tokens gespeichert, nicht das Token selbst.
 - **Logs:** Pino mit `redact` - Passwortfelder und Cookies werden zensiert.
 
-## Offene Punkte / naechste Schritte
+## Fortschritts-Vertrag (progress contract)
+
+### PUT /api/progress - Schritt-Vertrag (ab P7)
+
+Das Frontend schickt **je Uebungsschritt eine Zeile** (nicht eine pro Lektion):
+
+```json
+{
+  "progress": [
+    {
+      "lesson_id": "where-filters",
+      "step": 2,
+      "done": true,
+      "attempts": 4,
+      "updated_at": 1700000000
+    }
+  ],
+  "last_attempts": [
+    {
+      "lesson_id": "where-filters",
+      "step": 2,
+      "query": "SELECT title FROM books WHERE year > 2020;",
+      "error_msg": ""
+    }
+  ]
+}
+```
+
+Felder:
+- `step`: 0-basierter Index des Schritts in `lesson.steps` (nur `kind === 'exercise'`)
+- `done`: `true` wenn die Uebung geloest wurde (auch nach Loesung-anzeigen)
+- `attempts`: Gesamtzahl der Ausfuehrungen dieser Uebung in der Session
+- `last_attempts.error_msg`: leer wenn kein Fehler; `"Ergebnis stimmt nicht"` bei falscher Ausgabe; SQL-Fehlermeldung bei Syntaxfehler
+
+**Haengt-fest-Erkennung im Dashboard:**
+- `done = 0` UND `attempts >= 3` → haengt fest
+- ODER: `last_attempt.error_msg != ''` UND `updated_at < now - 300s` → haengt fest
+
+**Fertig-Erkennung:**
+- Die Anzahl erledigter Schritte (`done = 1`) muss >= `exercise_steps` aus `server/src/lesson-steps.json` sein.
+- `lesson-steps.json` wird von `tools/gen-lesson-steps.mjs` generiert und muss bei Kursaenderungen neu erstellt werden.
+
+### GET /api/progress - Antwortformat
+
+```json
+{
+  "progress": [
+    { "lesson_id": "where-filters", "step": 2, "done": true, "attempts": 4, "updated_at": 1700000000 }
+  ],
+  "last_attempts": [
+    { "lesson_id": "where-filters", "step": 2, "query": "...", "error_msg": "", "updated_at": 1700000000 }
+  ]
+}
+```
+
+### Abmelde-Verhalten (K4)
+
+Beim Abmelden wird `localStorage['tabula-progress']` geleert. Damit sieht der naechste Schueler am selben Schulrechner nicht den Stand des vorherigen.
+
+
 
 - [ ] SMTP-Implementierung (Hetzner, `noreply@tabulasql.de`, Passwort aus `/run/secrets/smtp_noreply`)
 - [ ] WebSocket-Support fuer Live-Quiz (K5, Spec 7.5)

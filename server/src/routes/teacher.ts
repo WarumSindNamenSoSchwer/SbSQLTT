@@ -23,10 +23,26 @@
 import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import { randomBytes } from 'node:crypto'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Db } from '../db.js'
 import { validateSession, SESSION_COOKIE_NAME } from '../session.js'
 import { hashPassword } from '../password.js'
 import { todayUtc, normalizeUsername } from '../password.js'
+
+// ---------------------------------------------------------------------------
+// Lektion-Schritt-Zaehler (aus lesson-steps.json, generiert von tools/gen-lesson-steps.mjs)
+// ---------------------------------------------------------------------------
+
+const _require = createRequire(import.meta.url)
+const _lessonStepsPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'lesson-steps.json')
+const LESSON_STEPS: Record<string, { exercise_steps: number; total_steps: number }> = _require(_lessonStepsPath)
+
+/** Liefert die Gesamtzahl der Uebungsschritte fuer eine Lektion (authoritative). */
+function lessonExerciseSteps(lessonId: string): number {
+  return LESSON_STEPS[lessonId]?.exercise_steps ?? 0
+}
 
 // ---------------------------------------------------------------------------
 // Beitrittscode-Erzeugung
@@ -355,13 +371,15 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
         return { user_id: student.id, display_name: student.display_name, status: 'kein_fokus' as const }
       }
 
-      // Alle Schritte dieser Lektion fuer den Schueler
+      // Authoritative Gesamtzahl der Uebungsschritte aus lesson-steps.json
+      const totalSteps = lessonExerciseSteps(focusLessonId)
+
+      // Alle Schritte dieser Lektion fuer den Schueler (pro Schritt eine Zeile, step = 0-basiert)
       const steps = db.prepare(
         'SELECT step, done, attempts FROM progress WHERE user_id = ? AND lesson_id = ?'
       ).all(student.id, focusLessonId) as { step: number; done: number; attempts: number }[]
 
       const doneSteps = steps.filter(s => s.done === 1).length
-      const totalSteps = steps.length
 
       // Haengt-fest-Pruefung: mindestens ein offener Schritt mit >= 3 Versuchen
       // oder letzter Versuch mit Fehler vor > 5 min
@@ -378,9 +396,10 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
       let status: 'fertig' | 'dran' | 'haengt_fest' | 'noch_nicht_begonnen'
       if (stuckStep !== undefined) {
         status = 'haengt_fest'
-      } else if (totalSteps > 0 && doneSteps === totalSteps) {
+      } else if (totalSteps > 0 && doneSteps >= totalSteps) {
+        // fertig: alle Uebungsschritte erledigt (doneSteps >= totalSteps als Absicherung)
         status = 'fertig'
-      } else if (totalSteps > 0) {
+      } else if (steps.length > 0) {
         status = 'dran'
       } else {
         status = 'noch_nicht_begonnen'
@@ -458,11 +477,13 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const matrix: Record<string, Record<string, string>> = {}
     for (const lessonId of lessonIds) {
       matrix[lessonId] = {}
+      const totalExerciseSteps = lessonExerciseSteps(lessonId)
       for (const student of students) {
         const steps = byUser[student.id]?.[lessonId] ?? []
         if (steps.length === 0) {
           matrix[lessonId][student.id] = 'nicht_begonnen'
-        } else if (steps.every(s => s.done === 1)) {
+        } else if (totalExerciseSteps > 0 && steps.filter(s => s.done === 1).length >= totalExerciseSteps) {
+          // fertig: authoritative Anzahl der Uebungsschritte alle erledigt
           matrix[lessonId][student.id] = 'fertig'
         } else {
           matrix[lessonId][student.id] = 'begonnen'

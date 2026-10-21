@@ -1,0 +1,46 @@
+{
+  "select-basics": {
+    "exercise_steps": 11,
+    "total_steps": 14
+  },
+  "select-columns": {
+    "exercise_steps": 11,
+    "total_steps": 14
+  },
+  "where-filters": {
+    "exercise_steps": 14,
+    "total_steps": 17
+  },
+  "order-limit": {
+    "exercise_steps": 11,
+    "total_steps": 14
+  },
+  "aggregates": {
+    "exercise_steps": 12,
+    "total_steps": 15
+  },
+  "group-by": {
+    "exercise_steps": 13,
+    "total_steps": 16
+  },
+  "joins": {
+    "exercise_steps": 13,
+    "total_steps": 16
+  },
+  "subqueries": {
+    "exercise_steps": 13,
+    "total_steps": 16
+  },
+  "ddl": {
+    "exercise_steps": 14,
+    "total_steps": 17
+  },
+  "project": {
+    "exercise_steps": 13,
+    "total_steps": 17
+  },
+  "python": {
+    "exercise_steps": 5,
+    "total_steps": 5
+  }
+}

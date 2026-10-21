@@ -813,10 +813,9 @@ describe('Dashboard: Haengt-fest-Regel', () => {
       url: '/api/progress',
       headers: { 'content-type': 'application/json', cookie: studentCookie },
       body: JSON.stringify({
-        progress: [
-          { lesson_id: 'aggregates', step: 0, done: true, attempts: 1, updated_at: nowTs },
-          { lesson_id: 'aggregates', step: 1, done: true, attempts: 2, updated_at: nowTs },
-        ],
+        progress: Array.from({ length: 12 }, (_, i) => ({
+          lesson_id: 'aggregates', step: i, done: true, attempts: 1, updated_at: nowTs,
+        })),
       }),
     })
 
