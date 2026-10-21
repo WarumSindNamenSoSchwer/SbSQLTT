@@ -17,6 +17,8 @@ import progressRoutes from './routes/progress.js'
 import classesRoutes from './routes/classes.js'
 import teacherRoutes from './routes/teacher.js'
 import studentClassesRoutes from './routes/student-classes.js'
+import quizRoutes from './routes/quiz.js'
+import quizWsPlugin from './routes/quiz-ws.js'
 
 export interface AppConfig {
   db: Db
@@ -119,6 +121,20 @@ export async function buildApp(cfg: AppConfig) {
     await api.register(async (teacherApi) => {
       await teacherApi.register(teacherRoutes, { db: cfg.db })
     }, { prefix: '/teacher' })
+
+    // Quiz: REST unter /api/teacher/quizzes und /api/teacher/quiz-sessions
+    await api.register(async (teacherApi) => {
+      await teacherApi.register(quizRoutes, { db: cfg.db })
+    }, { prefix: '/teacher' })
+
+    // Quiz: WebSocket unter /api/quiz/ws
+    await api.register(async (quizApi) => {
+      await quizApi.register(quizWsPlugin, {
+        db: cfg.db,
+        allowedOrigin,
+        skipOriginCheck: cfg.skipCsrf,
+      })
+    }, { prefix: '/quiz' })
   }, { prefix: '/api' })
 
   return app
