@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import TopNav from '$lib/tabula/TopNav.svelte';
+	import Edgar from '$lib/edgar/Edgar.svelte';
 	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
 	import { session } from '$lib/tabula/session.svelte.js';
 	import {
@@ -130,6 +131,7 @@
 				{:else if shown.length === 0}
 					{#if tab === 'aktiv'}
 						<div class="empty-state">
+							<Edgar pose="curious" {dark} class="empty-owl" />
 							<span class="empty-title">Noch keine Klasse</span>
 							<p class="empty-body">Legen Sie Ihre erste Klasse an. Ihre Schüler treten danach mit einem Code oder QR-Code bei.</p>
 							<button class="btn-primary mt6" onclick={() => goto('/teach/neu')}>+ Neue Klasse</button>
@@ -204,6 +206,7 @@
 	.error-box { padding: 14px; border-radius: 8px; background: var(--danger-soft); border: 1px solid var(--danger-line); color: var(--danger-ink); font-size: 14px; }
 
 	.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 10px; padding: 56px 40px; min-height: 300px; }
+	:global(.empty-owl) { width: 150px; height: 135px; }
 	.empty-title { font-size: 22px; font-weight: 600; }
 	.empty-body { font-size: 15px; color: var(--ink-2); max-width: 440px; line-height: 24px; }
 	.mt6 { margin-top: 6px; }

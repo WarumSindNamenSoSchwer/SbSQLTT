@@ -3,6 +3,7 @@
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import TopNav from '$lib/tabula/TopNav.svelte';
+	import Edgar from '$lib/edgar/Edgar.svelte';
 	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
 	import { session } from '$lib/tabula/session.svelte.js';
 	import { CATALOG, TRACK_INFO } from '$lib/tabula/lessons.js';
@@ -116,7 +117,7 @@
 		<!-- D2-02: Klasse erstellt -->
 		<main class="center">
 			<div class="created-wrap">
-				<div class="created-success-icon" aria-hidden="true">✓</div>
+				<Edgar pose="success" {dark} class="created-owl" />
 				<h1 class="created-title">{created.name} ist bereit</h1>
 				<p class="created-sub">Zeigen Sie den Code oder den QR-Code. Schüler treten damit bei.</p>
 
@@ -249,7 +250,7 @@
 
 	/* Created */
 	.created-wrap { width: 100%; max-width: 600px; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }
-	.created-success-icon { width: 60px; height: 60px; border-radius: 50%; background: var(--ok-soft); color: var(--ok-ink); display: grid; place-items: center; font-size: 26px; font-weight: 700; }
+	:global(.created-owl) { width: 110px; height: 99px; }
 	.created-title { font-size: 32px; line-height: 40px; font-weight: 600; }
 	.created-sub { font-size: 15px; color: var(--ink-2); }
 	.qr-code-box { display: flex; align-items: center; gap: 36px; padding: 28px 36px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }

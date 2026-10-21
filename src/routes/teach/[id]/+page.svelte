@@ -13,8 +13,30 @@
 	} from '$lib/tabula/api.js';
 	import { CATALOG, LESSONS } from '$lib/tabula/lessons.js';
 	import { tok } from '$lib/tabula/highlight.js';
+	import Edgar from '$lib/edgar/Edgar.svelte';
+	import QRCode from 'qrcode';
+
+	// Dunkles Theme wie im Layout erkennen (html ohne Klasse "light")
+	let dark = $state(false);
+	$effect(() => {
+		const sync = () => (dark = !document.documentElement.classList.contains('light'));
+		sync();
+		const mo = new MutationObserver(sync);
+		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+		return () => mo.disconnect();
+	});
 
 	const ctx = getContext<{ cls: any; reload: () => void; setFocus: (l: string | null) => void }>('teachClass');
+
+	// Echter QR-Code für den Leer-Zustand (Beitritts-Link der Klasse), lokal erzeugt
+	let emptyQr = $state<string | null>(null);
+	$effect(() => {
+		const code = ctx?.cls?.join_code as string | undefined;
+		if (!code) return;
+		QRCode.toDataURL(`https://www.tabulasql.de/beitreten/${code}`, { width: 472, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } })
+			.then((u: string) => (emptyQr = u))
+			.catch(() => (emptyQr = null));
+	});
 
 	let classId = $derived(Number(page.params.id));
 	let viewMode = $state<'focus' | 'matrix'>('focus');
@@ -203,12 +225,17 @@
 	<!-- Leerer Zustand: noch niemand beigetreten -->
 	<div class="empty-dashboard">
 		<div class="empty-qr-side">
-			<div class="empty-qr-box" aria-hidden="true">
-				<div class="qr-mock"></div>
+			<div class="empty-qr-box">
+				{#if emptyQr}
+					<img class="qr-real" src={emptyQr} alt="QR-Code zum Beitreten der Klasse" />
+				{:else}
+					<div class="qr-mock" aria-hidden="true"></div>
+				{/if}
 			</div>
 			<div class="empty-code mono">{ctx?.cls?.join_code ?? '------'}</div>
 		</div>
 		<div class="empty-text-side">
+			<Edgar pose="wave" {dark} class="empty-wave-owl" />
 			<h2 class="empty-title">Noch niemand beigetreten</h2>
 			<p class="empty-body">Zeigen Sie diesen Code oder QR-Code. Schüler öffnen tabulasql.de/beitreten und geben den Code ein.</p>
 			<div class="empty-steps">
@@ -442,8 +469,10 @@
 	@media (max-width: 800px) { .empty-dashboard { grid-template-columns: 1fr; gap: 24px; padding: 24px; } }
 	.empty-qr-side { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 28px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 	.qr-mock { width: 236px; height: 236px; border-radius: 6px; background: repeating-conic-gradient(var(--ink) 0 25%, transparent 0 50%) 0 0/20px 20px; opacity: 0.9; }
+	.qr-real { width: 236px; height: 236px; display: block; border-radius: 6px; }
 	.empty-code { font-family: var(--mono); font-size: 30px; font-weight: 500; letter-spacing: 5px; }
 	.empty-text-side { display: flex; flex-direction: column; gap: 18px; }
+	:global(.empty-wave-owl) { width: 96px; height: 86px; }
 	.empty-title { font-size: 28px; font-weight: 600; }
 	.empty-body { font-size: 16px; color: var(--ink-2); }
 	.empty-steps { display: flex; flex-direction: column; gap: 10px; }

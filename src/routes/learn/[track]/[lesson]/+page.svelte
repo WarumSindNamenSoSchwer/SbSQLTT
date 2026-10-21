@@ -366,7 +366,7 @@
 		<!-- ================= Lektion geschafft ================= -->
 		<main class="donescr">
 			<div class="done-in">
-				<Edgar pose="celebrate" mode="once" {dark} class="done-owl" />
+				<Edgar pose="celebrate" {dark} class="done-owl" />
 				<div class="done-head">
 					<span class="lbl">{lesson.trackLabel} · LEKTION {lesson.no} VON {lesson.of}</span>
 					<h1 class="h1">Lektion geschafft</h1>

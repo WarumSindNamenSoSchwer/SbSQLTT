@@ -12,10 +12,15 @@
 		type TeacherClass,
 	} from '$lib/tabula/api.js';
 	import QRCode from 'qrcode';
+	import G from '$lib/edgar/owl-gen.js';
 
 	let { children } = $props();
 
 	let dark = $state(false);
+	// Gleiches Logo wie in der TopNav (owl-gen icon)
+	const logoSvg = $derived(
+		G.icon(dark ? { body: '#E2E8F0', line: '#E2E8F0' } : {}).replace('<svg ', '<svg width="100%" height="100%" aria-hidden="true" ')
+	);
 	let cls = $state<TeacherClass | null>(null);
 	let allClasses = $state<TeacherClass[]>([]);
 	let loading = $state(true);
@@ -154,16 +159,7 @@
 	<!-- Lehrkraft-Topbar mit Klassen-Umschalter (Design D3-D6) -->
 	<header class="teach-nav">
 		<a class="teach-brand" href="/teach">
-			<svg class="teach-logo-owl" viewBox="0 0 120 104" fill="currentColor" aria-hidden="true">
-				<ellipse cx="60" cy="72" rx="40" ry="28"/>
-				<circle cx="40" cy="38" r="22"/>
-				<circle cx="80" cy="38" r="22"/>
-				<circle cx="40" cy="38" r="10" fill="var(--bg,#f8fafc)"/>
-				<circle cx="80" cy="38" r="10" fill="var(--bg,#f8fafc)"/>
-				<circle cx="42" cy="36" r="5"/>
-				<circle cx="82" cy="36" r="5"/>
-				<path d="M50 58 Q60 66 70 58" stroke="var(--bg,#f8fafc)" stroke-width="3" fill="none" stroke-linecap="round"/>
-			</svg>
+			<span class="teach-logo-owl" aria-hidden="true">{@html logoSvg}</span>
 			Tabula
 		</a>
 		{#if cls}
@@ -244,7 +240,7 @@
 						<span class="mono code-text">{cls.join_code}</span>
 						<span class="code-qr-hint">QR ⤢</span>
 					</button>
-					<button class="btn-quiz" onclick={() => {}}>▶ Quiz starten</button>
+					<a href="/teach/quiz" class="btn-quiz">▶ Quiz</a>
 				</div>
 			</div>
 			<nav class="class-tabs" aria-label="Klassen-Navigation">
@@ -321,6 +317,7 @@
 		flex: none;
 	}
 	.teach-logo-owl { width: 30px; height: 26px; display: block; }
+	.teach-logo-owl :global(svg) { display: block; }
 
 	.teach-nav-sep { width: 1px; height: 22px; background: var(--line); flex: none; }
 	.teach-nav-grow { flex: 1; }

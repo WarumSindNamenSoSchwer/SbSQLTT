@@ -165,7 +165,7 @@
 		<!-- ================= Lektion geschafft ================= -->
 		<main class="donescr">
 			<div class="done-in">
-				<Edgar pose="celebrate" mode="once" {dark} class="done-owl" />
+				<Edgar pose="celebrate" {dark} class="done-owl" />
 				<div class="done-head">
 					<span class="lbl">PYTHON & DATEN · LEKTION {PYTHON_LESSON.no} VON {PYTHON_LESSON.of}</span>
 					<h1 class="h1">Lektion geschafft</h1>
