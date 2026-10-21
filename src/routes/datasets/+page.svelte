@@ -95,8 +95,15 @@ print(df.head())`
 	function getRowCounts(id: DatasetId): Record<string, number> {
 		return id === 'books' ? rowCountsBooks : rowCountsSchule;
 	}
+	let previewTable = $state('');
 	function getPreview(id: DatasetId): { columns: string[]; rows: (string | number | null)[][] } {
+		const db = getDb(id);
+		const t = previewTable && getSchemas(id).some((x) => x.table === previewTable) ? previewTable : id === 'books' ? 'books' : 'klassen';
+		if (db) return run(db, `SELECT * FROM "${t}" LIMIT 6`);
 		return id === 'books' ? previewBooks : previewSchule;
+	}
+	function previewName(id: DatasetId): string {
+		return previewTable && getSchemas(id).some((x) => x.table === previewTable) ? previewTable : id === 'books' ? 'books' : 'klassen';
 	}
 	function getSize(id: DatasetId): number {
 		return id === 'books' ? sizeBooks : sizeSchule;
@@ -318,7 +325,7 @@ print(df.head())`
 							<h2 class="h2">Vorschau</h2>
 							<div class="tab-pill">
 								{#each schemas as tbl, i}
-									<span class="tab-item" class:on={i === 0}>{tbl.table}</span>
+									<button class="tab-item" class:on={tbl.table === previewName(dsId)} onclick={() => (previewTable = tbl.table)}>{tbl.table}</button>
 								{/each}
 							</div>
 						</div>
@@ -335,7 +342,7 @@ print(df.head())`
 									{/each}
 								</div>
 							{/each}
-							<div class="preview-foot">Erste {preview.rows.length} von {rowCounts[selectedDs.mainTable] ?? preview.rows.length} Zeilen</div>
+							<div class="preview-foot">Erste {preview.rows.length} von {rowCounts[previewName(dsId)] ?? preview.rows.length} Zeilen</div>
 						</div>
 					</div>
 				</div>
