@@ -69,4 +69,24 @@ describe('Log-Audit: keine personenbezogenen Daten im Log', () => {
     await app.close()
     db.close()
   }, 60_000)
+
+  it('fehlschlagender Mailversand schreibt keine E-Mail-Adresse ins Log', async () => {
+    const lines: string[] = []
+    const db = testDb()
+    const failing = { send: async (m: { to: string }) => { throw new Error(`Mailbox unavailable: ${m.to}`) } }
+    const app = await buildApp({ db, mail: failing as never, skipCsrf: true, logStream: { write: (m) => { lines.push(m) } } })
+    await app.ready()
+    const MAIL = 'geheim.adresse@schule-audit.de'
+    const reg = await app.inject({ method: 'POST', url: '/api/register', headers: json, body: JSON.stringify({
+      role: 'teacher', username: 'failmail', display_name: 'F', name: 'F M', email: MAIL, password: 'GeheimesPasswortXYZ1', terms_accepted: true }) })
+    expect(reg.statusCode).toBe(201) // Registrierung klappt trotz Mailfehler
+    const forgot = await app.inject({ method: 'POST', url: '/api/password/forgot', headers: json, body: JSON.stringify({ email: MAIL }) })
+    expect(forgot.statusCode).toBe(500)
+    expect(forgot.body).not.toContain(MAIL)
+    const log = lines.join('\n')
+    expect(log).not.toContain(MAIL)
+    expect(log).toContain('unhandled_error')
+    await app.close()
+    db.close()
+  }, 60_000)
 })

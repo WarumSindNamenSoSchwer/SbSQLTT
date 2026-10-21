@@ -54,7 +54,9 @@ export class InMemoryMailSender implements MailSender {
  */
 export class NoopMailSender implements MailSender {
   async send(msg: MailMessage): Promise<void> {
-    console.warn(`[MailSender] NOOP – kein SMTP konfiguriert. An: ${msg.to}, Betreff: ${msg.subject}`)
+    // Keine Empfängeradresse protokollieren (K10: keine personenbezogenen Daten im Log)
+    void msg
+    console.warn('[MailSender] NOOP: kein SMTP konfiguriert, Mail nicht versendet.')
   }
 }
 

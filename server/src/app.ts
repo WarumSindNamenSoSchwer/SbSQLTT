@@ -75,6 +75,17 @@ export async function buildApp(cfg: AppConfig) {
 
   await app.register(fastifyCookie)
 
+  // Unerwartete Fehler: nur Fehlerart protokollieren, keine Meldung (sie kann z. B. bei
+  // SMTP-Fehlern eine E-Mail-Adresse enthalten, K10). Antwort ohne Interna.
+  app.setErrorHandler((err: Error & { statusCode?: number; code?: string; validation?: unknown }, req, reply) => {
+    const status = err.statusCode ?? 500
+    if (status >= 500) req.log.error({ event: 'unhandled_error', type: err.name, code: err.code ?? null }, 'Fehler')
+    if (status < 500 && err.validation) {
+      return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
+    }
+    reply.code(status >= 400 ? status : 500).send({ fehler: status >= 500 ? 'Interner Fehler. Bitte später erneut versuchen.' : 'Anfrage nicht möglich.' })
+  })
+
   // CSRF-Origin-Check fuer schreibende Anfragen
   if (!cfg.skipCsrf) {
     const WRITE_METHODS = new Set(['POST', 'PATCH', 'DELETE', 'PUT'])
