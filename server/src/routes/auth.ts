@@ -8,6 +8,7 @@ import { z } from 'zod'
 import type { Db } from '../db.js'
 import type { MailSender } from '../mail.js'
 import type { RateLimiters } from '../plugins/ratelimit.js'
+import { sendVerificationMail } from './email-verify.js'
 import {
   hashPassword,
   verifyPassword,
@@ -90,7 +91,7 @@ function findUserByEmail(db: Db, email: string) {
 
 function findUserById(db: Db, id: number) {
   return db.prepare(
-    'SELECT id, username, display_name, email, name, school, role, created_day, last_login_at, must_change_password FROM users WHERE id = ?'
+    'SELECT id, username, display_name, email, name, school, role, created_day, last_login_at, must_change_password, email_verified_at FROM users WHERE id = ?'
   ).get(id) as PublicUserRow | undefined
 }
 
@@ -119,6 +120,7 @@ interface PublicUserRow {
   created_day: string
   last_login_at: number | null
   must_change_password: number
+  email_verified_at: number | null
 }
 
 // ---------------------------------------------------------------------------
@@ -129,10 +131,13 @@ export interface AuthPluginOptions {
   db: Db
   mail: MailSender
   limits: RateLimiters
+  /** Basis-URL fuer Links in Systemmails */
+  siteUrl?: string
 }
 
 const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) => {
-  const { db, limits } = opts
+  const { db, limits, mail } = opts
+  const siteUrl = opts.siteUrl ?? 'https://www.tabulasql.de'
 
   // POST /api/register
   fastify.post('/register', async (req, reply) => {
@@ -172,6 +177,9 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
          VALUES (?, ?, ?, ?, ?, 'teacher', ?, ?, ?)`
       ).run(username, data.display_name, data.email, data.name, data.school ?? null, passwordHash, createdDay, Math.floor(Date.now() / 1000))
       newUserId = result.lastInsertRowid as number
+      // K7: Bestaetigungslink an die Lehrkraft (Versandfehler blockieren die Registrierung nicht)
+      await sendVerificationMail(db, mail, siteUrl, { id: newUserId, email: data.email, display_name: data.display_name })
+        .catch(() => fastify.log.warn({ event: 'verify_mail_failed' }))
     } else {
       const result = db.prepare(
         `INSERT INTO users (username, display_name, email, role, password_hash, created_day)

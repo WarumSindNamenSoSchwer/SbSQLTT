@@ -12,6 +12,7 @@ import type { Db } from './db.js'
 import type { MailSender } from './mail.js'
 import { createRateLimiters } from './plugins/ratelimit.js'
 import authRoutes from './routes/auth.js'
+import emailVerifyRoutes from './routes/email-verify.js'
 import passwordRoutes from './routes/password.js'
 import progressRoutes from './routes/progress.js'
 import classesRoutes from './routes/classes.js'
@@ -104,7 +105,10 @@ export async function buildApp(cfg: AppConfig) {
     api.get('/health', async () => ({ ok: true }))
 
     // Auth-Routen
-    await api.register(authRoutes, { db: cfg.db, mail: cfg.mail, limits })
+    await api.register(authRoutes, { db: cfg.db, mail: cfg.mail, limits, siteUrl })
+
+    // E-Mail-Bestaetigung fuer Lehrkraefte (K7): POST /api/email/verify, /api/email/resend
+    await api.register(emailVerifyRoutes, { db: cfg.db, mail: cfg.mail, siteUrl })
 
     // Passwort-Routen unter /api/password/...
     await api.register(async (pwApi) => {

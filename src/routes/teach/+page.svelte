@@ -14,6 +14,22 @@
 	} from '$lib/tabula/api.js';
 
 	let dark = $state(false);
+
+	// E-Mail-Bestätigung (K7): Hinweis + Link erneut senden
+	let verifyBusy = $state(false);
+	let verifySent = $state(false);
+	async function resendVerify() {
+		verifyBusy = true;
+		try {
+			const { apiResendVerification } = await import('$lib/tabula/api.js');
+			await apiResendVerification();
+			verifySent = true;
+		} catch {
+			/* Fehler still: Banner bleibt */
+		} finally {
+			verifyBusy = false;
+		}
+	}
 	let classes = $state<TeacherClass[]>([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
@@ -124,6 +140,13 @@
 					<button class="btn-primary" onclick={() => goto('/teach/neu')}>+ Neue Klasse</button>
 				</div>
 
+				{#if session.user && session.user.role === 'teacher' && !session.user.email_verified_at}
+					<div class="verify-banner" role="status">
+						<span>Bitte bestätigen Sie Ihre E-Mail-Adresse {session.user.email}. Wir haben Ihnen einen Link geschickt.</span>
+						<button class="verify-btn" onclick={resendVerify} disabled={verifyBusy || verifySent}>{verifySent ? 'Neuer Link gesendet' : 'Link erneut senden'}</button>
+					</div>
+				{/if}
+
 				{#if loading}
 					<div class="spinner-wrap"><span class="spinner"></span></div>
 				{:else if error}
@@ -193,6 +216,10 @@
 	.teach-content { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 28px; }
 
 	.page-header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+	.verify-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--accent-line); background: var(--accent-soft); color: var(--accent-ink); font-size: 14px; line-height: 20px; }
+	.verify-banner span { flex: 1; min-width: 220px; }
+	.verify-btn { height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--accent-line); background: var(--surface); color: var(--accent-ink); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+	.verify-btn:disabled { opacity: .7; cursor: default; }
 	.page-title { flex: 1; font-size: 36px; line-height: 44px; font-weight: 600; letter-spacing: -0.015em; }
 	@media (max-width: 767px) { .page-title { font-size: 26px; line-height: 34px; } }
 

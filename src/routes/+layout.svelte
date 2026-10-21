@@ -20,6 +20,7 @@
 		/^\/profil(\/|$)/.test(page.url.pathname) ||
 		/^\/teach(\/|$)/.test(page.url.pathname) ||
 		/^\/passwort-zuruecksetzen(\/|$)/.test(page.url.pathname) ||
+		/^\/email-bestaetigen(\/|$)/.test(page.url.pathname) ||
 		page.url.pathname === '/datenschutz' ||
 		page.url.pathname === '/impressum' ||
 		page.url.pathname === '/kontakt' ||

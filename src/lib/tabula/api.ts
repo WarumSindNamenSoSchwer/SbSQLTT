@@ -89,6 +89,8 @@ export interface PublicUser {
   last_login_at: number | null;
   /** 1 nach Passwort-Reset durch Lehrkraft: muss beim nächsten Login geändert werden */
   must_change_password?: number;
+  /** Lehrkraft: Zeitpunkt der E-Mail-Bestätigung, null = offen */
+  email_verified_at?: number | null;
 }
 
 export interface ProgressItem {
@@ -147,6 +149,16 @@ export function apiDeleteMe(): Promise<{ ok: true }> {
 /** POST /api/me/password */
 export function apiChangePassword(current_password: string, new_password: string): Promise<{ ok: true }> {
   return request('POST', '/me/password', { current_password, new_password });
+}
+
+/** POST /api/email/verify (Lehrkraft bestätigt E-Mail-Adresse, K7) */
+export function apiVerifyEmail(token: string): Promise<{ ok: true }> {
+  return request('POST', '/email/verify', { token });
+}
+
+/** POST /api/email/resend (neuen Bestätigungslink anfordern) */
+export function apiResendVerification(): Promise<{ ok: true; already?: boolean }> {
+  return request('POST', '/email/resend');
 }
 
 /** POST /api/password/forgot */

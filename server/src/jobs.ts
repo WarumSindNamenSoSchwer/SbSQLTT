@@ -30,6 +30,7 @@ export function runCleanupJob(db: Db, now?: number): { sessions: number; resets:
   const nowTs = Math.floor((now ?? Date.now()) / 1000)
   const sessions = deleteExpiredSessions(db, now)
   const resets = (db.prepare('DELETE FROM password_resets WHERE expires_at <= ?').run(nowTs)).changes
+  db.prepare('DELETE FROM email_verifications WHERE expires_at <= ?').run(nowTs)
   return { sessions, resets }
 }
 
