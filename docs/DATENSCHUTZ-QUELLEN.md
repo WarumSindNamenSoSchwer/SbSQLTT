@@ -26,7 +26,7 @@ Verantwortlicher: Murat-Can Meric, Lübecker Str. 45, 10559 Berlin (allein). AV-
 | T8 | Standort Nürnberg | Hetzner-Metadaten `169.254.169.254/hetzner/v1/metadata` | `region: eu-central`, `availability-zone: nbg1-dc3` |
 | T9 | AV-Vertrag | Hetzner-Kundenkonto | abgeschlossen, bestätigt vom Verantwortlichen am 21.10.2026 |
 | T10 | TLS, Weiterleitung | `openssl s_client` / `curl` | Issuer Let's Encrypt (YE1); `tabulasql.de` → 301 `https://www.tabulasql.de/` |
-| T11 | localStorage nur nach Handlung | `grep localStorage` in `src`; Playwright frisches Profil je Seite | Schlüssel `tabula-progress`, `sbsqltt-theme`, `tabula-guest-hint`; nach reinem Aufruf jeder Seite leer (nach Fix in `/teach/settings`) |
+| T11 | localStorage nur nach Handlung | `grep localStorage` in `src`; Playwright frisches Profil je Seite | Schlüssel `tabula-progress`, `tabula-theme`, `tabula-guest-hint`; nach reinem Aufruf jeder Seite leer (nach Fix in `/teach/settings`) |
 | T12 | sessionStorage SvelteKit | `node_modules/@sveltejs/kit/src/runtime/client/constants.js` | `sveltekit:snapshot`, `sveltekit:scroll` |
 | T13 | Datenbanken im Code | `src/lib/tabula/course/*.ts` | SQL-Seeds als Konstanten |
 | T14 | Downloads lokal | `exportDb` (Blob + Object-URL), CSV-Blob in `/datasets`, `navigator.clipboard.writeText` | kein Netzwerkaufruf |

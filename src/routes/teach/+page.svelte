@@ -25,7 +25,7 @@
 </script>
 
 <svelte:head>
-	<title>SbSQLTT</title>
+	<title>Tabula</title>
 </svelte:head>
 
 <TeacherNav />

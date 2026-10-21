@@ -12,13 +12,13 @@
 	const links = [
 		{ href: '/learn', label: 'Lernen' },
 		{ href: '/datasets', label: 'Datensätze' },
-		{ href: '/fuer-lehrkraefte', label: 'Für Lehrkräfte' }
+		{ href: '/#lehrkraefte', label: 'Für Lehrkräfte' }
 	];
 	function toggleTheme() {
 		const light = document.documentElement.classList.toggle('light');
 		document.documentElement.classList.toggle('dark', !light);
 		try {
-			localStorage.setItem('sbsqltt-theme', light ? 'light' : 'dark');
+			localStorage.setItem('tabula-theme', light ? 'light' : 'dark');
 		} catch {
 			/* ignore */
 		}
@@ -29,7 +29,7 @@
 	<a class="brand" href="/"><span class="ic">{@html icon}</span>Tabula</a>
 	<nav class="links">
 		{#each links as l}
-			<a href={l.href} class:on={path.startsWith(l.href)}>{l.label}</a>
+			<a href={l.href} class:on={l.href === '/#lehrkraefte' ? path === '/' : path.startsWith(l.href)}>{l.label}</a>
 		{/each}
 	</nav>
 	<span class="grow"></span>

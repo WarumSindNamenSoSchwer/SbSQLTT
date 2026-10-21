@@ -67,7 +67,7 @@
 					<div
 						class="font-mono text-[clamp(11px,1.6vmin,14px)] tracking-[0.16em] uppercase text-ink-600 mb-[clamp(16px,3vmin,40px)]"
 					>
-						SbSQLTT · Einer Klasse beitreten
+						Tabula · Einer Klasse beitreten
 					</div>
 
 					<div class="grid place-items-center">

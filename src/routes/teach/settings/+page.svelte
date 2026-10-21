@@ -19,7 +19,7 @@
 		document.documentElement.classList.toggle('light', t === 'light');
 		document.documentElement.classList.toggle('dark', t === 'dark');
 		try {
-			localStorage.setItem('sbsqltt-theme', t);
+			localStorage.setItem('tabula-theme', t);
 		} catch {
 			// ignore
 		}
@@ -30,7 +30,7 @@
 </script>
 
 <svelte:head>
-	<title>SbSQLTT</title>
+	<title>Tabula</title>
 </svelte:head>
 
 <TeacherNav />
@@ -126,7 +126,7 @@
 			Datenschutz / DSGVO
 		</h2>
 		<p class="mt-1 text-[13px] text-ink-700">
-			SbSQLTT speichert nur Lernfortschritt und Konto-Daten. Sie haben jederzeit volle Kontrolle.
+			Tabula speichert nur Lernfortschritt und Konto-Daten. Sie haben jederzeit volle Kontrolle.
 		</p>
 		<div class="mt-5 space-y-3">
 			<div

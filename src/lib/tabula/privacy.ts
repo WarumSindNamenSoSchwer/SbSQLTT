@@ -105,7 +105,7 @@ export const SECTIONS: Section[] = [
 			{
 				list: [
 					'tabula-progress (localStorage): welche Lektionen und Schritte du erledigt hast. Wird erst angelegt, wenn du in einer Lektion auf „Weiter“ klickst.',
-					'sbsqltt-theme (localStorage): ob du die helle oder dunkle Darstellung gewählt hast. Wird erst angelegt, wenn du den Schalter benutzt.',
+					'tabula-theme (localStorage): ob du die helle oder dunkle Darstellung gewählt hast. Wird erst angelegt, wenn du den Schalter benutzt.',
 					'tabula-guest-hint (localStorage): dass du den Hinweis zur Anmeldung geschlossen hast. Wird erst angelegt, wenn du ihn schließt.',
 					'sveltekit:scroll und sveltekit:snapshot (sessionStorage): Scrollposition beim Zurückblättern. Wird beim Wechsel zwischen Seiten angelegt und beim Schließen des Tabs gelöscht.'
 				],
@@ -418,7 +418,7 @@ export const SOURCES: Source[] = [
 	{ id: 'T8', label: 'Hetzner-Metadaten des Servers: region eu-central, availability-zone nbg1-dc3' },
 	{ id: 'T9', label: 'AV-Vertrag im Hetzner-Kundenkonto (accounts.hetzner.com/account/dpa) abgeschlossen, bestätigt durch den Verantwortlichen am 21.10.2026' },
 	{ id: 'T10', label: 'TLS-Zertifikat von www.tabulasql.de, Aussteller: Let’s Encrypt; Weiterleitung tabulasql.de auf www (HTTP 301)' },
-	{ id: 'T11', label: 'Quellcode: einzige localStorage-Schlüssel tabula-progress, sbsqltt-theme, tabula-guest-hint; Prüfung: frisches Profil hat nach Aufruf aller Seiten leeren localStorage' },
+	{ id: 'T11', label: 'Quellcode: einzige localStorage-Schlüssel tabula-progress, tabula-theme, tabula-guest-hint; Prüfung: frisches Profil hat nach Aufruf aller Seiten leeren localStorage' },
 	{ id: 'T12', label: 'SvelteKit-Quellcode runtime/client/constants.js: sessionStorage-Schlüssel sveltekit:snapshot und sveltekit:scroll' },
 	{ id: 'T13', label: 'Quellcode src/lib/tabula/course/*.ts: Übungsdatenbanken als SQL im Programmcode, Aufbau im Browser' },
 	{ id: 'T14', label: 'Quellcode src/lib/tabula/sql.ts (exportDb) und src/routes/datasets: Blob und Download im Browser; Kopieren über navigator.clipboard' },

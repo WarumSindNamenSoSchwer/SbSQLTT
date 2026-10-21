@@ -14,7 +14,7 @@
 		document.documentElement.classList.toggle('light', theme === 'light');
 		document.documentElement.classList.toggle('dark', theme === 'dark');
 		try {
-			localStorage.setItem('sbsqltt-theme', theme);
+			localStorage.setItem('tabula-theme', theme);
 		} catch {
 			// ignore (private mode etc)
 		}

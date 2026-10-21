@@ -32,7 +32,7 @@
 		document.documentElement.classList.toggle('light', next === 'light');
 		document.documentElement.classList.toggle('dark', next === 'dark');
 		try {
-			localStorage.setItem('sbsqltt-theme', next);
+			localStorage.setItem('tabula-theme', next);
 		} catch {
 			// ignore — toggle still works without persistence
 		}

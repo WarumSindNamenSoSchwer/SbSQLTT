@@ -22,7 +22,7 @@
 		subject = `Einladung zur Klasse ${cls.name}`;
 		message = `Hallo,
 
-ich richte gerade unsere Klasse auf SbSQLTT ein — eine Plattform, mit der wir gemeinsam SQL üben werden.
+ich richte gerade unsere Klasse auf Tabula ein — eine Plattform, mit der wir gemeinsam SQL üben werden.
 
 So tritt ihr bei:
 1. Geht auf sbsqltt.de

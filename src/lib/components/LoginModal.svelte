@@ -140,7 +140,7 @@
 					Passwort.
 				{:else}
 					Wir verwenden einen Magic Link. Du musst dir also kein Passwort merken und kannst
-					SbSQLTT auch ohne Konto weiter nutzen.
+					Tabula auch ohne Konto weiter nutzen.
 				{/if}
 			</p>
 

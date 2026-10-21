@@ -14,7 +14,9 @@
 		/^\/datasets(\/|$)/.test(page.url.pathname) ||
 		/^\/login(\/|$)/.test(page.url.pathname) ||
 		page.url.pathname === '/datenschutz' ||
-		page.url.pathname === '/impressum'
+		page.url.pathname === '/impressum' ||
+		// Fehlerseite bringt eigene TopNav mit
+		page.error != null
 	);
 </script>
 

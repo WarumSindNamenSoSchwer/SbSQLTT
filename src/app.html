@@ -37,9 +37,17 @@
 			}
 		</script>
 		<script>
-			// Apply theme before paint (no flash). Default: light. Override via toggle.
+			// Theme vor dem Rendern anwenden (kein Flash). Standard: hell.
+			// Migration einmalig: alten Schlüssel 'sbsqltt-theme' auf 'tabula-theme' umziehen.
 			try {
-				const saved = localStorage.getItem('sbsqltt-theme');
+				const OLD = 'sbsqltt-theme';
+				const NEW = 'tabula-theme';
+				const old = localStorage.getItem(OLD);
+				if (old !== null) {
+					localStorage.setItem(NEW, old);
+					localStorage.removeItem(OLD);
+				}
+				const saved = localStorage.getItem(NEW);
 				if (saved === 'dark') {
 					document.documentElement.classList.remove('light');
 				} else {

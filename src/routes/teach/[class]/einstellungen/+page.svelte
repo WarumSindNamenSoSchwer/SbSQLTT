@@ -23,7 +23,7 @@
 </script>
 
 <svelte:head>
-	<title>SbSQLTT</title>
+	<title>Tabula</title>
 </svelte:head>
 
 <div class="max-w-[820px] mx-auto px-6 py-10 md:py-14">

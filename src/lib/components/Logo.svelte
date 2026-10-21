@@ -31,5 +31,5 @@
 			<rect x="41" y="44" width="12" height="6" rx="1.6" />
 		</g>
 	</svg>
-	<span>SbSQLTT</span>
+	<span>Tabula</span>
 </span>

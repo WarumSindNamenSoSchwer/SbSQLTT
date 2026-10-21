@@ -20,7 +20,7 @@
 				root.classList.toggle('light', !dark);
 				root.classList.toggle('dark', dark);
 				try {
-					localStorage.setItem('sbsqltt-theme', dark ? 'dark' : 'light');
+					localStorage.setItem('tabula-theme', dark ? 'dark' : 'light');
 				} catch {
 					/* ignore */
 				}

@@ -15,7 +15,7 @@
 </script>
 
 <svelte:head>
-	<title>SbSQLTT</title>
+	<title>Tabula</title>
 </svelte:head>
 
 <TeacherNav />
@@ -148,7 +148,7 @@
 		<Surface class="p-3 !bg-ink-100/30">
 			<p class="text-[11.5px] leading-relaxed text-ink-700">
 				Schüler:innen, die mit diesem Code beitreten, hinterlegen nur einen anonymen
-				Benutzernamen. SbSQLTT speichert Lernfortschritt und (optional) eine
+				Benutzernamen. Tabula speichert Lernfortschritt und (optional) eine
 				E-Mail-Adresse. Keine sozialen Tracker, keine Drittanbieter-Analytics. Sie können
 				alle Daten der Klasse jederzeit exportieren oder löschen.
 			</p>
