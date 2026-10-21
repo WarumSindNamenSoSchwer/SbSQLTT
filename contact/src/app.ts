@@ -74,7 +74,7 @@ export async function buildApp(config: AppConfig) {
     const parseResult = ContactSchema.safeParse(request.body)
     if (!parseResult.success) {
       app.log.info({ event: 'validation_error' })
-      return reply.status(400).send({ error: 'Ungueltige Eingabe.' })
+      return reply.status(400).send({ error: 'Ungültige Eingabe.' })
     }
 
     const body = parseResult.data
