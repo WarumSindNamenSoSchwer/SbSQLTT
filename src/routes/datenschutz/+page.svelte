@@ -1,15 +1,13 @@
 <script lang="ts">
 	// Datenschutzerklärung im Layout A5 (Inhaltsverzeichnis links, Lesespalte 680 px).
-	// Inhalt und Quellen: $lib/tabula/privacy.ts, Prüfprotokoll: docs/DATENSCHUTZ-QUELLEN.md
+	// Inhalt: $lib/tabula/privacy.ts. Belege je Absatz (src) nur intern, Prüfprotokoll: docs/DATENSCHUTZ-QUELLEN.md
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
 	import TopNav from '$lib/tabula/TopNav.svelte';
-	import { SECTIONS, SOURCES, STAND, CONTROLLER } from '$lib/tabula/privacy';
+	import { SECTIONS, STAND, CONTROLLER } from '$lib/tabula/privacy';
 
 	let dark = $state(false);
 	let active = $state(SECTIONS[0].id);
-	let showSrc = $state(false);
-	const srcById = Object.fromEntries(SOURCES.map((s) => [s.id, s]));
 	const draft = !CONTROLLER.name || CONTROLLER.address.length === 0;
 
 	onMount(() => {
@@ -46,7 +44,6 @@
 			{#each SECTIONS as s}
 				<a href="#{s.id}" class:on={active === s.id}>{s.title}</a>
 			{/each}
-			<a href="#quellen" class:on={active === 'quellen'}>Quellen</a>
 		</nav>
 		<main class="col">
 			<h1>Datenschutzerklärung</h1>
@@ -54,7 +51,6 @@
 			{#if draft}
 				<p class="draft" role="note">Entwurf: Name und ladungsfähige Anschrift des Verantwortlichen werden noch ergänzt.</p>
 			{/if}
-			<label class="srcswitch"><input type="checkbox" bind:checked={showSrc} /> Quellen zu jedem Absatz anzeigen</label>
 
 			{#each SECTIONS as s, i}
 				<section id={s.id} data-sec>
@@ -84,27 +80,10 @@
 								{#each b.list as li}<li>{li}</li>{/each}
 							</ul>
 						{/if}
-						{#if showSrc}
-							<span class="refs">
-								{#each b.src as id}<a href="#src-{id}" title={srcById[id]?.label}>[{id}]</a>{/each}
-							</span>
-						{/if}
 					{/each}
 				</section>
 			{/each}
 
-			<section id="quellen" data-sec>
-				<h2>{SECTIONS.length + 1}. Quellen</h2>
-				<p>Jede Aussage dieser Erklärung beruht auf einer der folgenden Quellen: Rechtsvorschriften (R), Dokumentation der eingesetzten Anbieter und Techniken (A) oder unserer eigenen technischen Prüfung der Website und des Servers (T).</p>
-				<ol class="srcs">
-					{#each SOURCES as s}
-						<li id="src-{s.id}">
-							<span class="mono sid">{s.id}</span>
-							{#if s.url}<a href={s.url} rel="noreferrer">{s.label}</a>{:else}{s.label}{/if}
-						</li>
-					{/each}
-				</ol>
-			</section>
 		</main>
 	</div>
 </div>
@@ -129,12 +108,6 @@
 	.col a:hover { text-decoration: underline; text-underline-offset: 3px; }
 	.ph { color: var(--ink-3); }
 	.draft { padding: 12px 16px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--subtle); font-size: 15px; }
-	.srcswitch { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); cursor: pointer; }
-	.refs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -10px; font-family: var(--mono); font-size: 12px; }
-	.refs a { color: var(--ink-3); }
-	.srcs { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
-	.srcs li { display: flex; gap: 12px; font-size: 14px; line-height: 22px; scroll-margin-top: 24px; }
-	.sid { flex: none; width: 36px; color: var(--ink-3); }
 	@media (max-width: 1023px) {
 		.wrap { gap: 0; padding: 24px 20px 64px; }
 		.toc { display: none; }
