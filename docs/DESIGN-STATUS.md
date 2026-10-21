@@ -7,12 +7,12 @@ Abgleich der Designer-Lieferung (`Website v11`, Design-System v3, Eule) mit [`DE
 - [x] Design-System v3: Farben, Typo (IBM Plex), Radien, Schatten, Buttons, Badges, Tabs, Code, Hell/Dunkel (`sbsqltt-theme.css`)
 - [x] Eule: 23 Posen + 24 Animationen als SVG (hell/dunkel), Icon in 5 Größen
 - [x] **A1 Startseite** (v11), inkl. Für-Lehrkräfte-, Datenschutz-, Kosten- und FAQ-Abschnitt
+- [x] **B2 Lektionsseite** (`Lektion B2`, Entwurf 1): alle 15 Desktop-Frames, Dunkel 1/3/8, Mobil 8 Frames. Kleinigkeiten offen: Schema-Bottom-Sheet mobil (geöffnet) und Tablet fehlen noch
 
 ## Noch zu designen
 
 **Must (Demo)**
 - [ ] A2 Lektionsübersicht (Fokus-Banner, gesperrte Lektion, Erstbesuch vs. „Weiter mit …“)
-- [ ] B2 Lektion als **eigene Seite** mit allen Übungszuständen + Abschluss-Screen + Mobil → Briefing: [`BRIEF-LEKTION.md`](./BRIEF-LEKTION.md)
 - [ ] A3 Datensätze (Liste + Detail mit Schema, Vorschau, Download, Python-Snippet)
 - [ ] C1 Login, C2 Registrieren (Schüler/Lehrkraft), C3 Klasse beitreten (QR-Flow, Handy)
 - [ ] D1 Klassenübersicht (inkl. leer), D3 Klassen-Dashboard (Fokus, Liste, Seitenpanel, Matrix, leer), D4 Lektionen
