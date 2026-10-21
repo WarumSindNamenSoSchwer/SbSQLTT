@@ -292,7 +292,7 @@
 			<span class="fb-msg">{canNext ? 'Alles erledigt, du kannst weiter.' : 'Hake alles ab, dann geht es weiter.'}</span>
 			<div class="fb-btns">
 				<button class="btn secondary" onclick={back} disabled={cur === 0 && !finished}>
-					<span class="arr back"></span><span class="hide-sm">Zuruck</span>
+					<span class="arr back"></span><span class="hide-sm">Zurück</span>
 				</button>
 				{#if canNext}
 					<button class="btn primary" onclick={next}>
@@ -379,7 +379,7 @@
 	/* Erwartete Ausgabe */
 	.output-card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
 	.output-lbl { padding: 8px 14px; border-bottom: 1px solid var(--line); display: block; }
-	.output-pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: 14px; line-height: 22px; white-space: pre; overflow-x: auto; }
+	.output-pre { margin: 0; padding: 14px; font-family: var(--mono); font-size: 14px; line-height: 22px; white-space: pre-wrap; overflow-wrap: anywhere; }
 	.output-note { padding: 0 14px 14px; font-size: 13px; line-height: 20px; color: var(--ink-2); }
 
 	/* Checkliste */

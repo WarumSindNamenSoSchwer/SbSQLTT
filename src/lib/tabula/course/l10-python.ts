@@ -27,7 +27,7 @@ export const PYTHON_STEPS: PythonStep[] = [
 		stepLabel: 'SCHRITT 1 · VORBEREITUNG',
 		title: 'Python und pandas installieren',
 		intro:
-			'Bevor du loslegen kannst, brauchst du Python und zwei Bibliotheken. Fuhre den folgenden Befehl im Terminal aus. Unter Windows heisst das Programm "Eingabeaufforderung" oder "PowerShell", unter macOS "Terminal".',
+			'Bevor du loslegen kannst, brauchst du Python und zwei Bibliotheken. Führe den folgenden Befehl im Terminal aus. Unter Windows heißt das Programm "Eingabeaufforderung" oder "PowerShell", unter macOS "Terminal".',
 		filename: 'Terminal',
 		code: `pip install pandas matplotlib`,
 		expectedOutput: `Successfully installed pandas matplotlib`,
@@ -46,7 +46,7 @@ export const PYTHON_STEPS: PythonStep[] = [
 		stepLabel: 'SCHRITT 2 · DIE DATEN IN PYTHON OFFNEN',
 		title: 'Deine Datenbank in pandas',
 		intro:
-			'Lade die Datenbank herunter und lege sie im selben Ordner wie dein Skript ab. Das Skript offnet die Datei mit sqlite3 und ladt die Tabelle in einen pandas DataFrame.',
+			'Lade die Datenbank herunter und lege sie im selben Ordner wie dein Skript ab. Das Skript öffnet die Datei mit sqlite3 und lädt die Tabelle in einen pandas DataFrame.',
 		filename: 'auswertung.py',
 		code: `import sqlite3
 import pandas as pd
@@ -56,11 +56,11 @@ df = pd.read_sql("SELECT * FROM books", con)
 print(df["year"].mean())`,
 		expectedOutput: `2015.5666666666666`,
 		expectedNote:
-			'Das ist der Durchschnitt der Erscheinungsjahre aller Bucher. Siehst du dieselbe Zahl, hat alles geklappt.',
+			'Das ist der Durchschnitt der Erscheinungsjahre aller Bücher. Siehst du dieselbe Zahl, hat alles geklappt.',
 		checklist: [
 			'bibliothek.db liegt im selben Ordner wie das Skript',
-			'Das Skript lauft ohne Fehlermeldung',
-			'Die Ausgabe zeigt 2015.57 oder ahnlich'
+			'Das Skript läuft ohne Fehlermeldung',
+			'Die Ausgabe zeigt 2015.57 oder ähnlich'
 		],
 		downloadCard: true,
 		installTip: false
@@ -69,9 +69,9 @@ print(df["year"].mean())`,
 		id: 'join-groupby',
 		name: 'JOIN und groupby',
 		stepLabel: 'SCHRITT 3 · TABELLEN VERBINDEN',
-		title: 'Verlage und Bucher zusammenfuhren',
+		title: 'Verlage und Bücher zusammenführen',
 		intro:
-			'In SQL verbindest du Tabellen mit JOIN. In pandas gibt es dafur merge(). Danach gruppierst du mit groupby() und zahlst, wie viele Bucher jeder Verlag hat.',
+			'In SQL verbindest du Tabellen mit JOIN. In pandas gibt es dafür merge(). Danach gruppierst du mit groupby() und zählst, wie viele Bücher jeder Verlag hat.',
 		filename: 'verlage.py',
 		code: `import sqlite3
 import pandas as pd
@@ -93,18 +93,18 @@ print(result.to_string(index=False))`,
    Addison-Wesley       4
 Leuchtturm Comics       4`,
 		expectedNote:
-			'Jede Zeile zeigt einen Verlag und die Anzahl seiner Bucher in der Bibliothek.',
+			'Jede Zeile zeigt einen Verlag und die Anzahl seiner Bücher in der Bibliothek.',
 		checklist: [
 			'Du hast verstanden, wie merge() einen SQL-JOIN nachbaut',
 			'Du hast verstanden, was groupby().count() macht',
-			'Die Ausgabe stimmt mit der erwarteten Tabelle uberein'
+			'Die Ausgabe stimmt mit der erwarteten Tabelle überein'
 		]
 	},
 	{
 		id: 'matplotlib',
 		name: 'Diagramm erstellen',
 		stepLabel: 'SCHRITT 4 · VISUALISIERUNG',
-		title: 'Bucher pro Genre als Balkendiagramm',
+		title: 'Bücher pro Genre als Balkendiagramm',
 		intro:
 			'Zahlen in einem Diagramm sind leichter zu verstehen als eine Tabelle. Mit matplotlib erstellst du ein Balkendiagramm und speicherst es als PNG-Datei.',
 		filename: 'genre_chart.py',
@@ -120,7 +120,7 @@ df = pd.read_sql(
 
 plt.figure(figsize=(8, 5))
 plt.bar(df["genre"], df["anzahl"], color="#3b82f6")
-plt.title("Buecher pro Genre")
+plt.title("Bücher pro Genre")
 plt.xlabel("Genre")
 plt.ylabel("Anzahl")
 plt.tight_layout()
@@ -135,11 +135,11 @@ Informatik      10
      Krimi       5
      Comic       4`,
 		expectedNote:
-			'Im selben Ordner sollte jetzt eine Datei buecher_genre.png liegen. Offne sie, um das Diagramm zu sehen.',
+			'Im selben Ordner sollte jetzt eine Datei buecher_genre.png liegen. Öffne sie, um das Diagramm zu sehen.',
 		checklist: [
-			'Das Skript lauft ohne Fehler durch',
+			'Das Skript läuft ohne Fehler durch',
 			'Die Datei buecher_genre.png wurde erstellt',
-			'Das Balkendiagramm zeigt die fuenf Genres mit ihren Zahlen'
+			'Das Balkendiagramm zeigt die fünf Genres mit ihren Zahlen'
 		]
 	},
 	{
@@ -148,7 +148,7 @@ Informatik      10
 		stepLabel: 'SCHRITT 5 · DEINE ANALYSE',
 		title: 'Welche Klasse leiht am meisten aus?',
 		intro:
-			'Jetzt bist du dran. Das Skript beantwortet eine eigene Frage an die Datenbank: Welche Klasse hat die meisten Ausleihvorgange? Passe es danach nach Belieben an.',
+			'Jetzt bist du dran. Das Skript beantwortet eine eigene Frage an die Datenbank: Welche Klasse hat die meisten Ausleihvorgänge? Passe es danach nach Belieben an.',
 		filename: 'klassen_chart.py',
 		code: `import sqlite3
 import pandas as pd
@@ -175,9 +175,9 @@ class  ausleihen
    Q2          8
   10a          8
   10b          6`,
-		expectedNote: 'Die Q1 hat mit Abstand die meisten Ausleihvorgange.',
+		expectedNote: 'Die Q1 hat mit Abstand die meisten Ausleihvorgänge.',
 		checklist: [
-			'Das Skript lauft durch und erzeugt ausleihen_klasse.png',
+			'Das Skript läuft durch und erzeugt ausleihen_klasse.png',
 			'Du verstehst, wie die SQL-Abfrage die Daten auswertet',
 			'Du hast eine eigene Frage formuliert und das Skript angepasst'
 		]
@@ -194,7 +194,7 @@ export const PYTHON_LESSON = {
 	track: 'python',
 	title: 'Daten mit Python und pandas auswerten',
 	done: {
-		sub: 'Du kannst jetzt SQL-Datenbanken in Python offnen, mit pandas auswerten und Diagramme erstellen.',
+		sub: 'Du kannst jetzt SQL-Datenbanken in Python öffnen, mit pandas auswerten und Diagramme erstellen.',
 		points: [
 			'Datenbank mit sqlite3 und pandas in Python geladen',
 			'Tabellen mit merge() verbunden und mit groupby() ausgewertet',
