@@ -7,6 +7,11 @@ export default defineConfig({
 	server: {
 		port: 5194,
 		proxy: {
+			// Kontaktformular-Dienst: MUSS vor /api stehen
+			'/api/contact': {
+				target: 'http://localhost:3001',
+				changeOrigin: true,
+			},
 			'/api': {
 				target: 'http://localhost:3005',
 				changeOrigin: true,

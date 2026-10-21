@@ -34,6 +34,7 @@ Verantwortlicher: Murat-Can Meric, Lübecker Str. 45, 10559 Berlin (allein). AV-
 | T16 | Mail bei Hetzner | `dig MX tabulasql.de` | `www750.your-server.de` |
 | T17 | Nur Hyperlinks | `grep href="https?://` in `src` | GitHub, PostgreSQL-Doku, EU-ODR (alte Impressum-Seite); keine Einbettungen |
 | T18 | Serverhärtung | `sshd -T`, `fail2ban-client get sshd …`, `systemctl is-enabled unattended-upgrades` | passwordauthentication no, permitrootlogin no, maxretry 5, findtime 600, bantime 600, dbpurgeage 86400 s, enabled |
+| T19 | Kontaktformular-Dienst: kein Persistenz-Layer, IP nur als Hash im RAM | Quellcode `contact/src/app.ts`, `contact/src/ratelimit.ts` | IP nur via `ContactRateLimiter.hashIp()` (SHA-256) im Speicher; kein Logging von Name/E-Mail/Nachricht; Rate-Limit 3 pro 10 min |
 
 Zusätzlich am 21.10.2026 auf dem Server gesetzt (damit die 14-Tage-Aussage für alle Protokolle stimmt):
 - `journald`: `/etc/systemd/journald.conf.d/50-retention.conf` mit `MaxRetentionSec=14day`.
@@ -43,6 +44,8 @@ Zusätzlich am 21.10.2026 auf dem Server gesetzt (damit die 14-Tage-Aussage für
 ## Konten, Klassen, Quiz (K)
 
 Die Erklärung beschreibt Konten bereits so, wie sie gebaut werden. Grundlage sind die verbindlichen Vorgaben in `docs/BACKEND-DATENSCHUTZ.md` (K1 bis K12). Das Backend darf nur live gehen, wenn deren Freigabe-Checkliste erfüllt ist.
+
+**K13 – Kontaktformular:** Felder Name (1–100 Z.), E-Mail, optionale Schulangabe (max. 150 Z.), Nachricht (10–5000 Z.). Kein Persistenz-Layer; Daten werden nur als E-Mail weitergeleitet. IP-Rate-Limiting (3 pro 10 min, SHA-256-Hash, nur im RAM). Logging: nur HTTP-Status und Fehlerart, keine personenbezogenen Daten.
 
 ## Rechtsquellen (R) und Anbieter (A)
 

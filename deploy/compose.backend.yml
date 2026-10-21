@@ -24,6 +24,8 @@ services:
       ALLOWED_ORIGIN: "https://www.tabulasql.de"
       SITE_URL: "https://www.tabulasql.de"
       LOG_LEVEL: "info"
+    secrets:
+      - smtp_noreply
     networks:
       - internal
     # Konsolenausgabe klein halten
@@ -41,6 +43,10 @@ services:
 
 volumes:
   api_data:
+
+secrets:
+  smtp_noreply:
+    file: /opt/tabula/secrets/smtp_noreply
 
 networks:
   internal:

@@ -49,6 +49,9 @@
 
 			<h2>Datenschutz</h2>
 			<p>Wie wir mit Daten umgehen, steht in der <a href="/datenschutz">Datenschutzerklärung</a>.</p>
+
+			<h2>Kontakt</h2>
+			<p>Anfragen können auch über das <a href="/kontakt">Kontaktformular</a> gestellt werden.</p>
 		</main>
 	</div>
 </div>

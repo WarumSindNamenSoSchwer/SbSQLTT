@@ -36,6 +36,7 @@
 			</a>
 			<a href="/impressum" class="hover:text-ink-900">Impressum</a>
 			<a href="/datenschutz" class="hover:text-ink-900">Datenschutz</a>
+			<a href="/kontakt" class="hover:text-ink-900">Kontaktformular</a>
 		</div>
 	</div>
 </footer>

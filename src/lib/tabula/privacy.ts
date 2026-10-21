@@ -229,7 +229,7 @@ export const SECTIONS: Section[] = [
 		title: 'E-Mails von Tabula',
 		blocks: [
 			{
-				p: 'Wir senden nur E-Mails, die für dein Konto nötig sind: einen Link zum Zurücksetzen des Passworts (1 Stunde gültig, nur einmal nutzbar) und bei Lehrkräften die Bestätigung der E-Mail-Adresse. Absender ist kontakt@tabulasql.de, der Versand läuft über den Mailserver der Hetzner Online GmbH. Newsletter oder Werbung senden wir nicht.',
+				p: 'Wir senden nur E-Mails, die für dein Konto nötig sind: einen Link zum Zurücksetzen des Passworts (1 Stunde gültig, nur einmal nutzbar) und bei Lehrkräften die Bestätigung der E-Mail-Adresse. Absender ist noreply@tabulasql.de, der Versand läuft über den Mailserver der Hetzner Online GmbH. Newsletter oder Werbung senden wir nicht.',
 				src: ['K7', 'T16', 'A1']
 			},
 			{
@@ -266,11 +266,37 @@ export const SECTIONS: Section[] = [
 		]
 	},
 	{
+		id: 'kontaktformular',
+		title: 'Kontaktformular',
+		blocks: [
+			{
+				p: 'Das Kontaktformular unter /kontakt ermöglicht es, uns eine Nachricht zu schicken. Dabei werden folgende Daten verarbeitet: Name, E-Mail-Adresse, optionale Schulangabe und der Nachrichtentext.',
+				src: ['K13', 'T19']
+			},
+			{
+				p: 'Zweck der Verarbeitung ist die Beantwortung deiner Anfrage. Die Daten werden nicht auf unserem Webserver gespeichert, sondern als E-Mail an kontakt@tabulasql.de weitergeleitet. Der Versand erfolgt über den Mailserver der Hetzner Online GmbH (mail.your-server.de), die als Auftragsverarbeiter nach Art. 28 DSGVO tätig ist und für die bereits ein AV-Vertrag besteht.',
+				src: ['K13', 'T16', 'A1', 'R6', 'T9']
+			},
+			{
+				p: 'Deine IP-Adresse wird nur kurzzeitig im Arbeitsspeicher des Kontaktformular-Dienstes verarbeitet, um Missbrauch durch automatisierte Masseneinsendungen zu verhindern (Rate-Limiting). Sie wird nicht protokolliert und nicht gespeichert.',
+				src: ['K13', 'T19', 'R4']
+			},
+			{
+				p: 'Wir löschen die E-Mail nach Erledigung, spätestens nach 6 Monaten, sofern keine gesetzliche Aufbewahrungspflicht besteht.',
+				src: ['K13', 'R8', 'R16']
+			},
+			{
+				p: 'Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Beantwortung von Anfragen). Wenn du Lehrkraft bist und deine Anfrage auf die Nutzung von Tabula im Unterricht zielt, kann auch Art. 6 Abs. 1 lit. b DSGVO (vorvertragliche Maßnahmen) greifen.',
+				src: ['R3', 'R13', 'K13']
+			}
+		]
+	},
+	{
 		id: 'email',
 		title: 'Kontakt per E-Mail',
 		blocks: [
 			{
-				p: 'Wenn du uns an kontakt@tabulasql.de schreibst, verarbeiten wir deine E-Mail-Adresse, den Inhalt und die Zeitangaben deiner Nachricht, um dir zu antworten. Das Postfach liegt auf einem Mailserver der Hetzner Online GmbH.',
+				p: 'Wenn du uns direkt an kontakt@tabulasql.de schreibst, verarbeiten wir deine E-Mail-Adresse, den Inhalt und die Zeitangaben deiner Nachricht, um dir zu antworten. Das Postfach liegt auf einem Mailserver der Hetzner Online GmbH.',
 				src: ['T16', 'A1']
 			},
 			{
@@ -425,5 +451,7 @@ export const SOURCES: Source[] = [
 	{ id: 'T15', label: 'Build: Schriften (IBM Plex, Inter, JetBrains Mono) über @fontsource als eigene Dateien unter /_app/immutable/assets' },
 	{ id: 'T16', label: 'DNS: MX von tabulasql.de ist www750.your-server.de (Hetzner-Webhosting)' },
 	{ id: 'T17', label: 'Quellcode: externe Links sind einfache Hyperlinks (a href), u. a. github.com/WarumSindNamenSoSchwer/SbSQLTT; keine eingebetteten Inhalte' },
-	{ id: 'T18', label: 'Server: sshd -T (passwordauthentication no, permitrootlogin no), unattended-upgrades enabled, fail2ban sshd maxretry 5, findtime 600, bantime 600, dbpurgeage 1d' }
+	{ id: 'T18', label: 'Server: sshd -T (passwordauthentication no, permitrootlogin no), unattended-upgrades enabled, fail2ban sshd maxretry 5, findtime 600, bantime 600, dbpurgeage 1d' },
+	{ id: 'T19', label: 'Quellcode contact/src: POST /api/contact, kein Persistenz-Layer, IP-Adresse nur als SHA-256-Hash im Arbeitsspeicher, Rate-Limit 3 pro 10 min, kein Logging personenbezogener Daten' },
+	{ id: 'K13', label: 'Kontaktformular: Felder Name, E-Mail, optionale Schule, Nachricht; keine Speicherung auf Webserver; Weiterleitung als E-Mail über Hetzner; IP-Rate-Limiting nur im RAM' }
 ];

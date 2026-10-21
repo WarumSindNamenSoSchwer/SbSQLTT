@@ -17,9 +17,11 @@
 		/^\/login(\/|$)/.test(page.url.pathname) ||
 		/^\/beitreten(\/|$)/.test(page.url.pathname) ||
 		/^\/profil(\/|$)/.test(page.url.pathname) ||
+		/^\/teach(\/|$)/.test(page.url.pathname) ||
 		/^\/passwort-zuruecksetzen(\/|$)/.test(page.url.pathname) ||
 		page.url.pathname === '/datenschutz' ||
 		page.url.pathname === '/impressum' ||
+		page.url.pathname === '/kontakt' ||
 		// Fehlerseite bringt eigene TopNav mit
 		page.error != null
 	);

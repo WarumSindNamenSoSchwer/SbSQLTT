@@ -1,0 +1,48 @@
+# deploy/compose.contact.yml
+# Erweiterung fuer den Kontaktformular-Dienst.
+# Verwendung: docker compose -f compose.yml -f compose.contact.yml up -d
+# (oder zusaetzlich -f compose.backend.yml falls der API-Service laeuft)
+#
+# Der contact-Service laeuft NUR im internen Netz (kein Port nach aussen).
+# Caddy leitet /api/contact per reverse_proxy weiter (siehe Caddyfile).
+
+services:
+  contact:
+    build:
+      context: ../contact
+      dockerfile: Dockerfile
+    image: tabula-contact:latest
+    restart: unless-stopped
+    expose:
+      - "3001"
+    environment:
+      PORT: "3001"
+      HOST: "0.0.0.0"
+      ALLOWED_ORIGIN: "https://www.tabulasql.de"
+      LOG_LEVEL: "info"
+    secrets:
+      - smtp_formular
+    networks:
+      - internal
+    # Arbeitsspeicher klein halten (kein Datenbankzugriff, kein groses Heap)
+    mem_limit: 128m
+    # Konsolenausgabe klein halten
+    logging:
+      driver: local
+      options:
+        max-size: "1m"
+        max-file: "2"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/contact"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+secrets:
+  smtp_formular:
+    file: /opt/tabula/secrets/smtp_formular
+
+networks:
+  internal:
+    internal: true

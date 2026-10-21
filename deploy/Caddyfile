@@ -26,6 +26,23 @@ tabulasql.de {
 
 www.tabulasql.de {
 	encode zstd gzip
+
+	# Kontaktformular-Dienst: MUSS vor einer allgemeinen /api/*-Regel stehen.
+	# Caddy prueft handle-Bloecke der Reihe nach; der erste passende gewinnt.
+	handle /api/contact {
+		reverse_proxy contact:3001 {
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# Allgemeiner API-Reverse-Proxy (nur aktiv wenn compose.backend.yml eingebunden).
+	# Einkommentieren, sobald der api-Service laeuft:
+	# handle /api/* {
+	#     reverse_proxy api:3000 {
+	#         header_up X-Real-IP {remote_host}
+	#     }
+	# }
+
 	root * /srv/site
 	try_files {path} {path}.html /200.html
 	file_server
