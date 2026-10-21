@@ -19,7 +19,8 @@ Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geände
 - Eingaben in den Hash (Vorgabe Muri, 21.10.2026):
   - Passwort (Klartext, nur im Arbeitsspeicher),
   - **zufälliger Salt** je Konto (16 Byte, kryptografisch zufällig) – bleibt Pflicht, siehe Begründung,
-  - **Benutzername** (klein geschrieben, Unicode-NFC) und **Erstellungstag des Kontos** (UTC, `YYYY-MM-DD`) als Argon2-Parameter „associated data“: `ad = "tabula:v1:" + benutzername + ":" + erstellungstag`.
+  - **Benutzername** (klein geschrieben, Unicode-NFC) und **Erstellungstag des Kontos** (UTC, `YYYY-MM-DD`) als Argon2-Eingabe `"tabula:v1:" + benutzername + ":" + erstellungstag`.
+  - Umsetzung (server/src/password.ts): als Argon2-Parameter **`secret`**, nicht als „associated data“. Grund: Das npm-Paket `argon2` legt „associated data“ im gespeicherten Hash ab und verwendet beim Prüfen den gespeicherten Wert, die Bindung ans Konto würde also nicht erzwungen. `secret` wird nicht gespeichert und muss beim Prüfen stimmen. Test belegt: Hash von Konto A schlägt bei Konto B fehl.
 - Gespeichert werden Hash, Salt und Parameter (PHC-Format). Erstellungstag liegt ohnehin im Konto.
 - Folgen:
   - Ein kopierter Hash passt nur zu genau diesem Konto (anderer Benutzername oder Tag = ungültig).
