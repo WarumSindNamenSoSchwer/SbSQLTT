@@ -8,6 +8,12 @@ services:
       - ./site:/srv/site:ro
       - caddy_data:/data
       - caddy_config:/config
+    # Konsolenausgabe des Containers klein halten (Protokoll steht in /data/logs, siehe Caddyfile)
+    logging:
+      driver: local
+      options:
+        max-size: "1m"
+        max-file: "2"
 volumes:
   caddy_data:
   caddy_config:

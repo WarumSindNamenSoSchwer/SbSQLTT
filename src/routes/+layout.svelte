@@ -3,7 +3,6 @@
 	import { page } from '$app/state';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import LoginModal from '$lib/components/LoginModal.svelte';
-	import ConsentBanner from '$lib/components/ConsentBanner.svelte';
 
 	let { children } = $props();
 
@@ -13,7 +12,8 @@
 		page.url.pathname === '/' ||
 		/^\/learn(\/|$)/.test(page.url.pathname) ||
 		/^\/datasets(\/|$)/.test(page.url.pathname) ||
-		/^\/login(\/|$)/.test(page.url.pathname)
+		/^\/login(\/|$)/.test(page.url.pathname) ||
+		page.url.pathname === '/datenschutz'
 	);
 </script>
 
@@ -24,6 +24,5 @@
 		<Navbar onOpenLogin={() => (loginOpen = true)} />
 		{@render children()}
 		<LoginModal open={loginOpen} onClose={() => (loginOpen = false)} />
-		<ConsentBanner />
 	</div>
 {/if}

@@ -6,10 +6,16 @@
 	let theme = $state<'light' | 'dark' | 'system'>('light');
 	let language = $state<'de' | 'en'>('de');
 	let confirmDelete = $state(false);
+	let themeTouched = false;
 
+	// Erst nach einer Auswahl durch den Nutzer speichern (§ 25 Abs. 2 Nr. 2 TDDDG).
 	$effect(() => {
 		if (typeof document === 'undefined') return;
 		const t = theme === 'system' ? 'light' : theme;
+		if (!themeTouched) {
+			themeTouched = true;
+			return;
+		}
 		document.documentElement.classList.toggle('light', t === 'light');
 		document.documentElement.classList.toggle('dark', t === 'dark');
 		try {
