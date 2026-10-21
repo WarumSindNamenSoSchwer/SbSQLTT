@@ -326,7 +326,8 @@ describe('sendContactMail - Header-Injection-Unit-Test', () => {
     })
 
     const subject = (sent as { subject?: string }).subject ?? ''
-    const replyTo = (sent as { replyTo?: string }).replyTo ?? ''
+    const rt = (sent as { replyTo?: { name: string; address: string } }).replyTo
+    const replyTo = rt ? `${rt.name} <${rt.address}>` : ''
 
     // CR und LF muessen aus Betreff und Reply-To entfernt sein (SMTP-Header-Injection)
     expect(subject).not.toContain('\r')
@@ -336,5 +337,20 @@ describe('sendContactMail - Header-Injection-Unit-Test', () => {
     // Steuerziffern (ASCII 0-31, 127) muessen entfernt sein
     expect(replyTo).not.toMatch(/[\x00-\x1f\x7f]/)
     expect(subject).not.toMatch(/[\x00-\x1f\x7f]/)
+  })
+
+  it('escaped HTML in allen Feldern und enthält Text- und HTML-Teil', async () => {
+    const { buildContactMail } = await import('../src/mailer.js')
+    const m = buildContactMail({
+      name: '<b>Max</b>', email: 'max@example.de', schule: 'A & B <Schule>',
+      nachricht: 'Hallo\n<script>alert(1)</script>\nZeile 3', receivedAt: new Date('2026-10-21T19:47:00Z'),
+    })
+    expect(m.subject).toBe('Kontaktformular: <b>Max</b> (A & B <Schule>)')
+    expect(m.html).not.toContain('<script>')
+    expect(m.html).toContain('&lt;script&gt;')
+    expect(m.html).toContain('A &amp; B &lt;Schule&gt;')
+    expect(m.html).not.toContain('<b>Max</b>')
+    expect(m.text).toContain('Eingang:   21.10.2026, 21:47 Uhr')
+    expect(m.text).toContain('Hallo\n<script>alert(1)</script>\nZeile 3')
   })
 })
