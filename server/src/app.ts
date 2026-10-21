@@ -28,6 +28,8 @@ export interface AppConfig {
   siteUrl?: string
   /** Nur fuer Tests: true deaktiviert den Origin-Check */
   skipCsrf?: boolean
+  /** Nur fuer Tests: Log-Ausgabe in diesen Stream schreiben (Pruefung "nichts Persoenliches im Log") */
+  logStream?: { write(msg: string): void }
 }
 
 export async function buildApp(cfg: AppConfig) {
@@ -37,6 +39,7 @@ export async function buildApp(cfg: AppConfig) {
   const app = Fastify({
     logger: {
       level: process.env['LOG_LEVEL'] ?? 'info',
+      ...(cfg.logStream ? { stream: cfg.logStream } : {}),
       redact: {
         // Passwortfelder und Token aus Log-Ausgaben entfernen (K3, K10)
         paths: [
