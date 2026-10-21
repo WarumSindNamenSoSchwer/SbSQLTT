@@ -8,8 +8,8 @@
 	let { children } = $props();
 
 	let loginOpen = $state(false);
-	// Lektionsseite (Tabula B2) hat eine eigene, reduzierte Kopfleiste.
-	let bare = $derived(/^\/learn\/[^/]+\/[^/]+/.test(page.url.pathname));
+	// Tabula-Seiten (neues Design) bringen ihre eigene Kopfleiste mit.
+	let bare = $derived(/^\/learn(\/|$)/.test(page.url.pathname));
 </script>
 
 {#if bare}

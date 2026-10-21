@@ -6,7 +6,7 @@
 	import Edgar from '$lib/edgar/Edgar.svelte';
 	import CodeEditor from '$lib/tabula/CodeEditor.svelte';
 	import { tok } from '$lib/tabula/highlight';
-	import { LESSONS, type Step } from '$lib/tabula/lessons';
+	import { LESSONS, saveProgress, loadProgress, type Step } from '$lib/tabula/lessons';
 	import { openDb, run, readSchema, explainError, compare, exportDb, type Result, type Schema } from '$lib/tabula/sql';
 
 	const lesson = $derived(LESSONS[page.params.lesson ?? ''] ?? LESSONS['where-filters']);
@@ -90,6 +90,8 @@
 		} catch {
 			guestHint = false;
 		}
+		const p = loadProgress()[lesson.id];
+		if (p?.step && !p.done) cur = Math.min(p.step - 1, lesson.steps.length - 1);
 		return () => mo.disconnect();
 	});
 
@@ -154,7 +156,11 @@
 		if (cur < lesson.steps.length - 1) {
 			cur += 1;
 			stepMenu = false;
-		} else finished = true;
+			if (!loadProgress()[lesson.id]?.done) saveProgress(lesson.id, { step: cur + 1, of: lesson.steps.length });
+		} else {
+			finished = true;
+			saveProgress(lesson.id, { done: true });
+		}
 	}
 	function back() {
 		if (finished) finished = false;
