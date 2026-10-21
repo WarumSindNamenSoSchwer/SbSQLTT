@@ -6,8 +6,8 @@ export const STAND = '21. Oktober 2026';
 
 /** Verantwortlicher. Bis Name und Anschrift feststehen, bleibt die Seite als Entwurf markiert. */
 export const CONTROLLER = {
-	name: '', // z. B. 'Murat-Can Meric'
-	address: [] as string[], // ladungsfähige Anschrift, z. B. ['Musterstraße 1', '10115 Berlin']
+	name: 'Murat-Can Meric',
+	address: ['Lübecker Str. 45', '10559 Berlin', 'Deutschland'],
 	email: 'kontakt@tabulasql.de',
 	/** Erst auf true setzen, wenn der AV-Vertrag im Hetzner-Kundenkonto abgeschlossen ist (accounts.hetzner.com/account/dpa). */
 	avv: true

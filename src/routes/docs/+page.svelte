@@ -140,8 +140,8 @@
 			>
 			weiter. Vorschläge oder Wünsche zu Themen, die du in der Referenz sehen willst, gerne per E-Mail
 			an
-			<a href="mailto:murat.meric@jmestudio.de" class="text-accent hover:underline"
-				>murat.meric@jmestudio.de</a
+			<a href="mailto:kontakt@tabulasql.de" class="text-accent hover:underline"
+				>kontakt@tabulasql.de</a
 			>
 			oder als Issue auf
 			<a

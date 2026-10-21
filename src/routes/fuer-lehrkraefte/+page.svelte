@@ -237,11 +237,11 @@
 			</p>
 			<div class="flex flex-wrap items-center gap-3">
 				<a
-					href="mailto:teachers@jmestudio.de"
+					href="mailto:kontakt@tabulasql.de"
 					class="inline-flex items-center gap-2 px-3 h-9 rounded-md bg-ink-200 hover:bg-ink-300 text-ink-900 border border-ink-300 text-[14px]"
 				>
 					<Icon name="mail" size={14} />
-					teachers@jmestudio.de
+					kontakt@tabulasql.de
 				</a>
 				<a
 					href="https://github.com/WarumSindNamenSoSchwer/SbSQLTT/issues"

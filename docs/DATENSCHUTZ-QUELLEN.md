@@ -3,7 +3,11 @@
 Stand: 21.10.2026. Grundlage für `src/lib/tabula/privacy.ts` und `/datenschutz`.
 Jede Aussage der Erklärung trägt im Code eine Quellen-ID. Auf der Seite lassen sich die IDs pro Absatz einblenden.
 
-## Offene Punkte vor Veröffentlichung (Seite zeigt bis dahin „Entwurf“ und `noindex`)
+## Veröffentlicht am 21.10.2026
+
+Verantwortlicher: Murat-Can Meric, Lübecker Str. 45, 10559 Berlin (allein). AV-Vertrag Hetzner für Tabula am 21.10.2026 abgeschlossen (Kundennummer K0845673926). Aufsicht: Berliner Beauftragte für Datenschutz und Informationsfreiheit.
+
+## Frühere offene Punkte
 
 1. **Name und ladungsfähige Anschrift** des Verantwortlichen in `CONTROLLER` eintragen (Art. 13 Abs. 1 lit. a DSGVO).
 2. ~~**AV-Vertrag mit Hetzner**~~ erledigt am 21.10.2026 (Cloud-Konto). Prüfen, ob das Webhosting-Konto (Mail) dasselbe Konto ist; sonst dort ebenfalls abschließen: https://accounts.hetzner.com/account/dpa (Checkbox, keine Unterschrift nötig, laut Hetzner-FAQ). Danach `CONTROLLER.avv = true`. Vorher behauptet die Seite keinen Vertrag. Achtung: Das Postfach kontakt@tabulasql.de liegt auf dem Webhosting-Paket (konsoleH, 030Activities). Gehört das zu einem anderen Kundenkonto als der Cloud-Server, braucht auch dieses Konto einen AV-Vertrag.

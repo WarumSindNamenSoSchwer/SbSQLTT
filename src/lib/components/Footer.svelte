@@ -36,12 +36,6 @@
 			</a>
 			<a href="/impressum" class="hover:text-ink-900">Impressum</a>
 			<a href="/datenschutz" class="hover:text-ink-900">Datenschutz</a>
-			<a
-				href="https://jmestudio.de"
-				target="_blank"
-				rel="noreferrer"
-				class="hover:text-ink-900">jmestudio.de</a
-			>
 		</div>
 	</div>
 </footer>
