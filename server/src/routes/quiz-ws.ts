@@ -6,7 +6,7 @@
  * VERBINDUNGSAUFBAU
  * Jeder Client sendet nach dem Upgrade sofort eine join-Nachricht:
  *
- *   Lehrkraft: { type: "teacher_join", room_id: number, token: string }
+ *   Lehrkraft: { type: "teacher_join", room_id: number }   (Auth über Cookie tabula_session beim Upgrade)
  *   Schueler:  { type: "student_join", pin: string, display_name: string }
  *              (token optional: Session-Cookie des registrierten Nutzers)
  *
@@ -50,7 +50,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import fastifyWebsocket from '@fastify/websocket'
 import type { WebSocket as WsSocket } from 'ws'
 import type { Db } from '../db.js'
-import { validateSession } from '../session.js'
+import { validateSession, SESSION_COOKIE_NAME } from '../session.js'
 import { RateLimiter } from '../plugins/ratelimit.js'
 // ---------------------------------------------------------------------------
 // Typen fuer eingehende Nachrichten
@@ -59,7 +59,7 @@ import { RateLimiter } from '../plugins/ratelimit.js'
 interface TeacherJoin {
   type: 'teacher_join'
   room_id: number
-  token: string
+  token?: string // nur Fallback; Browser authentifiziert per HttpOnly-Cookie beim Upgrade
 }
 
 interface StudentJoin {
@@ -353,6 +353,9 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
     let roomId: number | null = null
     let isTeacher = false
     let participantWsEntry: ParticipantConn | null = null
+    // Sitzung aus dem HttpOnly-Cookie des Upgrade-Requests (Browser sendet es automatisch mit).
+    // msg.token bleibt nur als Fallback für Tests/Nicht-Browser-Clients.
+    const cookieToken = (req.cookies?.[SESSION_COOKIE_NAME] as string | undefined) ?? ''
 
     socket.on('message', (rawData) => {
       let msg: IncomingMsg
@@ -415,7 +418,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
     // ---- Innere Hilfsfunktionen ----
 
     function handleTeacherJoin(msg: TeacherJoin): void {
-      const session = validateSession(db, msg.token)
+      const session = validateSession(db, cookieToken || msg.token || '')
       if (!session) {
         sendJson(socket, { type: 'error', code: 'unauthorized', message: 'Ungueltige Sitzung.' })
         socket.close(1008, 'Unauthorized.')
@@ -494,8 +497,9 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       let userId: number | null = null
       let displayName = name
 
-      if (msg.token) {
-        const session = validateSession(db, msg.token)
+      const studentToken = cookieToken || msg.token || ''
+      if (studentToken) {
+        const session = validateSession(db, studentToken)
         if (session) {
           const userRow = db.prepare(
             'SELECT id, display_name FROM users WHERE id = ?'

@@ -760,3 +760,31 @@ describe('K8: Konto loeschen entfernt Quiz-Daten', () => {
     await teardown(app, db)
   })
 })
+
+describe('Quiz WebSocket: Anmeldung per HttpOnly-Cookie', () => {
+  it('Lehrkraft tritt ohne token im Nachrichtentext bei, nur mit Cookie beim Upgrade', async () => {
+    const { app, db, wsUrl } = await setup()
+    const teacherToken = await registerTeacher(app, 'cookielehrer')
+    const quizId = await createQuiz(app, teacherToken)
+    const session = await startSession(app, teacherToken, quizId)
+
+    const msg = await new Promise<Record<string, unknown>>((resolve, reject) => {
+      const ws = new WebSocket(`${wsUrl}/api/quiz/ws`, { headers: { cookie: `tabula_session=${teacherToken}` } })
+      ws.on('open', () => ws.send(JSON.stringify({ type: 'teacher_join', room_id: session.id })))
+      ws.on('message', (d) => { const m = JSON.parse(d.toString()); if (m.type === 'joined' || m.type === 'error') { ws.close(); resolve(m) } })
+      setTimeout(() => reject(new Error('timeout')), 3000)
+    })
+    expect(msg['type']).toBe('joined')
+    expect(msg['role']).toBe('teacher')
+
+    const denied = await new Promise<Record<string, unknown>>((resolve, reject) => {
+      const ws = new WebSocket(`${wsUrl}/api/quiz/ws`)
+      ws.on('open', () => ws.send(JSON.stringify({ type: 'teacher_join', room_id: session.id })))
+      ws.on('message', (d) => { const m = JSON.parse(d.toString()); if (m.type === 'joined' || m.type === 'error') { ws.close(); resolve(m) } })
+      setTimeout(() => reject(new Error('timeout')), 3000)
+    })
+    expect(denied['code']).toBe('unauthorized')
+
+    await teardown(app, db)
+  })
+})
