@@ -76,4 +76,49 @@ export function saveProgress(id: string, patch: Progress[string]) {
 	} catch {
 		/* ignore */
 	}
+	// Entprellter Server-Sync (nur wenn ACCOUNTS_LIVE und angemeldet)
+	_scheduleSyncToServer(id, patch);
+}
+
+// ---- Entprellter Server-Sync -----------------------------------------------
+let _syncTimer: ReturnType<typeof setTimeout> | null = null;
+const _pendingSync: Map<string, Progress[string]> = new Map();
+
+function _scheduleSyncToServer(id: string, patch: Progress[string]) {
+	_pendingSync.set(id, { ...(_pendingSync.get(id) ?? {}), ...patch });
+	if (_syncTimer) clearTimeout(_syncTimer);
+	_syncTimer = setTimeout(_flushSyncToServer, 2000);
+}
+
+async function _flushSyncToServer() {
+	_syncTimer = null;
+	if (_pendingSync.size === 0) return;
+
+	// Dynamisch importieren um Circular-Import-Probleme zu vermeiden
+	try {
+		const { ACCOUNTS_LIVE } = await import('./flags.js');
+		if (!ACCOUNTS_LIVE) return;
+		const { session } = await import('./session.svelte.js');
+		if (!session.user) return;
+		const { apiPutProgress } = await import('./api.js');
+
+		const items = [];
+		const nowTs = Math.floor(Date.now() / 1000);
+
+		for (const [lesson_id, p] of _pendingSync.entries()) {
+			if (p.done) {
+				items.push({ lesson_id, step: 0, done: true, attempts: 0, updated_at: nowTs });
+			} else if (p.step !== undefined) {
+				items.push({ lesson_id, step: p.step - 1, done: false, attempts: 0, updated_at: nowTs });
+			}
+		}
+
+		_pendingSync.clear();
+
+		if (items.length > 0) {
+			await apiPutProgress(items).catch(() => {/* ignore */});
+		}
+	} catch {
+		// ignore
+	}
 }

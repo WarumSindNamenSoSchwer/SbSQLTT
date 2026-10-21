@@ -1,8 +1,10 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import LoginModal from '$lib/components/LoginModal.svelte';
+	import { initSession } from '$lib/tabula/session.svelte.js';
 
 	let { children } = $props();
 
@@ -13,11 +15,18 @@
 		/^\/learn(\/|$)/.test(page.url.pathname) ||
 		/^\/datasets(\/|$)/.test(page.url.pathname) ||
 		/^\/login(\/|$)/.test(page.url.pathname) ||
+		/^\/beitreten(\/|$)/.test(page.url.pathname) ||
+		/^\/profil(\/|$)/.test(page.url.pathname) ||
+		/^\/passwort-zuruecksetzen(\/|$)/.test(page.url.pathname) ||
 		page.url.pathname === '/datenschutz' ||
 		page.url.pathname === '/impressum' ||
 		// Fehlerseite bringt eigene TopNav mit
 		page.error != null
 	);
+
+	onMount(() => {
+		initSession();
+	});
 </script>
 
 {#if bare}

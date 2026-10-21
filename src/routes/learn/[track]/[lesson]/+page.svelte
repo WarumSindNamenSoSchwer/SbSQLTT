@@ -560,7 +560,7 @@
 				</div>
 			{/if}
 			{#if guestHint && step.kind === 'exercise' && s.state === 'solved'}
-				<span class="guest hide-sm">Melde dich an, um deinen Fortschritt zu sichern. <a href="/" class="guest-a">Anmelden</a><button class="guest-x" aria-label="Hinweis schließen" onclick={closeGuest}>✕</button></span>
+				<span class="guest hide-sm">Melde dich an, um deinen Fortschritt zu sichern. <a href="/login" class="guest-a">Anmelden</a><button class="guest-x" aria-label="Hinweis schließen" onclick={closeGuest}>✕</button></span>
 			{/if}
 			<div class="fb-btns">
 				{#if tipBtn}<button class="btn tipbtn" onclick={() => (s.tipOpen = true)}>Tipp anzeigen</button>{/if}

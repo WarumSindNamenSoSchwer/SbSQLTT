@@ -1,8 +1,13 @@
 <script lang="ts">
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import TopNav from '$lib/tabula/TopNav.svelte';
 	import Edgar from '$lib/edgar/Edgar.svelte';
+	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
+	import { sessionLogin, sessionRegister } from '$lib/tabula/session.svelte.js';
+	import { apiPasswordForgot, ApiError } from '$lib/tabula/api.js';
 
 	// ---- Theme ---------------------------------------------------------------
 	let dark = $state(false);
@@ -11,8 +16,14 @@
 		sync();
 		const mo = new MutationObserver(sync);
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+		// Redirect nach Login?
+		const redirect = page.url.searchParams.get('redirect') ?? '/learn';
+		_redirect = redirect;
 		return () => mo.disconnect();
 	});
+
+	let _redirect = $state('/learn');
 
 	// ---- View state ----------------------------------------------------------
 	type View = 'login' | 'register' | 'forgot' | 'forgot-sent';
@@ -21,8 +32,12 @@
 	// Segment: Schüler (0) or Lehrkraft (1)
 	let seg = $state<0 | 1>(0);
 
+	// ---- Busy / Server error -------------------------------------------------
+	let busy = $state(false);
+	let serverError = $state<string | null>(null);
+
 	// ---- Login form ----------------------------------------------------------
-	let loginIdent = $state('');       // E-Mail oder Benutzername
+	let loginIdent = $state('');
 	let loginPw = $state('');
 	let loginTouched = $state(false);
 	let loginError = $state(false);    // wrong credentials banner
@@ -79,31 +94,104 @@
 	const forgotEmailErr = $derived(forgotTouched && !validEmail(forgotEmail));
 
 	// ---- Handlers ------------------------------------------------------------
-	function submitLogin(e: Event) {
+	async function submitLogin(e: Event) {
 		e.preventDefault();
 		loginTouched = true;
 		loginError = false;
+		serverError = null;
 		if (!loginIdent.trim() || !loginPw.trim()) return;
-		// No backend: show "coming soon" notice
-		showNotice = true;
+
+		if (!ACCOUNTS_LIVE) {
+			showNotice = true;
+			return;
+		}
+
+		busy = true;
+		try {
+			await sessionLogin(loginIdent.trim(), loginPw);
+			goto(_redirect);
+		} catch (err) {
+			if (err instanceof ApiError && err.status === 401) {
+				loginError = true;
+			} else if (err instanceof Error) {
+				serverError = err.message;
+			}
+		} finally {
+			busy = false;
+		}
 	}
 
-	function submitRegister(e: Event) {
+	async function submitRegister(e: Event) {
 		e.preventDefault();
 		regTouched = true;
+		serverError = null;
+
 		if (seg === 0) {
 			if (!regUsername.trim() || !regDisplay.trim() || regPw.length < 8 || regPw !== regPwRepeat) return;
 		} else {
 			if (!regName.trim() || !validEmail(regEmail) || regLPw.length < 8 || regLPw !== regLPwRepeat || !regAccepted) return;
 		}
-		showNotice = true;
+
+		if (!ACCOUNTS_LIVE) {
+			showNotice = true;
+			return;
+		}
+
+		busy = true;
+		try {
+			if (seg === 0) {
+				await sessionRegister({
+					role: 'student',
+					username: regUsername.trim(),
+					display_name: regDisplay.trim(),
+					password: regPw,
+					email: regEmailOpt.trim() || undefined,
+					class_code: regClassOpt.trim() || undefined,
+				});
+			} else {
+				await sessionRegister({
+					role: 'teacher',
+					username: regEmail.trim(),
+					display_name: regName.trim(),
+					name: regName.trim(),
+					email: regEmail.trim(),
+					password: regLPw,
+					school: regSchoolOpt.trim() || undefined,
+					terms_accepted: true,
+				});
+			}
+			goto(_redirect);
+		} catch (err) {
+			if (err instanceof Error) {
+				serverError = err.message;
+			}
+		} finally {
+			busy = false;
+		}
 	}
 
-	function submitForgot(e: Event) {
+	async function submitForgot(e: Event) {
 		e.preventDefault();
 		forgotTouched = true;
+		serverError = null;
 		if (!validEmail(forgotEmail)) return;
-		view = 'forgot-sent';
+
+		if (!ACCOUNTS_LIVE) {
+			view = 'forgot-sent';
+			return;
+		}
+
+		busy = true;
+		try {
+			await apiPasswordForgot(forgotEmail.trim());
+			view = 'forgot-sent';
+		} catch (err) {
+			if (err instanceof Error) {
+				serverError = err.message;
+			}
+		} finally {
+			busy = false;
+		}
 	}
 
 	function go(v: View) {
@@ -113,12 +201,14 @@
 		regTouched = false;
 		forgotTouched = false;
 		showNotice = false;
+		serverError = null;
 	}
 
 	function switchSeg(s: 0 | 1) {
 		seg = s;
 		regTouched = false;
 		showNotice = false;
+		serverError = null;
 	}
 </script>
 
@@ -153,6 +243,13 @@
 					</div>
 				{/if}
 
+				{#if serverError}
+					<div class="err-banner" role="alert">
+						<span class="err-ico">!</span>
+						{serverError}
+					</div>
+				{/if}
+
 				<form onsubmit={submitLogin} novalidate>
 					<div class="field">
 						<div class="label-row">
@@ -164,6 +261,7 @@
 							autocomplete="username"
 							placeholder="mia.k oder name@schule.de"
 							class:err={loginIdentErr}
+							disabled={busy}
 							bind:value={loginIdent}
 						/>
 						{#if loginIdentErr}
@@ -182,6 +280,7 @@
 							autocomplete="current-password"
 							placeholder="••••••••"
 							class:err={loginPwErr}
+							disabled={busy}
 							bind:value={loginPw}
 						/>
 						{#if loginPwErr}
@@ -189,7 +288,9 @@
 						{/if}
 					</div>
 
-					<button type="submit" class="btn-primary">Anmelden</button>
+					<button type="submit" class="btn-primary" disabled={busy}>
+						{busy ? 'Anmelden …' : 'Anmelden'}
+					</button>
 				</form>
 
 				<p class="foot">Noch kein Konto? <button type="button" class="link-foot" onclick={() => go('register')}>Konto erstellen</button></p>
@@ -213,6 +314,13 @@
 					</div>
 				{/if}
 
+				{#if serverError}
+					<div class="err-banner" role="alert">
+						<span class="err-ico">!</span>
+						{serverError}
+					</div>
+				{/if}
+
 				{#if seg === 0}
 					<!-- Schüler:in -->
 					<form onsubmit={submitRegister} novalidate>
@@ -224,6 +332,7 @@
 								autocomplete="username"
 								placeholder="z. B. mia.k"
 								class:err={regUsernameErr}
+								disabled={busy}
 								bind:value={regUsername}
 							/>
 							<span class="field-hint">Damit meldest du dich an. Nicht dein echter Name nötig.</span>
@@ -240,6 +349,7 @@
 								autocomplete="name"
 								placeholder="z. B. Mia K."
 								class:err={regDisplayErr}
+								disabled={busy}
 								bind:value={regDisplay}
 							/>
 							<span class="field-hint">Sieht deine Lehrkraft.</span>
@@ -256,6 +366,7 @@
 								autocomplete="new-password"
 								placeholder="••••••••"
 								class:err={regPwErr}
+								disabled={busy}
 								bind:value={regPw}
 							/>
 							{#if regTouched}
@@ -273,6 +384,7 @@
 								autocomplete="new-password"
 								placeholder="••••••••"
 								class:err={regPwRepeatErr}
+								disabled={busy}
 								bind:value={regPwRepeat}
 							/>
 							{#if regTouched}
@@ -284,14 +396,15 @@
 
 						<div class="field">
 							<div class="label-row">
-								<label for="reg-email-opt">E-Mail</label>
+								<label for="reg-email">E-Mail</label>
 								<span class="opt-label">optional</span>
 							</div>
 							<input
-								id="reg-email-opt"
+								id="reg-email"
 								type="email"
 								autocomplete="email"
 								placeholder="nur für Passwort-Reset"
+								disabled={busy}
 								bind:value={regEmailOpt}
 							/>
 						</div>
@@ -306,11 +419,14 @@
 								type="text"
 								autocomplete="off"
 								placeholder="z. B. ABC123"
+								disabled={busy}
 								bind:value={regClassOpt}
 							/>
 						</div>
 
-						<button type="submit" class="btn-primary">Konto erstellen</button>
+						<button type="submit" class="btn-primary" disabled={busy}>
+							{busy ? 'Konto wird erstellt …' : 'Konto erstellen'}
+						</button>
 					</form>
 				{:else}
 					<!-- Lehrkraft -->
@@ -323,6 +439,7 @@
 								autocomplete="name"
 								placeholder="z. B. Anna Müller"
 								class:err={regNameErr}
+								disabled={busy}
 								bind:value={regName}
 							/>
 							{#if regNameErr}
@@ -338,6 +455,7 @@
 								autocomplete="email"
 								placeholder="name@gymnasium-beispiel.de"
 								class:err={regEmailErr}
+								disabled={busy}
 								bind:value={regEmail}
 							/>
 							{#if regEmailErr}
@@ -353,6 +471,7 @@
 								autocomplete="new-password"
 								placeholder="••••••••"
 								class:err={regLPwErr}
+								disabled={busy}
 								bind:value={regLPw}
 							/>
 							{#if regTouched}
@@ -371,6 +490,7 @@
 								autocomplete="new-password"
 								placeholder="••••••••"
 								class:err={regLPwRepeatErr}
+								disabled={busy}
 								bind:value={regLPwRepeat}
 							/>
 							{#if regLPwRepeatErr}
@@ -388,6 +508,7 @@
 								type="text"
 								autocomplete="organization"
 								placeholder="z. B. Gymnasium am Park"
+								disabled={busy}
 								bind:value={regSchoolOpt}
 							/>
 						</div>
@@ -399,6 +520,7 @@
 								class:checked={regAccepted}
 								role="checkbox"
 								aria-checked={regAccepted}
+								disabled={busy}
 								onclick={() => (regAccepted = !regAccepted)}
 							>{#if regAccepted}✓{/if}</button>
 							<span>Ich habe die Hinweise zum Datenschutz gelesen. <a href="/datenschutz" class="link-inline">Datenschutzerklärung</a></span>
@@ -407,7 +529,9 @@
 							<span class="field-hint err-hint" style="margin-top:-8px">Bitte stimmen Sie der Datenschutzerklärung zu.</span>
 						{/if}
 
-						<button type="submit" class="btn-primary">Konto erstellen</button>
+						<button type="submit" class="btn-primary" disabled={busy}>
+							{busy ? 'Konto wird erstellt …' : 'Konto erstellen'}
+						</button>
 					</form>
 				{/if}
 
@@ -422,6 +546,13 @@
 					<p class="sub">Gib die E-Mail-Adresse deines Kontos ein.</p>
 				</div>
 
+				{#if serverError}
+					<div class="err-banner" role="alert">
+						<span class="err-ico">!</span>
+						{serverError}
+					</div>
+				{/if}
+
 				<form onsubmit={submitForgot} novalidate>
 					<div class="field">
 						<label for="forgot-email">E-Mail</label>
@@ -431,13 +562,16 @@
 							autocomplete="email"
 							placeholder="name@schule.de"
 							class:err={forgotEmailErr}
+							disabled={busy}
 							bind:value={forgotEmail}
 						/>
 						{#if forgotEmailErr}
 							<span class="field-hint err-hint">Bitte gib eine gültige E-Mail-Adresse ein.</span>
 						{/if}
 					</div>
-					<button type="submit" class="btn-primary">Link senden</button>
+					<button type="submit" class="btn-primary" disabled={busy}>
+						{busy ? 'Wird gesendet …' : 'Link senden'}
+					</button>
 				</form>
 
 				<p class="foot-note">Kein Konto mit E-Mail? Bitte deine Lehrkraft, dein Passwort zurückzusetzen.</p>
@@ -544,6 +678,7 @@
 	input::placeholder { color: var(--ink-3); }
 	input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); border-width: 1.5px; }
 	input.err { border-color: var(--danger); border-width: 1.5px; }
+	input:disabled { opacity: 0.6; cursor: not-allowed; }
 
 	.field-hint { font-size: 13px; line-height: 18px; color: var(--ink-3); }
 	.err-hint { color: var(--danger-ink); }
@@ -572,7 +707,8 @@
 		font-size: 16px; font-weight: 500; cursor: pointer;
 		font-family: inherit; width: 100%;
 	}
-	.btn-primary:hover { background: var(--accent-strong); }
+	.btn-primary:hover:not(:disabled) { background: var(--accent-strong); }
+	.btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
 
 	/* Footer links */
 	.foot { font-size: 14px; color: var(--ink-2); text-align: center; margin: 0; }

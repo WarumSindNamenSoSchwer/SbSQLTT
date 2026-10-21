@@ -1,0 +1,135 @@
+/**
+ * Session-Store: aktueller angemeldeter Nutzer.
+ *
+ * - GET /api/me beim Start (nur wenn ACCOUNTS_LIVE)
+ * - login / logout / register
+ * - Fortschritt-Sync nach Login (einmalige Uebernahme lokaler Daten, K4)
+ */
+
+import { ACCOUNTS_LIVE } from './flags.js';
+import {
+  apiMe,
+  apiLogin,
+  apiLogout,
+  apiRegister,
+  apiPutProgress,
+  type PublicUser,
+  type RegisterStudentBody,
+  type RegisterTeacherBody,
+} from './api.js';
+import { loadProgress } from './lessons.js';
+
+// ---------------------------------------------------------------------------
+// Reaktiver Zustand
+// ---------------------------------------------------------------------------
+
+let _user = $state<PublicUser | null>(null);
+let _loading = $state(true);
+let _error = $state<string | null>(null);
+
+export const session = {
+  get user(): PublicUser | null { return _user; },
+  get loading(): boolean { return _loading; },
+  get error(): string | null { return _error; },
+};
+
+// ---------------------------------------------------------------------------
+// Initialisierung (einmalig beim App-Start)
+// ---------------------------------------------------------------------------
+
+let _initialized = false;
+
+export async function initSession(): Promise<void> {
+  if (_initialized) return;
+  _initialized = true;
+
+  if (!ACCOUNTS_LIVE) {
+    _loading = false;
+    return;
+  }
+
+  try {
+    const { user } = await apiMe();
+    _user = user;
+  } catch {
+    // Nicht angemeldet oder Fehler: kein Problem
+    _user = null;
+  } finally {
+    _loading = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Login
+// ---------------------------------------------------------------------------
+
+export async function sessionLogin(loginInput: string, password: string): Promise<void> {
+  await apiLogin(loginInput, password);
+  const { user } = await apiMe();
+  _user = user;
+  // Einmalige Uebernahme lokaler Fortschrittsdaten (K4)
+  await _uploadLocalProgress();
+}
+
+// ---------------------------------------------------------------------------
+// Logout
+// ---------------------------------------------------------------------------
+
+export async function sessionLogout(): Promise<void> {
+  await apiLogout();
+  _user = null;
+}
+
+// ---------------------------------------------------------------------------
+// Registrieren
+// ---------------------------------------------------------------------------
+
+export async function sessionRegister(
+  body: RegisterStudentBody | RegisterTeacherBody,
+): Promise<void> {
+  await apiRegister(body);
+  const { user } = await apiMe();
+  _user = user;
+  // Einmalige Uebernahme lokaler Fortschrittsdaten (K4)
+  await _uploadLocalProgress();
+}
+
+// ---------------------------------------------------------------------------
+// Hilfsfunktion: lokale Fortschrittsdaten einmalig hochladen
+// ---------------------------------------------------------------------------
+
+async function _uploadLocalProgress(): Promise<void> {
+  try {
+    const local = loadProgress();
+    const items = Object.entries(local).flatMap(([lesson_id, p]) => {
+      const entries = [];
+      if (p.done) {
+        // Wenn done, mindestens step 0 mit done=true hochladen
+        entries.push({
+          lesson_id,
+          step: 0,
+          done: true,
+          attempts: 0,
+          updated_at: Math.floor(Date.now() / 1000),
+        });
+      } else if (p.step !== undefined) {
+        for (let s = 0; s < (p.step ?? 0); s++) {
+          entries.push({
+            lesson_id,
+            step: s,
+            done: true,
+            attempts: 0,
+            updated_at: Math.floor(Date.now() / 1000),
+          });
+        }
+      }
+      return entries;
+    });
+
+    if (items.length > 0) {
+      await apiPutProgress(items);
+    }
+  } catch {
+    // Fehlschlag ignorieren, kein showstopper
+  }
+}

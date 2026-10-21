@@ -79,10 +79,16 @@ export function deleteExpiredSessions(db: Db, now?: number): number {
  * sameSite: 'lax' erlaubt Navigation von anderen Seiten,
  * blockiert aber Cross-Site-POST (ausreichend zusammen mit CSRF-Origin-Check).
  */
+/**
+ * SECURE_COOKIE=false deaktiviert Secure fuer lokale Entwicklung.
+ * Standard bleibt true (Produktion).
+ */
+const SECURE = process.env['SECURE_COOKIE'] !== 'false';
+
 export function sessionCookieOptions(maxAge: number = SESSION_TTL_SECONDS) {
   return {
     httpOnly: true,
-    secure: true,
+    secure: SECURE,
     sameSite: 'lax' as const,
     path: '/',
     maxAge,
