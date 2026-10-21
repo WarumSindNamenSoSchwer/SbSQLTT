@@ -9,7 +9,7 @@
 
 	let loginOpen = $state(false);
 	// Tabula-Seiten (neues Design) bringen ihre eigene Kopfleiste mit.
-	let bare = $derived(/^\/learn(\/|$)/.test(page.url.pathname));
+	let bare = $derived(page.url.pathname === '/' || /^\/learn(\/|$)/.test(page.url.pathname));
 </script>
 
 {#if bare}
