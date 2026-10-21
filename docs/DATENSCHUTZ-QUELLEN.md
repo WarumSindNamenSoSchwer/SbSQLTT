@@ -46,6 +46,7 @@ Zusätzlich am 21.10.2026 auf dem Server gesetzt (damit die 14-Tage-Aussage für
 Die Erklärung beschreibt Konten bereits so, wie sie gebaut werden. Grundlage sind die verbindlichen Vorgaben in `docs/BACKEND-DATENSCHUTZ.md` (K1 bis K12). Das Backend darf nur live gehen, wenn deren Freigabe-Checkliste erfüllt ist.
 
 **K13 – Kontaktformular:** Felder Name (1–100 Z.), E-Mail, optionale Schulangabe (max. 150 Z.), Nachricht (10–5000 Z.). Kein Persistenz-Layer; Daten werden nur als E-Mail weitergeleitet. IP-Rate-Limiting (3 pro 10 min, SHA-256-Hash, nur im RAM). Logging: nur HTTP-Status und Fehlerart, keine personenbezogenen Daten.
+Geprüft live am 21.10.2026: Absenden über https://www.tabulasql.de/kontakt, Container-Log enthält nur `incoming request` (Methode, Pfad), `mail_sent`, Statuscode; kein Name, keine E-Mail, kein Text, keine IP. Caddy schreibt kein Zugriffsprotokoll. Browser: kein Cookie, kein localStorage. Versand über mail.your-server.de:587 (STARTTLS) mit Postfach formular@tabulasql.de.
 
 ## Rechtsquellen (R) und Anbieter (A)
 
