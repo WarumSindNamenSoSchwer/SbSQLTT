@@ -12,7 +12,7 @@ Abgleich der Designer-Lieferung (`Website v11`, Design-System v3, Eule) mit [`DE
 
 **Must (Demo)**
 - [ ] A2 Lektionsübersicht (Fokus-Banner, gesperrte Lektion, Erstbesuch vs. „Weiter mit …“)
-- [ ] B2 Lektion als **eigene Seite** mit allen Übungszuständen (Neu, Läuft, SQL-Fehler, Falsch, Richtig, Hängt fest, Lösung zeigen) + Abschluss-Screen + Mobil
+- [ ] B2 Lektion als **eigene Seite** mit allen Übungszuständen + Abschluss-Screen + Mobil → Briefing: [`BRIEF-LEKTION.md`](./BRIEF-LEKTION.md)
 - [ ] A3 Datensätze (Liste + Detail mit Schema, Vorschau, Download, Python-Snippet)
 - [ ] C1 Login, C2 Registrieren (Schüler/Lehrkraft), C3 Klasse beitreten (QR-Flow, Handy)
 - [ ] D1 Klassenübersicht (inkl. leer), D3 Klassen-Dashboard (Fokus, Liste, Seitenpanel, Matrix, leer), D4 Lektionen
