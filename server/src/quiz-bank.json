@@ -1,0 +1,951 @@
+[
+  {
+    "lesson_id": "select-basics",
+    "title": "Erste Abfrage mit SELECT",
+    "questions": [
+      {
+        "question": "Was macht SELECT * FROM books?",
+        "options": [
+          "Löscht alle Zeilen",
+          "Zeigt alle Spalten aller Bücher",
+          "Erstellt eine neue Tabelle",
+          "Filtert nach Büchern"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie heißt die Tabelle, in der die Verlage gespeichert sind?",
+        "options": [
+          "books",
+          "loans",
+          "publishers",
+          "authors"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Abfrage zeigt nur die Spalte title aus books?",
+        "options": [
+          "SELECT * FROM books;",
+          "SELECT title FROM books;",
+          "SELECT books.title;",
+          "FROM books SELECT title;"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20,
+        "code": "SELECT ??? FROM books;"
+      },
+      {
+        "question": "Was bedeutet NULL in einer Tabelle?",
+        "options": [
+          "Der Wert ist 0",
+          "Der Wert ist leer / unbekannt",
+          "Der Wert ist gesperrt",
+          "Die Spalte existiert nicht"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Tabellen hat die Schulbibliothek-Datenbank?",
+        "options": [
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Bücher sind in der Tabelle books gespeichert?",
+        "options": [
+          "25",
+          "28",
+          "30",
+          "32"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Klausel gibt an, aus welcher Tabelle Daten gelesen werden?",
+        "options": [
+          "SELECT",
+          "WHERE",
+          "FROM",
+          "ORDER BY"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was zeigt diese Abfrage?",
+        "options": [
+          "Alle Bücher mit Klasse",
+          "Namen und Klasse aller Ausleihen",
+          "Nur Schüler der Q1",
+          "Alle Spalten der loans-Tabelle"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20,
+        "code": "SELECT student, class FROM loans;"
+      }
+    ]
+  },
+  {
+    "lesson_id": "select-columns",
+    "title": "Spalten auswählen und umbenennen",
+    "questions": [
+      {
+        "question": "Was bewirkt AS in einer Abfrage?",
+        "options": [
+          "Filtert Zeilen",
+          "Benennt eine Spalte im Ergebnis um",
+          "Verbindet zwei Tabellen",
+          "Sortiert das Ergebnis"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was ergibt SELECT DISTINCT genre FROM books?",
+        "options": [
+          "Alle Bücher mit Genre",
+          "Jedes Genre genau einmal",
+          "Das häufigste Genre",
+          "Die Anzahl der Genres"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele verschiedene Genres gibt es?",
+        "options": [
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Abfrage zeigt den Preis mit 10 % Rabatt als rabattpreis?",
+        "options": [
+          "price - 0.1",
+          "price / 0.9",
+          "ROUND(price * 0.9, 2)",
+          "price * 10"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20,
+        "code": "SELECT title, ??? AS rabattpreis FROM books;"
+      },
+      {
+        "question": "Womit hängt man in SQL zwei Texte aneinander?",
+        "options": [
+          "+",
+          "&",
+          "||",
+          "CONCAT"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was liefert 2026 - year AS jahre_alt für das Buch \"Refactoring\" (Jahr 2018)?",
+        "options": [
+          "2018",
+          "2026",
+          "8",
+          "2026-2018"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was zeigt SELECT DISTINCT class FROM loans?",
+        "options": [
+          "Alle 40 Ausleihen",
+          "Alle Bücher je Klasse",
+          "Jeden Klassennamen einmal",
+          "Die Klasse mit den meisten Ausleihen"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Welches Schlüsselwort entfernt doppelte Zeilen?",
+        "options": [
+          "UNIQUE",
+          "DISTINCT",
+          "FILTER",
+          "ONLY"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      }
+    ]
+  },
+  {
+    "lesson_id": "where-filters",
+    "title": "Mit WHERE filtern",
+    "questions": [
+      {
+        "question": "Welche Abfrage findet alle Krimis?",
+        "options": [
+          "title = 'Krimi'",
+          "genre = 'Krimi'",
+          "kind = 'Krimi'",
+          "type = 'Krimi'"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20,
+        "code": "SELECT title FROM books WHERE ???;"
+      },
+      {
+        "question": "Wie viele Bücher haben weniger als 200 Seiten?",
+        "options": [
+          "5",
+          "6",
+          "7",
+          "8"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was prüft WHERE price IS NULL?",
+        "options": [
+          "Preis ist 0",
+          "Preis ist leer / unbekannt",
+          "Preis ist negativ",
+          "Preis fehlt im Schema"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Bedingung findet Bücher zwischen 10 und 15 Euro (Grenzen inklusive)?",
+        "options": [
+          "price > 10 AND price < 15",
+          "price >= 10 OR price <= 15",
+          "price BETWEEN 10 AND 15",
+          "price IN (10, 15)"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Ausleihen sind noch nicht zurückgegeben?",
+        "options": [
+          "5",
+          "7",
+          "8",
+          "10"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was bedeutet % in einem LIKE-Muster?",
+        "options": [
+          "Genau ein Zeichen",
+          "Beliebig viele Zeichen",
+          "Ein Leerzeichen",
+          "Ein Sonderzeichen"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Welches Zeichen steht in LIKE für genau ein Zeichen?",
+        "options": [
+          "%",
+          "*",
+          "_",
+          "?"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Abfrage findet alle Bücher ab 2020?",
+        "options": [
+          "year = 2020",
+          "year > 2020",
+          "year >= 2020",
+          "year AFTER 2020"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20,
+        "code": "SELECT title, year FROM books WHERE ???;"
+      }
+    ]
+  },
+  {
+    "lesson_id": "order-limit",
+    "title": "Ergebnisse sortieren",
+    "questions": [
+      {
+        "question": "Was macht ORDER BY year DESC?",
+        "options": [
+          "Sortiert aufsteigend nach Jahr",
+          "Sortiert absteigend nach Jahr",
+          "Filtert nach Jahr",
+          "Zählt nach Jahr"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie lautet die Standard-Sortierrichtung wenn DESC fehlt?",
+        "options": [
+          "DESC",
+          "ASC",
+          "RAND",
+          "NONE"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was ist das Erscheinungsjahr des ältesten Buches?",
+        "options": [
+          "1998",
+          "1999",
+          "2001",
+          "2005"
+        ],
+        "correct_idx": 0,
+        "time_limit": 20
+      },
+      {
+        "question": "Welches Schlüsselwort begrenzt die Anzahl der Ergebniszeilen?",
+        "options": [
+          "TOP",
+          "LIMIT",
+          "MAX",
+          "RESTRICT"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was macht LIMIT 5 OFFSET 5?",
+        "options": [
+          "Zeigt die ersten 5 Zeilen",
+          "Zeigt die Zeilen 6 bis 10",
+          "Überspringt die ersten 5 und zeigt alle weiteren",
+          "Zeigt maximal 10 Zeilen"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "In welcher Reihenfolge stehen die Klauseln?",
+        "options": [
+          "FROM, WHERE, SELECT, ORDER BY",
+          "SELECT, FROM, ORDER BY, WHERE",
+          "SELECT, FROM, WHERE, ORDER BY",
+          "WHERE, SELECT, FROM, ORDER BY"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Abfrage zeigt die 3 teuersten Bücher?",
+        "options": [
+          "ORDER BY price ASC",
+          "WHERE price > 40",
+          "ORDER BY price DESC",
+          "HAVING price > 40"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20,
+        "code": "SELECT title, price FROM books\n??? \nLIMIT 3;"
+      },
+      {
+        "question": "Wie viele Bücher sind nach 2020 erschienen?",
+        "options": [
+          "8",
+          "9",
+          "10",
+          "11"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      }
+    ]
+  },
+  {
+    "lesson_id": "aggregates",
+    "title": "Zählen und zusammenfassen",
+    "questions": [
+      {
+        "question": "Was gibt COUNT(*) zurück?",
+        "options": [
+          "Den Maximalwert",
+          "Die Anzahl aller Zeilen",
+          "Die Summe einer Spalte",
+          "Den Durchschnitt"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Bücher haben einen Preis eingetragen?",
+        "options": [
+          "26",
+          "27",
+          "28",
+          "30"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was unterscheidet COUNT(price) von COUNT(*)?",
+        "options": [
+          "Nichts, sie sind identisch",
+          "COUNT(price) überspringt leere Felder",
+          "COUNT(*) ist schneller",
+          "COUNT(price) zählt doppelte Werte doppelt"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Funktion berechnet den Durchschnitt?",
+        "options": [
+          "SUM",
+          "MAX",
+          "AVG",
+          "MEAN"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele verschiedene Autoren gibt es?",
+        "options": [
+          "12",
+          "13",
+          "15",
+          "17"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was gibt MAX(price) für alle Bücher zurück?",
+        "options": [
+          "39.9",
+          "49.9",
+          "54.0",
+          "44.9"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Womit filtert man, bevor man zusammenfasst?",
+        "options": [
+          "HAVING",
+          "GROUP BY",
+          "WHERE",
+          "ORDER BY"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Ausleihen gab es im Herbst 2025 (September bis November)?",
+        "options": [
+          "16",
+          "18",
+          "20",
+          "22"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      }
+    ]
+  },
+  {
+    "lesson_id": "group-by",
+    "title": "Gruppieren mit GROUP BY",
+    "questions": [
+      {
+        "question": "Was bewirkt GROUP BY genre in einer Abfrage?",
+        "options": [
+          "Filtert nach Genre",
+          "Fasst Zeilen mit gleichem Genre zusammen",
+          "Sortiert nach Genre",
+          "Zählt alle Genres"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Bücher hat das Genre \"Informatik\"?",
+        "options": [
+          "8",
+          "9",
+          "10",
+          "11"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was filtert HAVING im Unterschied zu WHERE?",
+        "options": [
+          "WHERE filtert nach dem Gruppieren, HAVING davor",
+          "HAVING filtert Gruppen nach dem Aggregieren, WHERE filtert Zeilen davor",
+          "Beides ist identisch",
+          "HAVING kann kein COUNT verwenden"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "In welcher Reihenfolge stehen diese Klauseln?",
+        "options": [
+          "SELECT, GROUP BY, FROM, HAVING",
+          "SELECT, FROM, GROUP BY, HAVING",
+          "FROM, SELECT, HAVING, GROUP BY",
+          "SELECT, HAVING, FROM, GROUP BY"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Genres haben mindestens 5 Bücher?",
+        "options": [
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was macht CASE WHEN pages < 200 THEN ... END?",
+        "options": [
+          "Filtert Bücher",
+          "Ordnet jeder Zeile eine Kategorie zu",
+          "Erzeugt neue Tabellen",
+          "Gruppiert nach Seitenanzahl"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Klasse hat die meisten Ausleihen?",
+        "options": [
+          "10a",
+          "10b",
+          "Q1",
+          "Q2"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was darf in WHERE nicht stehen, aber in HAVING schon?",
+        "options": [
+          "Spaltennamen",
+          "Aggregatfunktionen wie COUNT(*)",
+          "Vergleichsoperatoren",
+          "Text in Anführungszeichen"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      }
+    ]
+  },
+  {
+    "lesson_id": "joins",
+    "title": "Tabellen verbinden mit JOIN",
+    "questions": [
+      {
+        "question": "Was steht nach ON bei einem JOIN?",
+        "options": [
+          "Der Tabellenname",
+          "Eine Filterbedingung",
+          "Welche Spalten zusammengehören",
+          "Eine Sortierspalte"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was fehlt in dieser Abfrage?",
+        "options": [
+          "WHERE b.id = p.id",
+          "ON b.publisher_id = p.id",
+          "USING (id)",
+          "GROUP BY p.name"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20,
+        "code": "SELECT b.title, p.name\nFROM books b\nJOIN publishers p;"
+      },
+      {
+        "question": "Wie viele Bücher wurden bisher mindestens einmal ausgeliehen?",
+        "options": [
+          "18",
+          "19",
+          "21",
+          "23"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was gibt LEFT JOIN im Vergleich zu JOIN zusätzlich zurück?",
+        "options": [
+          "Nur Zeilen mit Partner",
+          "Alle Zeilen der rechten Tabelle",
+          "Alle Zeilen der linken Tabelle, auch ohne Partner",
+          "Nur doppelte Zeilen"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Bücher wurden noch nie ausgeliehen?",
+        "options": [
+          "7",
+          "8",
+          "9",
+          "10"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Womit ersetzt man NULL-Werte nach einem LEFT JOIN?",
+        "options": [
+          "IFNULL",
+          "REPLACE",
+          "COALESCE",
+          "NULLIF"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie nennt man einen JOIN einer Tabelle mit sich selbst?",
+        "options": [
+          "Inner Join",
+          "Self-Join",
+          "Cross Join",
+          "Natural Join"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Welches Buch wurde am häufigsten ausgeliehen?",
+        "options": [
+          "Clean Code",
+          "Nachtzug nach Riga",
+          "Das Netz der Lügen",
+          "Pixelherz 2"
+        ],
+        "correct_idx": 3,
+        "time_limit": 20,
+        "code": "SELECT b.title, COUNT(*) AS n\nFROM loans l\nJOIN books b ON l.book_id = b.id\nGROUP BY b.title ORDER BY n DESC LIMIT 1;"
+      }
+    ]
+  },
+  {
+    "lesson_id": "subqueries",
+    "title": "Unterabfragen",
+    "questions": [
+      {
+        "question": "Wo steht eine Unterabfrage?",
+        "options": [
+          "Immer nach FROM",
+          "Immer in der SELECT-Liste",
+          "In Klammern innerhalb der äußeren Abfrage",
+          "In eckigen Klammern"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Abfrage findet Bücher, die teurer als der Durchschnitt sind?",
+        "options": [
+          "AVG(price)",
+          "(SELECT AVG(price) FROM books)",
+          "MAX(price)",
+          "(SELECT MAX(price) FROM books)"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20,
+        "code": "SELECT title, price FROM books\nWHERE price > ???;"
+      },
+      {
+        "question": "Wie viele Bücher sind teurer als der Durchschnittspreis?",
+        "options": [
+          "8",
+          "9",
+          "10",
+          "11"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Wann nutzt man IN statt = bei einer Unterabfrage?",
+        "options": [
+          "Immer",
+          "Wenn die Unterabfrage mehrere Werte liefert",
+          "Wenn die Unterabfrage schneller sein soll",
+          "Wenn man Texte vergleicht"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was prüft EXISTS(…)?",
+        "options": [
+          "Den genauen Wert",
+          "Ob mindestens eine Zeile existiert",
+          "Ob die Spalte NULL ist",
+          "Die Anzahl der Zeilen"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was macht UNION im Vergleich zu UNION ALL?",
+        "options": [
+          "UNION behält Duplikate, UNION ALL entfernt sie",
+          "UNION entfernt Duplikate, UNION ALL behält sie",
+          "Beides ist identisch",
+          "UNION sortiert, UNION ALL nicht"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie viele Bücher wurden noch nie ausgeliehen (mit NOT IN gelöst)?",
+        "options": [
+          "7",
+          "8",
+          "9",
+          "10"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Wo kann eine Unterabfrage stehen?",
+        "options": [
+          "Nur in WHERE",
+          "In WHERE, FROM und der SELECT-Liste",
+          "Nur in FROM",
+          "Nur in GROUP BY"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      }
+    ]
+  },
+  {
+    "lesson_id": "ddl",
+    "title": "Eigene Datenbank entwerfen",
+    "questions": [
+      {
+        "question": "Welches Schlüsselwort legt eine neue Tabelle an?",
+        "options": [
+          "NEW TABLE",
+          "ADD TABLE",
+          "CREATE TABLE",
+          "INSERT TABLE"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was macht ein Primärschlüssel?",
+        "options": [
+          "Erlaubt doppelte Werte",
+          "Macht jede Zeile eindeutig identifizierbar",
+          "Verweist auf eine andere Tabelle",
+          "Verhindert leere Felder"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was bedeutet NOT NULL bei einer Spalte?",
+        "options": [
+          "Die Spalte muss leer sein",
+          "Die Spalte darf keinen Wert haben",
+          "Die Spalte darf nicht leer sein",
+          "Die Spalte ist ein Primärschlüssel"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Welches Schlüsselwort verweist auf den Primärschlüssel einer anderen Tabelle?",
+        "options": [
+          "FOREIGN KEY",
+          "REFERENCES",
+          "LINK TO",
+          "RELATES TO"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was macht UPDATE ohne WHERE?",
+        "options": [
+          "Fehler",
+          "Aktualisiert nur die erste Zeile",
+          "Aktualisiert alle Zeilen",
+          "Löscht die Tabelle"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Mit welchem Befehl löscht man eine ganze Tabelle?",
+        "options": [
+          "DELETE TABLE",
+          "REMOVE TABLE",
+          "DROP TABLE",
+          "CLEAR TABLE"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Was verhindert UNIQUE bei einer Spalte?",
+        "options": [
+          "Leere Felder",
+          "Doppelte Werte",
+          "Negative Zahlen",
+          "Zu langen Text"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wie fügt man eine neue Spalte zu einer bestehenden Tabelle hinzu?",
+        "options": [
+          "CREATE COLUMN",
+          "ADD COLUMN",
+          "ALTER TABLE … ADD COLUMN",
+          "UPDATE TABLE … ADD"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      }
+    ]
+  },
+  {
+    "lesson_id": "project",
+    "title": "Projekt: Eigene Datenanalyse",
+    "questions": [
+      {
+        "question": "Welche Tabellen hat die Projekt-Datenbank?",
+        "options": [
+          "books, loans, publishers",
+          "traffic, servers, releases",
+          "users, orders, products",
+          "events, logs, metrics"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was speichert die Tabelle traffic?",
+        "options": [
+          "SQL-Abfragen",
+          "Stündliche Messungen mit Nutzern und Antwortzeit",
+          "Server-Konfigurationen",
+          "Software-Versionen"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was ist der typische Analyse-Ablauf in SQL?",
+        "options": [
+          "Erst gruppieren, dann filtern, dann anzeigen",
+          "Erst FROM/WHERE, dann GROUP BY/HAVING, dann SELECT",
+          "Erst SELECT, dann FROM, dann filtern",
+          "Die Reihenfolge ist beliebig"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche Aggregatfunktion berechnet den Mittelwert?",
+        "options": [
+          "SUM",
+          "COUNT",
+          "AVG",
+          "MED"
+        ],
+        "correct_idx": 2,
+        "time_limit": 20
+      },
+      {
+        "question": "Wozu dient SUBSTR(ts, 1, 7) bei einem Zeitstempel?",
+        "options": [
+          "Extrahiert den Tag",
+          "Extrahiert Jahr und Monat (YYYY-MM)",
+          "Extrahiert die Uhrzeit",
+          "Kürzt den Zeitstempel auf 7 Zeichen"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Was ist eine mögliche Ursache für stark gestiegene Antwortzeiten?",
+        "options": [
+          "Mehr Nutzer allein reichen aus",
+          "Ein Software-Update mit ineffizientem Code",
+          "Mehr Festplattenplatz",
+          "Eine neue Datenbank-Migration"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Welche SQL-Technik hilft, erst zu gruppieren und dann über Gruppen zu rechnen?",
+        "options": [
+          "HAVING",
+          "Unterabfrage hinter FROM",
+          "JOIN",
+          "ORDER BY"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      },
+      {
+        "question": "Wofür steht max_users in der servers-Tabelle?",
+        "options": [
+          "Maximale Anzahl registrierter Nutzer",
+          "Maximale gleichzeitige Nutzer, die der Server aushält",
+          "Maximale Datenbankverbindungen",
+          "Maximale Anfragen pro Stunde"
+        ],
+        "correct_idx": 1,
+        "time_limit": 20
+      }
+    ]
+  }
+]
