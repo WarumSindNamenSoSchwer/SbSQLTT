@@ -405,12 +405,22 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
         status = 'noch_nicht_begonnen'
       }
 
+      // Aktueller Schritt: erster offener Schritt (sonst letzter erledigter), Versuche dort, letzte Aktivitaet
+      const open = steps.filter(s => s.done === 0).sort((a, b) => a.step - b.step)
+      const current = stuckStep ?? open[0] ?? null
+      const lastActive = (db.prepare(
+        'SELECT MAX(updated_at) AS t FROM progress WHERE user_id = ? AND lesson_id = ?'
+      ).get(student.id, focusLessonId) as { t: number | null }).t
+
       return {
         user_id: student.id,
         display_name: student.display_name,
         status,
         steps_done: doneSteps,
         steps_total: totalSteps,
+        current_step: current ? current.step : null,
+        attempts: current ? current.attempts : 0,
+        last_active: lastActive ?? null,
       }
     })
 

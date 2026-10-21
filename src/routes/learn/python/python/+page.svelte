@@ -105,7 +105,7 @@
 			cur += 1;
 		} else {
 			finished = true;
-			saveProgress(PYTHON_LESSON.id, { done: true });
+			saveProgress(PYTHON_LESSON.id, { done: true, of: PYTHON_STEPS.length });
 		}
 	}
 

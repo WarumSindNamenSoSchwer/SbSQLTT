@@ -283,14 +283,47 @@ export function apiTeacherNewCode(id: number): Promise<{ ok: true; join_code: st
   return request('POST', `/teacher/classes/${id}/code`);
 }
 
-/** GET /api/teacher/classes/:id/dashboard */
-export function apiTeacherDashboard(id: number): Promise<{ students: DashboardStudent[]; focus_lesson: string | null; updated_at: number }> {
-  return request('GET', `/teacher/classes/${id}/dashboard`);
+/** GET /api/teacher/classes/:id/dashboard (Server-Antwort auf UI-Modell abgebildet) */
+export async function apiTeacherDashboard(id: number): Promise<{ students: DashboardStudent[]; focus_lesson: string | null; updated_at: number }> {
+  const STATUS: Record<string, DashboardStudent['status']> = {
+    fertig: 'done', dran: 'in_progress', haengt_fest: 'stuck', noch_nicht_begonnen: 'not_started', kein_fokus: 'not_started',
+  };
+  const res = await request<{ focus_lesson: string | null; students: Array<{
+    user_id: number; display_name: string; status: string;
+    steps_done?: number; steps_total?: number; attempts?: number; last_active?: number | null;
+  }> }>('GET', `/teacher/classes/${id}/dashboard`);
+  return {
+    focus_lesson: res.focus_lesson,
+    updated_at: Math.floor(Date.now() / 1000),
+    students: res.students.map((s) => ({
+      user_id: s.user_id,
+      display_name: s.display_name,
+      status: STATUS[s.status] ?? 'not_started',
+      // step = Anzahl erledigter Übungen, total_steps = Übungen der Fokus-Lektion
+      step: s.steps_total ? (s.steps_done ?? 0) : null,
+      total_steps: s.steps_total ?? null,
+      attempts: s.attempts ?? 0,
+      last_active: s.last_active ?? null,
+    })),
+  };
 }
 
-/** GET /api/teacher/classes/:id/matrix */
-export function apiTeacherMatrix(id: number): Promise<{ rows: MatrixRow[]; lesson_ids: string[] }> {
-  return request('GET', `/teacher/classes/${id}/matrix`);
+/** GET /api/teacher/classes/:id/matrix (Server-Antwort auf Zeilen abgebildet) */
+export async function apiTeacherMatrix(id: number): Promise<{ rows: MatrixRow[]; lesson_ids: string[] }> {
+  const CELL: Record<string, MatrixRow['cells'][number]['status']> = {
+    fertig: 'done', begonnen: 'started', haengt_fest: 'stuck', nicht_begonnen: 'open',
+  };
+  const res = await request<{ students: Array<{ id: number; display_name: string }>; lesson_ids?: string[]; matrix: Record<string, Record<string, string>> }>(
+    'GET', `/teacher/classes/${id}/matrix`);
+  const ids = res.lesson_ids ?? [];
+  return {
+    lesson_ids: ids,
+    rows: res.students.map((s) => {
+      const cells = ids.map((lid) => ({ status: CELL[res.matrix[lid]?.[s.id] ?? ''] ?? 'open' }));
+      const done = cells.filter((c) => c.status === 'done').length;
+      return { user_id: s.id, display_name: s.display_name, cells, progress: `${done} / ${ids.length}` };
+    }),
+  };
 }
 
 /** GET /api/teacher/classes/:id/students */
@@ -313,11 +346,13 @@ export function apiTeacherRemoveStudent(classId: number, userId: number): Promis
 }
 
 /** GET /api/teacher/classes/:id/students/:uid/last-attempt */
-export function apiTeacherLastAttempt(
+export async function apiTeacherLastAttempt(
   classId: number,
   userId: number,
 ): Promise<{ last_attempt: LastAttempt | null }> {
-  return request('GET', `/teacher/classes/${classId}/students/${userId}/last-attempt`);
+  const res = await request<{ last_attempts: LastAttempt[] }>('GET', `/teacher/classes/${classId}/students/${userId}/last-attempt`);
+  // Server liefert neueste zuerst
+  return { last_attempt: res.last_attempts?.[0] ?? null };
 }
 
 /** PUT /api/teacher/classes/:id/lessons */

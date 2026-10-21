@@ -92,26 +92,41 @@ export function clearProgress() {
 	}
 }
 
+/** Indizes der Übungsschritte einer Lektion (Python-Checkliste: alle Schritte 0..of-1). */
+export function exerciseIndices(lessonId: string, of?: number): number[] {
+	const l = LESSONS[lessonId];
+	if (l) return l.steps.flatMap((s, i) => (s.kind === 'exercise' ? [i] : []));
+	return Array.from({ length: of ?? 0 }, (_, i) => i);
+}
+
 /**
- * Lokalen Fortschritt mit Server-Daten zusammenfuehren (nach Login / initSession).
- * Regel: done gewinnt, sonst hoehere Schritt-Zahl.
+ * Lokalen Fortschritt mit Server-Daten zusammenführen (nach Login / initSession).
+ * Server: je Übungsschritt eine Zeile. Lektion fertig, wenn alle Übungen erledigt;
+ * sonst Position = erste offene Übung. Regel: fertig gewinnt, sonst höhere Position.
  */
-export function mergeServerProgress(serverProgress: { lesson_id: string; step: number; done: boolean }[]): void {
+export function mergeServerProgress(serverProgress: { lesson_id: string; step: number; done: boolean | number }[]): void {
 	try {
 		const local = loadProgress();
+		const byLesson = new Map<string, Set<number>>();
 		for (const row of serverProgress) {
-			const lid = row.lesson_id;
-			const local_ = local[lid];
-			if (row.done) {
-				// Server sagt fertig -> lokal auch fertig setzen
-				local[lid] = { ...local_, done: true };
-			} else {
-				// Schritt-Zahl: hoeherer Wert gewinnt (0-basiert vom Server -> +1 fuer step-in-progress)
-				const serverStep = row.step + 1;
-				const localStep = local_?.step ?? 0;
-				if (serverStep > localStep) {
-					local[lid] = { ...local_, step: serverStep };
-				}
+			if (!byLesson.has(row.lesson_id)) byLesson.set(row.lesson_id, new Set());
+			if (row.done) byLesson.get(row.lesson_id)!.add(row.step);
+		}
+		for (const [lid, doneSet] of byLesson) {
+			const cur = local[lid] ?? {};
+			if (cur.done) continue;
+			if (!(lid in LESSONS)) {
+				// Checklisten-Lektion (Python) wird nur als Ganzes gemeldet
+				if (doneSet.size > 0) local[lid] = { ...cur, done: true };
+				continue;
+			}
+			const idx = exerciseIndices(lid);
+			const firstOpen = idx.find((i) => !doneSet.has(i));
+			if (firstOpen === undefined && idx.length) {
+				local[lid] = { ...cur, done: true };
+			} else if (firstOpen !== undefined && firstOpen > 0) {
+				const pos = firstOpen + 1; // 1-basiert wie saveProgress({ step })
+				if (pos > (cur.step ?? 0)) local[lid] = { ...cur, step: pos, of: LESSONS[lid].steps.length };
 			}
 		}
 		localStorage.setItem(KEY, JSON.stringify(local));
@@ -146,10 +161,12 @@ async function _flushSyncToServer() {
 		const nowTs = Math.floor(Date.now() / 1000);
 
 		for (const [lesson_id, p] of _pendingSync.entries()) {
-			if (p.done) {
-				items.push({ lesson_id, step: 0, done: true, attempts: 0, updated_at: nowTs });
-			} else if (p.step !== undefined) {
-				items.push({ lesson_id, step: p.step - 1, done: false, attempts: 0, updated_at: nowTs });
+			// Nur Lektionen ohne Übungs-Sync (Python-Checkliste): alle Schritte als erledigt melden.
+			// SQL-Lektionen melden ihre Übungen einzeln über syncExerciseStep; eine zusätzliche
+			// Positionszeile würde dort Übungszeilen überschreiben.
+			if (p.done && !(lesson_id in LESSONS)) {
+				const n = p.of ?? 1;
+				for (let s = 0; s < n; s++) items.push({ lesson_id, step: s, done: true, attempts: 0, updated_at: nowTs });
 			}
 		}
 

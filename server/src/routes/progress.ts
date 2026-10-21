@@ -74,9 +74,10 @@ const progressRoutes: FastifyPluginAsync<ProgressPluginOptions> = async (fastify
       INSERT INTO progress (user_id, lesson_id, step, done, attempts, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id, lesson_id, step) DO UPDATE SET
-        done     = CASE WHEN excluded.updated_at > updated_at THEN excluded.done     ELSE done     END,
-        attempts = CASE WHEN excluded.updated_at > updated_at THEN excluded.attempts ELSE attempts END,
-        updated_at = CASE WHEN excluded.updated_at > updated_at THEN excluded.updated_at ELSE updated_at END
+        -- erledigt bleibt erledigt (erneutes Ueben setzt eine geloeste Uebung nicht zurueck)
+        done     = MAX(done, excluded.done),
+        attempts = CASE WHEN excluded.updated_at >= updated_at THEN MAX(attempts, excluded.attempts) ELSE attempts END,
+        updated_at = MAX(updated_at, excluded.updated_at)
     `)
 
     const upsertAttempt = db.prepare(`

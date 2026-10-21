@@ -217,8 +217,8 @@
 					<div class="table-header">
 						<span>NAME</span>
 						<span>STATUS</span>
-						<span>SCHRITT</span>
-						<span>FEHLVERSUCHE</span>
+						<span>GELÖST</span>
+						<span>VERSUCHE</span>
 						<span>ZULETZT AKTIV</span>
 					</div>
 					{#each sortedStudents as s (s.user_id)}
@@ -242,7 +242,7 @@
 									<span class="badge neutral">○ Nicht begonnen</span>
 								{/if}
 							</span>
-							<span class="mono dim">{s.step !== null ? `${s.step + 1} / ${s.total_steps ?? '?'}` : '–'}</span>
+							<span class="mono dim">{s.step !== null ? `${s.step} / ${s.total_steps}` : '–'}</span>
 							<span class="mono dim">{s.attempts > 0 ? s.attempts : '–'}</span>
 							<span class="dim">{relTime(s.last_active)}</span>
 						</button>
@@ -302,7 +302,7 @@
 								<span class="badge neutral">○ Nicht begonnen</span>
 							{/if}
 							{#if selectedStudent.step !== null}
-								<span class="panel-step-info">Schritt {selectedStudent.step + 1} von {selectedStudent.total_steps ?? '?'} · {selectedStudent.attempts} Fehlversuche</span>
+								<span class="panel-step-info">Übung {Math.min(selectedStudent.step + 1, selectedStudent.total_steps ?? 0)} von {selectedStudent.total_steps} · {selectedStudent.attempts} Versuche</span>
 							{/if}
 						</div>
 					</div>

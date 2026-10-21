@@ -18,7 +18,7 @@ import {
   type RegisterStudentBody,
   type RegisterTeacherBody,
 } from './api.js';
-import { loadProgress, clearProgress, mergeServerProgress } from './lessons.js';
+import { loadProgress, clearProgress, mergeServerProgress, exerciseIndices } from './lessons.js';
 
 // ---------------------------------------------------------------------------
 // Reaktiver Zustand
@@ -131,35 +131,16 @@ async function _downloadAndMergeProgress(): Promise<void> {
 async function _uploadLocalProgress(): Promise<void> {
   try {
     const local = loadProgress();
+    const now = Math.floor(Date.now() / 1000);
+    // Vertrag: je Übungsschritt (Index in lesson.steps) eine Zeile.
+    // Fertige Lektion: alle Übungen erledigt. Begonnene: Übungen vor der aktuellen Position erledigt.
     const items = Object.entries(local).flatMap(([lesson_id, p]) => {
-      const entries = [];
-      if (p.done) {
-        // Wenn done, mindestens step 0 mit done=true hochladen
-        entries.push({
-          lesson_id,
-          step: 0,
-          done: true,
-          attempts: 0,
-          updated_at: Math.floor(Date.now() / 1000),
-        });
-      } else if (p.step !== undefined) {
-        for (let s = 0; s < (p.step ?? 0); s++) {
-          entries.push({
-            lesson_id,
-            step: s,
-            done: true,
-            attempts: 0,
-            updated_at: Math.floor(Date.now() / 1000),
-          });
-        }
-      }
-      return entries;
+      const idx = exerciseIndices(lesson_id, p.of);
+      const upto = p.done ? Infinity : (p.step ?? 1) - 1;
+      return idx.filter((i) => i < upto).map((step) => ({ lesson_id, step, done: true, attempts: 0, updated_at: now }));
     });
-
-    if (items.length > 0) {
-      await apiPutProgress(items);
-    }
+    if (items.length > 0) await apiPutProgress(items);
   } catch {
-    // Fehlschlag ignorieren, kein showstopper
+    // Fehlschlag ignorieren, kein Showstopper
   }
 }

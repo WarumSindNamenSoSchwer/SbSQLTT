@@ -13,7 +13,7 @@ export default defineConfig({
 				changeOrigin: true,
 			},
 			'/api': {
-				target: 'http://localhost:3005',
+				target: `http://localhost:${process.env.API_PORT ?? '3005'}`,
 				changeOrigin: true,
 			},
 		},
