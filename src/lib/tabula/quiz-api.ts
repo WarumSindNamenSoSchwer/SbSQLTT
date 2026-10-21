@@ -86,25 +86,56 @@ export type QuizResult = {
     correct: number;
     total: number;
   }[];
+  /** Auswertung je Frage (Anteil richtig, ohne Namen) */
+  question_stats?: QuizQuestionStat[];
+};
+
+export type QuizQuestionStat = {
+  question_id: number;
+  question: string;
+  correct_idx: number;
+  answer_counts: number[];
+  correct_ratio: number;
+  answer_count: number;
+  avg_ms: number | null;
+};
+
+/** Frage im Server-Format */
+type ServerQuestion = {
+  id: number;
+  position: number;
+  question: string;
+  code?: string | null;
+  options: string[];
+  correct_idx: number;
+  time_limit: number;
 };
 
 // ---------------------------------------------------------------------------
 // REST-Endpunkte (Lehrkraft)
 // ---------------------------------------------------------------------------
 
-/** Alle eigenen Fragensaetze laden */
-export function apiQuizList(): Promise<{ quizzes: QuizSet[] }> {
-  return request('GET', '/teacher/quizzes');
+/** Alle eigenen Fragesätze laden (Server liefert ein Array) */
+export async function apiQuizList(): Promise<{ quizzes: QuizSet[] }> {
+  const rows = await request<QuizSet[]>('GET', '/teacher/quizzes');
+  return { quizzes: rows };
+}
+
+/** Server-Frage (correct_idx) → UI-Frage (correct_index, points) */
+function toUiQuestion(q: ServerQuestion): QuizQuestion {
+  return { id: q.id, position: q.position, question: q.question, code: q.code ?? null, options: q.options, correct_index: q.correct_idx, time_limit: q.time_limit, points: 1000 };
 }
 
 /** Fragensatz laden (inkl. Fragen) */
-export function apiQuizGet(id: number): Promise<{ quiz: QuizSetDetail }> {
-  return request('GET', `/teacher/quizzes/${id}`);
+export async function apiQuizGet(id: number): Promise<{ quiz: QuizSetDetail }> {
+  const s = await request<{ id: number; title: string; created_at: number; questions: ServerQuestion[] }>('GET', `/teacher/quizzes/${id}`);
+  return { quiz: { id: s.id, title: s.title, created_at: s.created_at, questions: s.questions.map(toUiQuestion) } };
 }
 
-/** Neuen Fragensatz erstellen */
-export function apiQuizCreate(title: string): Promise<{ quiz: { id: number; title: string } }> {
-  return request('POST', '/teacher/quizzes', { title });
+/** Neuen (leeren) Fragensatz erstellen */
+export async function apiQuizCreate(title: string): Promise<{ quiz: { id: number; title: string } }> {
+  const r = await request<{ id: number }>('POST', '/teacher/quizzes', { title });
+  return { quiz: { id: r.id, title } };
 }
 
 /** Fragensatz umbenennen */
@@ -117,21 +148,34 @@ export function apiQuizDelete(id: number): Promise<{ ok: true }> {
   return request('DELETE', `/teacher/quizzes/${id}`);
 }
 
-/** Frage hinzufuegen */
-export function apiQuizAddQuestion(
+/** UI-Frage → Server-Format (correct_idx; Punkte vergibt der Server nach Zeit, max. 1000) */
+function toServerQuestion(q: Partial<Omit<QuizQuestion, 'id' | 'position'>>) {
+  const out: Record<string, unknown> = {};
+  if (q.question !== undefined) out.question = q.question;
+  if (q.code !== undefined) out.code = q.code ?? undefined;
+  if (q.options !== undefined) out.options = q.options;
+  if (q.correct_index !== undefined) out.correct_idx = q.correct_index;
+  if (q.time_limit !== undefined) out.time_limit = q.time_limit;
+  return out;
+}
+
+/** Frage hinzufügen */
+export async function apiQuizAddQuestion(
   quizId: number,
   q: Omit<QuizQuestion, 'id' | 'position'>,
 ): Promise<{ question: QuizQuestion }> {
-  return request('POST', `/teacher/quizzes/${quizId}/questions`, q);
+  const r = await request<{ question: ServerQuestion }>('POST', `/teacher/quizzes/${quizId}/questions`, toServerQuestion(q));
+  return { question: toUiQuestion(r.question) };
 }
 
 /** Frage aktualisieren */
-export function apiQuizUpdateQuestion(
+export async function apiQuizUpdateQuestion(
   quizId: number,
   questionId: number,
   q: Partial<Omit<QuizQuestion, 'id' | 'position'>>,
 ): Promise<{ question: QuizQuestion }> {
-  return request('PATCH', `/teacher/quizzes/${quizId}/questions/${questionId}`, q);
+  const r = await request<{ question: ServerQuestion }>('PATCH', `/teacher/quizzes/${quizId}/questions/${questionId}`, toServerQuestion(q));
+  return { question: toUiQuestion(r.question) };
 }
 
 /** Frage loeschen */
@@ -140,11 +184,12 @@ export function apiQuizDeleteQuestion(quizId: number, questionId: number): Promi
 }
 
 /** Sitzung starten (eigener Fragensatz) */
-export function apiQuizStart(
+export async function apiQuizStart(
   quizId: number,
   opts?: { class_id?: number },
 ): Promise<QuizSession> {
-  return request('POST', '/teacher/quiz-sessions', { quiz_id: quizId, ...opts });
+  const r = await request<{ id: number; pin: string }>('POST', '/teacher/quiz-sessions', { quiz_id: quizId, ...opts });
+  return { session_id: r.id, pin: r.pin };
 }
 
 // ---------------------------------------------------------------------------
@@ -163,21 +208,35 @@ export function apiQuizBankList(): Promise<QuizBankEntry[]> {
 }
 
 /** Auto-Quiz aus Bank starten */
-export function apiQuizStartFromBank(
+export async function apiQuizStartFromBank(
   lessonId: string,
   opts?: { class_id?: number },
 ): Promise<QuizSession> {
-  return request('POST', '/teacher/quiz-sessions', { bank_lesson_id: lessonId, ...opts });
+  const r = await request<{ id: number; pin: string }>('POST', '/teacher/quiz-sessions', { bank_lesson_id: lessonId, ...opts });
+  return { session_id: r.id, pin: r.pin };
 }
 
 /** Sitzung beenden */
 export function apiQuizEnd(sessionId: number): Promise<{ ok: true }> {
-  return request('DELETE', `/teacher/quiz-sessions/${sessionId}`);
+  return request('POST', `/teacher/quiz-sessions/${sessionId}/end`, {});
 }
 
-/** Ergebnisse einer Sitzung laden */
-export function apiQuizResults(sessionId: number): Promise<{ result: QuizResult }> {
-  return request('GET', `/teacher/quiz-sessions/${sessionId}/results`);
+/** Ergebnisse einer Sitzung laden (Server: /result) */
+export async function apiQuizResults(sessionId: number): Promise<{ result: QuizResult }> {
+  const r = await request<{
+    id: number; title: string; ended_at: number | null; question_total: number;
+    participants: { display_name: string; total_points: number; correct: number }[];
+    question_stats: QuizQuestionStat[];
+  }>('GET', `/teacher/quiz-sessions/${sessionId}/result`);
+  return {
+    result: {
+      session_id: r.id,
+      quiz_title: r.title,
+      ended_at: r.ended_at ?? Math.floor(Date.now() / 1000),
+      participants: r.participants.map((p) => ({ display_name: p.display_name, total_points: p.total_points, correct: p.correct, total: r.question_total })),
+      question_stats: r.question_stats,
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------

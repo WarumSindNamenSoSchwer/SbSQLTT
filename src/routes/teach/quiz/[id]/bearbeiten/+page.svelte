@@ -197,7 +197,7 @@
 										</span>
 									{/each}
 								</div>
-								<div class="q-meta">{q.time_limit}s · {q.points} Pkt.</div>
+								<div class="q-meta">{q.time_limit} s</div>
 							</div>
 							<div class="q-actions">
 								<button class="btn-ghost sm" onclick={() => openEdit(q)} disabled={busy}>Bearbeiten</button>
@@ -252,10 +252,7 @@
 								<label for="fq-time" class="field-label">Zeit (Sek.)</label>
 								<input id="fq-time" type="number" class="field-input" min="5" max="120" bind:value={fTimeLimit} />
 							</div>
-							<div class="field">
-								<label for="fq-points" class="field-label">Punkte</label>
-								<input id="fq-points" type="number" class="field-input" min="1" max="1000" bind:value={fPoints} />
-							</div>
+							<p class="field-label" style="align-self:end;margin:0 0 10px">Punkte: bis zu 1000, je schneller die richtige Antwort, desto mehr.</p>
 						</div>
 
 						<div class="btn-row">

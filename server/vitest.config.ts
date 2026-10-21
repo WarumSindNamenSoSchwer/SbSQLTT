@@ -1,6 +1,11 @@
 import { defineConfig } from 'vitest/config'
+import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
+  resolve: {
+    // Vertragstest importiert die echten Frontend-Clients (src/lib/tabula/api.ts, quiz-api.ts)
+    alias: { $lib: fileURLToPath(new URL('../src/lib', import.meta.url)) },
+  },
   test: {
     globals: true,
     environment: 'node',

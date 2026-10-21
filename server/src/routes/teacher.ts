@@ -535,6 +535,24 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
   })
 
   // -------------------------------------------------------------------------
+  // GET /api/teacher/classes/:id/lessons - Lektionseinstellungen lesen (D4)
+  // -------------------------------------------------------------------------
+  fastify.get('/classes/:id/lessons', async (req, reply) => {
+    const session = await requireTeacher(db, req, reply)
+    if (!session) return
+    const classId = Number((req.params as { id: string }).id)
+    if (!Number.isInteger(classId) || classId <= 0) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
+    const cls = requireOwnClass(db, session.user_id, classId, reply)
+    if (!cls) return
+    const rows = db.prepare(
+      'SELECT lesson_id, unlocked, sort_order, is_focus FROM lesson_settings WHERE class_id = ? ORDER BY sort_order'
+    ).all(classId) as { lesson_id: string; unlocked: number; sort_order: number; is_focus: number }[]
+    return reply.send({
+      lessons: rows.map((r) => ({ lesson_id: r.lesson_id, unlocked: r.unlocked === 1, sort_order: r.sort_order, is_focus: r.is_focus === 1 })),
+    })
+  })
+
+  // -------------------------------------------------------------------------
   // PUT /api/teacher/classes/:id/lessons - Lektionseinstellungen setzen
   // -------------------------------------------------------------------------
   fastify.put('/classes/:id/lessons', async (req, reply) => {
