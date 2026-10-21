@@ -51,7 +51,8 @@ Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geände
 
 ## K7 E-Mails
 - Nur Systemmails: Passwort zurücksetzen (Link 1 Stunde gültig, einmalig nutzbar), Bestätigung der E-Mail-Adresse von Lehrkräften.
-- Versand über den Mailserver von Hetzner (Absender kontakt@tabulasql.de). Keine Newsletter, keine Werbung.
+- Versand über den Mailserver von Hetzner (Absender noreply@tabulasql.de, Port 587 mit STARTTLS). Keine Newsletter, keine Werbung.
+- **Offen:** Bestätigung der E-Mail-Adresse von Lehrkräften ist noch nicht gebaut, die Datenschutzerklärung nennt sie aber. Vor dem Start bauen oder den Satz streichen.
 
 ## K8 Löschung
 - Konto jederzeit selbst löschbar (Einstellungen), Löschung sofort mit allen Fortschritts- und Quizdaten.
@@ -76,14 +77,17 @@ Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geände
 - Bei Selbst-Hosting (Docker an der Schule) ist allein die Schule verantwortlich, Daten erreichen uns nicht.
 
 ## Prüfpunkte vor dem Start der Konten (Freigabe-Checkliste)
-- [ ] K1/K2: Formularfelder und Datenbankschema entsprechen genau der Liste.
-- [ ] K3: Argon2id-Parameter im Code, Test „Passwort taucht in keinem Log auf“.
-- [ ] K4: Lehrkraft A sieht keine Schüler aus Klasse von Lehrkraft B (Test).
-- [ ] K5: Löschjob 24 h nach Quiz-Ende (Test mit Zeitreise).
-- [ ] K6: Ein Cookie, Attribute geprüft im Browser.
-- [ ] K8: Konto löschen entfernt alle Zeilen (Test), Inaktivitätsjob, Backup-Rotation 7 Tage.
-- [ ] K10: Keine IP in Datenbank (Test).
-- [ ] Danach `ACCOUNTS_LIVE = true` in `privacy.ts`.
+Stand 21.10.2026. Belege sind Tests in `server/tests/` (ausführen: `cd server && npm test`) oder Prüfungen auf dem Server.
+- [x] K1/K2: Formularfelder und Datenbankschema entsprechen genau der Liste. Beleg: `migrations/0001_users.sql` (keine Spalten für Geburtsdatum, Geschlecht, IP), Tests „K1/K2: Registrierung und Schema“ (Pflichtfelder, Lehrkraft ohne E-Mail abgelehnt).
+- [x] K3: Argon2id-Parameter im Code, Test „Passwort taucht in keinem Log auf“. Beleg: `k3-password.test.ts` (Parameter, Bindung an Konto und Tag), `log-audit.test.ts` (kompletter Durchlauf: kein Passwort, Token, Abfragetext, Name, E-Mail, IP im Log), `change-password.test.ts`.
+- [x] K4: Lehrkraft A sieht keine Schüler aus Klasse von Lehrkraft B (Test). Beleg: `teacher.test.ts` „Isolation: Lehrkraft A vs B“ (Klasse, Schüler, Dashboard, Matrix, letzte Abfrage, Passwort-Reset, Erledigt-Markieren: jeweils 404).
+- [x] K5: Löschjob 24 h nach Quiz-Ende (Test mit Zeitreise). Beleg: `quiz.test.ts` „K5: 24h Loeschjob“ (nach 24 h nur Aggregat ohne Namen, vorher nichts gelöscht).
+- [ ] K6: Ein Cookie, Attribute geprüft im Browser. Automatisch belegt durch „K6: Cookie-Attribute“ (HttpOnly, Secure, SameSite=Lax, 30 Tage, Löschen beim Abmelden). **Offen:** Sichtprüfung im echten Browser nach dem Deploy (Entwicklerwerkzeuge, Anwendung, Cookies).
+- [ ] K8: Konto löschen entfernt alle Zeilen (Test), Inaktivitätsjob, Backup-Rotation 7 Tage. Belegt: „K8: Konto loeschen entfernt alle Zeilen“, „K8: Klasse loeschen“, „K8: Schueler aus Klasse entfernen“, Quiz-Daten, Inaktivitätsjob (`jobs.test.ts`). **Offen:** Backup (`server/scripts/backup.sh`) auf dem Server einrichten (age-Schlüssel, täglicher Timer, Wiederherstellung einmal testen).
+- [x] K10: Keine IP in Datenbank (Test). Beleg: „K10: Keine IP in Datenbank“ (users, sessions, classes, Quiz-Tabellen), `log-audit.test.ts`.
+- [x] Betrieb geprüft (21.10.2026): API-Image baut auf dem Server, läuft als Nutzer 10001 mit schreibgeschütztem Dateisystem, Datenbank im Volume, Healthcheck grün. Noch nicht an Caddy angeschlossen.
+- [ ] Danach `ACCOUNTS_LIVE` einschalten (Build-Variable `VITE_ACCOUNTS_LIVE=1`, siehe `src/lib/tabula/flags.ts`) und in Caddy `handle /api/*` auf `api:3000` aktivieren.
+- [ ] Rechtliche Restfragen unten mit Fachanwalt geklärt.
 
 ## Rechtliche Restfragen (vor Start mit Fachanwalt klären)
 - Rechtsgrundlage Art. 6 Abs. 1 lit. b DSGVO für Konten Minderjähriger: Wirksamkeit des Nutzungsvertrags bei unter 18-Jährigen (BGB), alternativ Einwilligung mit Art. 8 DSGVO (Altersgrenze 16 in Deutschland).
