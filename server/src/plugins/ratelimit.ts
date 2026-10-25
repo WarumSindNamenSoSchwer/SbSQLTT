@@ -43,6 +43,13 @@ export class RateLimiter {
     return true
   }
 
+  /** Aktueller Zählerstand ohne zu zählen (0 wenn kein aktives Fenster). */
+  peek(key: string, now: number = Date.now()): number {
+    const bucket = this.buckets.get(key)
+    if (!bucket || now >= bucket.resetAt) return 0
+    return bucket.count
+  }
+
   /** Loescht abgelaufene Eintraege */
   private cleanup(now: number): void {
     for (const [key, bucket] of this.buckets) {

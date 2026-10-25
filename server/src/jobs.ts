@@ -31,6 +31,7 @@ export function runCleanupJob(db: Db, now?: number): { sessions: number; resets:
   const sessions = deleteExpiredSessions(db, now)
   const resets = (db.prepare('DELETE FROM password_resets WHERE expires_at <= ?').run(nowTs)).changes
   db.prepare('DELETE FROM email_verifications WHERE expires_at <= ?').run(nowTs)
+  db.prepare('DELETE FROM student_reset_codes WHERE expires_at <= ?').run(nowTs)
   return { sessions, resets }
 }
 
@@ -46,16 +47,18 @@ export async function runInactivityReminderJob(ctx: JobContext, now?: number): P
   const reminderThreshold = nowTs - (INACTIVITY_LIMIT_S - REMINDER_WINDOW_S)
   const deleteThreshold = nowTs - INACTIVITY_LIMIT_S
 
+  // Inaktive Schüler und Lehrkräfte erinnern: nur Lehrkräfte haben eine E-Mail-Adresse
   const candidates = ctx.db.prepare(`
-    SELECT id, username, email, last_login_at
+    SELECT id, display_name, email, last_login_at
     FROM users
-    WHERE email IS NOT NULL
+    WHERE role = 'teacher'
+      AND email IS NOT NULL
       AND last_login_at IS NOT NULL
       AND last_login_at <= ?
       AND last_login_at > ?
   `).all(reminderThreshold, deleteThreshold) as {
     id: number
-    username: string
+    display_name: string
     email: string
     last_login_at: number
   }[]
@@ -68,16 +71,16 @@ export async function runInactivityReminderJob(ctx: JobContext, now?: number): P
     try {
       await ctx.mail.send({
         to: user.email,
-        subject: 'Dein Tabula-Konto wird bald geloescht',
+        subject: 'Ihr Tabula-Konto wird bald gelöscht',
         text: [
-          `Hallo ${user.username},`,
+          `Hallo ${user.display_name},`,
           '',
-          `dein Tabula-Konto wurde seit mehr als 11 Monaten nicht mehr genutzt.`,
-          `Falls du dich nicht wieder anmeldest, wird es am ${deletionDate} automatisch geloescht.`,
+          'Ihr Lehrkraft-Konto bei Tabula wurde seit mehr als 11 Monaten nicht genutzt.',
+          `Wenn Sie sich nicht wieder anmelden, wird es am ${deletionDate} automatisch gelöscht, zusammen mit Ihren Klassen und den Daten Ihrer Schüler.`,
           '',
-          `Jetzt anmelden: ${ctx.siteUrl}`,
+          `Jetzt anmelden: ${ctx.siteUrl}/login`,
           '',
-          'Tabula SQL-Trainer',
+          'Tabula SQL-Trainer · https://www.tabulasql.de',
         ].join('\n'),
       })
       sent++
@@ -97,10 +100,19 @@ export function runInactivityDeletionJob(db: Db, now?: number): number {
   const nowTs = Math.floor((now ?? Date.now()) / 1000)
   const threshold = nowTs - INACTIVITY_LIMIT_S
 
-  const result = db.prepare(`
-    DELETE FROM users
-    WHERE last_login_at IS NOT NULL AND last_login_at <= ?
-  `).run(threshold)
+  const result = db.transaction(() => {
+    // Schüler aus Klassen inaktiver Lehrkräfte zuerst (sonst blieben sie ohne Klasse zurück)
+    db.prepare(`
+      DELETE FROM users WHERE role = 'student' AND id IN (
+        SELECT m.user_id FROM memberships m JOIN classes c ON c.id = m.class_id
+        JOIN users t ON t.id = c.teacher_id
+        WHERE t.last_login_at IS NOT NULL AND t.last_login_at <= ?)
+    `).run(threshold)
+    return db.prepare(`
+      DELETE FROM users
+      WHERE last_login_at IS NOT NULL AND last_login_at <= ?
+    `).run(threshold)
+  })()
 
   return result.changes
 }

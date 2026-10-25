@@ -15,7 +15,7 @@ import authRoutes from './routes/auth.js'
 import emailVerifyRoutes from './routes/email-verify.js'
 import passwordRoutes from './routes/password.js'
 import progressRoutes from './routes/progress.js'
-import classesRoutes from './routes/classes.js'
+import classLoginRoutes from './routes/class-login.js'
 import teacherRoutes from './routes/teacher.js'
 import studentClassesRoutes from './routes/student-classes.js'
 import quizRoutes from './routes/quiz.js'
@@ -46,7 +46,12 @@ export async function buildApp(cfg: AppConfig) {
         paths: [
           'req.body.password',
           'req.body.current_password',
+          'req.body.new_password',
           'req.body.token',
+          'req.body.key',
+          'req.body.old_key',
+          'req.body.new_key',
+          'req.body.reset_code',
           'req.headers.authorization',
           'req.headers.cookie',
         ],
@@ -128,9 +133,9 @@ export async function buildApp(cfg: AppConfig) {
 
     // Fortschritt unter /api/progress (GET, PUT)
     await api.register(progressRoutes, { db: cfg.db })
-    // Klassen-Beitritt: POST /api/classes/join
-    // Schueler-Klassen: GET /api/classes/mine
-    await api.register(classesRoutes, { db: cfg.db })
+    // Klassen-Login der Schüler (K1): /api/class-login/*, /api/student/*
+    await api.register(classLoginRoutes, { db: cfg.db })
+    // Schüler-Klasse mit Fokus und Lektionen: GET /api/classes/mine
     await api.register(async (classApi) => {
       await classApi.register(studentClassesRoutes, { db: cfg.db })
     }, { prefix: '/classes' })

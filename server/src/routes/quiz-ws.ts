@@ -11,8 +11,8 @@
  *   Lehrkraft: { type: "teacher_join", room_id: number }
  *              Auth: Cookie tabula_session beim Upgrade-Request
  *   Schueler:  { type: "student_join", pin: string }
- *              Auth: Cookie tabula_session (Pflicht, kein Gast-Beitritt)
- *              display_name kommt aus dem Konto, Feld im Join entfaellt.
+ *              Auth: Cookie tabula_session aus dem Klassen-Login (Pflicht, kein Gast-Beitritt).
+ *              Der Server kennt keine Namen (K5). Teilnehmer heißen beim Server nur nach ihrer Nummer.
  *
  * NACHRICHTEN LEHRKRAFT -> SERVER
  *   { type: "next_question" }         Naechste Frage zeigen
@@ -20,20 +20,23 @@
  *   { type: "end_quiz" }              Sitzung beenden
  *
  * NACHRICHTEN SERVER -> CLIENT (alle)
- *   { type: "lobby_state", participants: string[], count: number,
- *           expected?: number }       expected = Anzahl Klassenmitglieder (nur bei Klassensitzung)
+ *   { type: "lobby_state", count: number, expected?: number }
+ * NUR AN DIE LEHRKRAFT
+ *   { type: "lobby_state", ..., participants: {user_id:number, enc_name:string|null}[] }
+ *   { type: "leaderboard", rankings: {rank:number, user_id:number, enc_name:string|null, points:number}[] }
+ *           Die Namen entschlüsselt der Browser der Lehrkraft.
  *   { type: "question_start", question_index: number, question_total: number, question_id: number,
  *           question: string, code?: string, options: string[], time_limit: number,
  *           started_at: number }
  *   { type: "answer_progress", count: number, total: number }
  *   { type: "reveal", correct_idx: number, answer_counts: number[],
  *           correct_ratio: number }
- *   { type: "leaderboard", rankings: {rank:number, display_name:string, points:number}[] }
  *   { type: "quiz_ended" }
  *   { type: "error", code: string, message: string }
  *
  * NACHRICHTEN SERVER -> SCHUELER (nur an diesen Schueler)
  *   { type: "answer_ack", correct: boolean, points: number, total_points: number }
+ *   { type: "my_rank", rank: number, of: number, points: number }   statt der Rangliste
  *   { type: "answer_too_late" }
  *   { type: "answer_duplicate" }
  *
@@ -117,7 +120,6 @@ type IncomingMsg = TeacherJoin | StudentJoin | NextQuestion | RevealMsg | EndQui
 interface ParticipantConn {
   ws: WsSocket
   participantId: number
-  displayName: string
 }
 
 interface RoomState {
@@ -322,23 +324,34 @@ function handleEndQuiz(db: Db, roomId: number, room: RoomState): void {
   broadcastToRoom(room, { type: 'quiz_ended' })
 }
 
+/**
+ * Rangliste: Die Lehrkraft bekommt Nummern und verschlüsselte Namen (ihr Browser entschlüsselt),
+ * jeder Schüler nur seinen eigenen Platz. Der Server kennt keine Namen (K5).
+ */
 function sendLeaderboard(db: Db, roomId: number, room: RoomState): void {
-  const rankings = db.prepare(
-    `SELECT display_name, total_points
-     FROM quiz_participants
-     WHERE room_id = ?
-     ORDER BY total_points DESC
-     LIMIT 20`
-  ).all(roomId) as { display_name: string; total_points: number }[]
+  const all = db.prepare(
+    `SELECT p.id, p.user_id, p.total_points, u.enc_name
+     FROM quiz_participants p LEFT JOIN users u ON u.id = p.user_id
+     WHERE p.room_id = ?
+     ORDER BY p.total_points DESC, p.joined_at`
+  ).all(roomId) as { id: number; user_id: number | null; total_points: number; enc_name: string | null }[]
 
-  broadcastToRoom(room, {
-    type: 'leaderboard',
-    rankings: rankings.map((r, i) => ({
-      rank: i + 1,
-      display_name: r.display_name,
-      points: r.total_points,
-    })),
-  })
+  if (room.teacherWs) {
+    sendJson(room.teacherWs, {
+      type: 'leaderboard',
+      rankings: all.slice(0, 20).map((r, i) => ({
+        rank: i + 1,
+        user_id: r.user_id,
+        enc_name: r.enc_name,
+        points: r.total_points,
+      })),
+    })
+  }
+  const rankOf = new Map(all.map((r, i) => [r.id, { rank: i + 1, points: r.total_points }]))
+  for (const [ws, conn] of room.students) {
+    const me = rankOf.get(conn.participantId)
+    if (me) sendJson(ws, { type: 'my_rank', rank: me.rank, of: all.length, points: me.points })
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -497,12 +510,12 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
         return
       }
 
-      // display_name aus dem Konto holen
+      // Nur Schüler aus dem Klassen-Login (Lehrkräfte steuern das Quiz, sie spielen nicht mit)
       const userRow = db.prepare(
-        'SELECT id, display_name FROM users WHERE id = ?'
-      ).get(session.user_id) as { id: number; display_name: string } | undefined
+        "SELECT id FROM users WHERE id = ? AND role = 'student'"
+      ).get(session.user_id) as { id: number } | undefined
       if (!userRow) {
-        sendJson(socket, { type: 'error', code: 'login_required', message: 'Konto nicht gefunden.' })
+        sendJson(socket, { type: 'error', code: 'login_required', message: 'Bitte melde dich mit deiner Klasse an.' })
         socket.close(1008, 'Login required.')
         return
       }
@@ -530,27 +543,23 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
         return
       }
 
-      // Schritt 3: Klassen-Check (falls Sitzung eine Klasse hat)
-      if (roomRow.class_id !== null) {
-        const membership = db.prepare(
-          'SELECT id FROM memberships WHERE class_id = ? AND user_id = ?'
-        ).get(roomRow.class_id, session.user_id) as { id: number } | undefined
-
-        if (!membership) {
-          sendJson(socket, { type: 'error', code: 'not_in_class', message: 'Du bist kein Mitglied dieser Klasse.' })
-          return
-        }
+      // Schritt 3: Klassen-Check (Quiz gibt es nur innerhalb einer Klasse, K5)
+      const membership = roomRow.class_id === null ? undefined : db.prepare(
+        'SELECT id FROM memberships WHERE class_id = ? AND user_id = ?'
+      ).get(roomRow.class_id, session.user_id) as { id: number } | undefined
+      if (!membership) {
+        sendJson(socket, { type: 'error', code: 'not_in_class', message: 'Dieses Quiz ist für eine andere Klasse.' })
+        return
       }
 
-      const displayName = userRow.display_name
-
-      // Schritt 4: Teilnehmer anlegen (UNIQUE-Verletzung = doppelter Beitritt)
+      // Schritt 4: Teilnehmer anlegen (UNIQUE-Verletzung = doppelter Beitritt).
+      // display_name ist nur ein Platzhalter ohne Bezug zum Namen (Pflichtspalte, eindeutig je Raum).
       let participantId: number
       try {
         const result = db.prepare(
           `INSERT INTO quiz_participants (room_id, user_id, display_name)
            VALUES (?, ?, ?)`
-        ).run(roomRow.id, session.user_id, displayName)
+        ).run(roomRow.id, session.user_id, `#${session.user_id}`)
         participantId = result.lastInsertRowid as number
       } catch {
         // Doppelter Beitritt (user_id UNIQUE je Raum) -> als Wiederverbindung behandeln
@@ -568,10 +577,10 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       roomId = roomRow.id
       isTeacher = false
       const room = getOrCreateRoom(roomId)
-      participantWsEntry = { ws: socket, participantId, displayName }
+      participantWsEntry = { ws: socket, participantId }
       room.students.set(socket, participantWsEntry)
 
-      sendJson(socket, { type: 'joined', role: 'student', display_name: displayName, participant_id: participantId })
+      sendJson(socket, { type: 'joined', role: 'student', participant_id: participantId })
       sendLobbyState(db, roomId, room)
     }
 
@@ -667,14 +676,14 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
  */
 function sendLobbyState(db: Db, roomId: number, room: RoomState): void {
   const participants = db.prepare(
-    'SELECT display_name FROM quiz_participants WHERE room_id = ? ORDER BY joined_at'
-  ).all(roomId) as { display_name: string }[]
+    `SELECT p.user_id, u.enc_name FROM quiz_participants p LEFT JOIN users u ON u.id = p.user_id
+     WHERE p.room_id = ? ORDER BY p.joined_at`
+  ).all(roomId) as { user_id: number | null; enc_name: string | null }[]
 
   const roomRow = db.prepare('SELECT class_id FROM quiz_rooms WHERE id = ?').get(roomId) as { class_id: number | null } | undefined
 
   const lobbyMsg: Record<string, unknown> = {
     type: 'lobby_state',
-    participants: participants.map(p => p.display_name),
     count: participants.length,
   }
 
@@ -685,7 +694,9 @@ function sendLobbyState(db: Db, roomId: number, room: RoomState): void {
     lobbyMsg['expected'] = memberCount
   }
 
-  broadcastToRoom(room, lobbyMsg)
+  // Schüler bekommen nur die Anzahl, die Lehrkraft zusätzlich die verschlüsselten Namen
+  for (const [ws] of room.students) sendJson(ws, lobbyMsg)
+  if (room.teacherWs) sendJson(room.teacherWs, { ...lobbyMsg, participants })
 }
 
 export default quizWsPlugin

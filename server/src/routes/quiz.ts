@@ -147,8 +147,8 @@ const startSessionSchema = z.object({
   quiz_id: z.number().int().positive().optional(),
   /** Automatischer Fragensatz aus der Bank: lesson_id */
   bank_lesson_id: z.string().min(1).max(64).optional(),
-  /** Optionaler Klassen-Bezug (K4) */
-  class_id: z.number().int().positive().optional(),
+  /** Klasse (Pflicht: Quiz nur innerhalb einer Klasse, K5) */
+  class_id: z.number().int().positive(),
 }).refine(d => d.quiz_id !== undefined || d.bank_lesson_id !== undefined, {
   message: 'quiz_id oder bank_lesson_id muss angegeben werden.',
 })
@@ -464,7 +464,7 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
       // Automatischer Fragensatz: Bank-Eintrag laden
       const bankEntry = getQuizBankEntry(bank_lesson_id)
       if (!bankEntry) {
-        return reply.code(404).send({ fehler: 'Kein Fragensatz fuer diese Lektion.' })
+        return reply.code(404).send({ fehler: 'Kein Fragensatz für diese Lektion.' })
       }
 
       // Pruefen ob fuer diese Lehrkraft bereits ein auto-Satz fuer diese Lektion existiert
@@ -505,14 +505,12 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
       effectiveQuizId = quiz.id
     }
 
-    // Optionale Klasse pruefen
-    if (class_id !== undefined) {
-      const cls = db.prepare(
-        'SELECT id FROM classes WHERE id = ? AND teacher_id = ?'
-      ).get(class_id, teacher.user_id) as { id: number } | undefined
-      if (!cls) {
-        return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
-      }
+    // Klasse prüfen (nur eigene)
+    const ownClass = db.prepare(
+      'SELECT id FROM classes WHERE id = ? AND teacher_id = ?'
+    ).get(class_id, teacher.user_id) as { id: number } | undefined
+    if (!ownClass) {
+      return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
     }
 
     // Eindeutigen PIN generieren (bis zu 10 Versuche)
@@ -528,14 +526,14 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
       }
     }
     if (!pin) {
-      return reply.code(503).send({ fehler: 'Kein PIN verfuegbar. Bitte erneut versuchen.' })
+      return reply.code(503).send({ fehler: 'Kein PIN verfügbar. Bitte erneut versuchen.' })
     }
 
-    // Sitzung anlegen (class_id kann NULL sein - Gast-Modus)
+    // Sitzung anlegen
     const roomResult = db.prepare(
       `INSERT INTO quiz_rooms (class_id, set_id, state, pin, current_q)
        VALUES (?, ?, 'lobby', ?, 0)`
-    ).run(class_id ?? null, effectiveQuizId, pin)
+    ).run(class_id, effectiveQuizId, pin)
 
     const roomId = roomResult.lastInsertRowid as number
     return reply.code(201).send({ id: roomId, pin })
@@ -564,8 +562,9 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
     }
 
     const participants = db.prepare(
-      'SELECT display_name, total_points FROM quiz_participants WHERE room_id = ? ORDER BY total_points DESC'
-    ).all(roomId) as { display_name: string; total_points: number }[]
+      `SELECT p.user_id, u.enc_name, p.total_points FROM quiz_participants p LEFT JOIN users u ON u.id = p.user_id
+       WHERE p.room_id = ? ORDER BY p.total_points DESC`
+    ).all(roomId) as { user_id: number | null; enc_name: string | null; total_points: number }[]
 
     const answerCount = (db.prepare(
       'SELECT COUNT(DISTINCT participant_id) as cnt FROM quiz_answers WHERE room_id = ? AND question_id = ?'
@@ -760,8 +759,9 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     // Rangliste (falls noch vorhanden - 24h Fenster)
     const participants = db.prepare(
-      'SELECT display_name, total_points FROM quiz_participants WHERE room_id = ? ORDER BY total_points DESC LIMIT 50'
-    ).all(roomId) as { display_name: string; total_points: number }[]
+      `SELECT p.id, p.user_id, u.enc_name, p.total_points FROM quiz_participants p LEFT JOIN users u ON u.id = p.user_id
+       WHERE p.room_id = ? ORDER BY p.total_points DESC LIMIT 50`
+    ).all(roomId) as { id: number; user_id: number | null; enc_name: string | null; total_points: number }[]
 
     // Frage-Statistiken: nach dem 24-h-Löschjob aus quiz_question_stats (ohne Namen),
     // vorher live aus den noch vorhandenen Einzelantworten berechnet.
@@ -812,14 +812,14 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
 
     const title = (db.prepare('SELECT title FROM quiz_question_sets WHERE id = ?').get(room.set_id) as { title: string } | undefined)?.title ?? ''
     // Je Schüler: Anzahl richtiger Antworten (nur solange Einzelantworten existieren)
-    const correctBy = new Map<string, number>()
+    const correctBy = new Map<number, number>()
     for (const r of db.prepare(
-      `SELECT p.display_name, SUM(CASE WHEN a.chosen_idx = qq.correct_idx THEN 1 ELSE 0 END) AS n
+      `SELECT p.id, SUM(CASE WHEN a.chosen_idx = qq.correct_idx THEN 1 ELSE 0 END) AS n
        FROM quiz_participants p
        LEFT JOIN quiz_answers a ON a.participant_id = p.id
        LEFT JOIN quiz_questions qq ON qq.id = a.question_id
        WHERE p.room_id = ? GROUP BY p.id`
-    ).all(roomId) as { display_name: string; n: number | null }[]) correctBy.set(r.display_name, r.n ?? 0)
+    ).all(roomId) as { id: number; n: number | null }[]) correctBy.set(r.id, r.n ?? 0)
     const questionTotal = (db.prepare('SELECT COUNT(*) AS n FROM quiz_questions WHERE set_id = ?').get(room.set_id) as { n: number }).n
 
     return {
@@ -828,7 +828,9 @@ const quizRoutes: FastifyPluginAsync<QuizRoutesOptions> = async (fastify, opts) 
       state: room.state,
       ended_at: room.ended_at,
       question_total: questionTotal,
-      participants: participants.map((p) => ({ ...p, correct: correctBy.get(p.display_name) ?? 0 })),
+      participants: participants.map((p) => ({
+        user_id: p.user_id, enc_name: p.enc_name, total_points: p.total_points, correct: correctBy.get(p.id) ?? 0,
+      })),
       question_stats: stats.map(s => ({
         question_id: s.question_id,
         question: s.question,

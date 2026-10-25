@@ -15,6 +15,7 @@ import type { MailSender } from '../mail.js'
 import type { RateLimiters } from '../plugins/ratelimit.js'
 import { sha256hex } from '../db.js'
 import { hashPassword } from '../password.js'
+import { createSession, SESSION_COOKIE_NAME, sessionCookieOptions } from '../session.js'
 
 const forgotSchema = z.object({
   email: z.string().email(),
@@ -49,13 +50,13 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
     const { email } = parsed.data
 
     // Rate-Limit pro E-Mail
-    if (!limits.forgot.check(email.toLowerCase())) {
+    if (!limits.forgot.check(email.trim().toLowerCase())) {
       return reply.code(429).send({ fehler: 'Zu viele Versuche. Bitte warte kurz.' })
     }
 
     const user = db.prepare(
-      'SELECT id, username, email, created_day FROM users WHERE email = ?'
-    ).get(email) as { id: number; username: string; email: string; created_day: string } | undefined
+      "SELECT id, username, display_name, email, created_day FROM users WHERE email = ? AND role = 'teacher'"
+    ).get(email.trim().toLowerCase()) as { id: number; username: string; display_name: string; email: string; created_day: string } | undefined
 
     // Immer gleiche Antwort (verhindert Benutzer-Enumeration, K7)
     if (!user) return reply.send({ ok: true })
@@ -72,23 +73,29 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
       'INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)'
     ).run(tokenHash, user.id, expiresAt)
 
-    // E-Mail versenden (Interface MailSender, vorerst In-Memory-Stub)
-    await mail.send({
-      to: user.email,
-      subject: 'Passwort zuruecksetzen - Tabula',
-      text: [
-        `Hallo ${user.username},`,
-        '',
-        'jemand hat fuer dein Konto eine Passwort-Zuruecksetzen-Anfrage gestellt.',
-        'Klicke auf den folgenden Link, um dein Passwort innerhalb einer Stunde zurueckzusetzen:',
-        '',
-        `${siteUrl}/passwort-zuruecksetzen?token=${rawToken}`,
-        '',
-        'Wenn du das nicht warst, kannst du diese E-Mail ignorieren.',
-        '',
-        'Tabula SQL-Trainer',
-      ].join('\n'),
-    })
+    // E-Mail versenden. Ein Versandfehler darf nicht verraten, dass die Adresse existiert:
+    // gleiche Antwort wie oben, Fehler nur ohne Adresse protokollieren.
+    try {
+      await mail.send({
+        to: user.email,
+        subject: 'Passwort zurücksetzen · Tabula',
+        text: [
+          `Hallo ${user.display_name},`,
+          '',
+          'für Ihr Lehrkraft-Konto bei Tabula wurde ein neues Passwort angefordert.',
+          'Mit diesem Link können Sie innerhalb einer Stunde ein neues Passwort festlegen:',
+          '',
+          `${siteUrl}/passwort-zuruecksetzen?token=${rawToken}`,
+          '',
+          'Halten Sie danach Ihren Wiederherstellungscode bereit, damit die Namen Ihrer Schüler sofort wieder lesbar sind.',
+          'Wenn Sie das nicht angefordert haben, können Sie diese E-Mail ignorieren.',
+          '',
+          'Tabula SQL-Trainer · https://www.tabulasql.de',
+        ].join('\n'),
+      })
+    } catch {
+      fastify.log.warn({ event: 'reset_mail_failed' })
+    }
 
     return reply.send({ ok: true })
   })
@@ -113,7 +120,7 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
     }
 
     const user = db.prepare(
-      'SELECT id, username, created_day FROM users WHERE id = ?'
+      "SELECT id, username, created_day FROM users WHERE id = ? AND role = 'teacher'"
     ).get(reset.user_id) as { id: number; username: string; created_day: string } | undefined
 
     if (!user) {
@@ -123,14 +130,20 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
     // Token als verbraucht markieren (einmalig, K7)
     db.prepare('UPDATE password_resets SET used = 1 WHERE token_hash = ?').run(tokenHash)
 
-    // Neuen Hash mit unveraendertem Benutzernamen (K3)
+    // Neuer Hash mit unverändertem Benutzernamen (K3). must_change_password = 1 bedeutet hier:
+    // Der private Schlüssel ist noch mit dem alten Passwort verpackt. Der Browser fragt nach dem
+    // Wiederherstellungscode (oder legt ein neues Schlüsselpaar an) und schickt das Ergebnis an /api/me/keys.
     const newHash = await hashPassword(password, user.username, user.created_day)
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, user.id)
+    db.transaction(() => {
+      db.prepare('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?').run(newHash, user.id)
+      // Alle Sitzungen beenden (Sicherheit: altes Passwort gilt nicht mehr)
+      db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id)
+    })()
 
-    // Alle Sitzungen des Nutzers loeschen (Sicherheit: alter Hash gehoert nicht mehr)
-    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id)
-
-    return reply.send({ ok: true })
+    // Direkt anmelden, damit der Schlüssel im nächsten Schritt neu gesetzt werden kann
+    const token = createSession(db, user.id)
+    reply.setCookie(SESSION_COOKIE_NAME, token, sessionCookieOptions())
+    return reply.send({ ok: true, needs_key_recovery: true })
   })
 }
 

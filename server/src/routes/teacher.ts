@@ -3,33 +3,28 @@
  *
  * Sicherheitsregeln:
  * - Nur role=teacher darf diese Endpunkte aufrufen.
- * - Eine Lehrkraft sieht und aendert nur ihre eigenen Klassen.
+ * - Eine Lehrkraft sieht und ändert nur ihre eigenen Klassen.
  *   Fremde Klassen liefern 404 (nicht 403), um Existenz nicht zu verraten (K4).
  * - Keine IP-Adressen in DB (K10).
- * - Keine Abfragetexte in Logs (K3).
+ * - Der Server kennt keine Schülernamen und keine Abfragen im Klartext (K1, K4). Er liefert
+ *   enc_name und sealed aus, der Browser der Lehrkraft entschlüsselt.
  *
- * Beitrittscode-Alphabet (join_code, 6 Zeichen):
- * Ohne verwechselbare Zeichen: kein 0/O, kein 1/I/l.
- * Erlaubt: 23456789ABCDEFGHJKLMNPQRSTUVWXYZ (32 Zeichen, ~5 Bit/Zeichen, 30 Bit gesamt).
+ * Klassencode: drei Wörter und eine Zahl, z. B. "blau-tiger-mond-42" (leicht abzutippen).
  *
- * Haengt-fest-Regel (dokumentiert):
- * Ein Schueler gilt als "haengt fest" an einem Schritt wenn:
- *   - Er >= 3 Versuche ohne Erfolg hat (done=0, attempts >= 3) ODER
- *   - Der letzte Versuch einen Fehler hatte (error_msg != '') UND
- *     der Zeitpunkt des letzten Versuchs > 5 Minuten zurueckliegt.
- * Grundlage: progress.done=0, progress.attempts >= 3 ODER
- *            last_attempt.error_msg != '' UND last_attempt.updated_at < now - 300s.
+ * Hängt-fest-Regel:
+ * Ein Schüler gilt als "hängt fest" an einem Schritt, wenn
+ *   - er >= 3 Versuche ohne Erfolg hat (done=0, attempts >= 3) ODER
+ *   - der letzte Versuch einen Fehler hatte (has_error = 1) UND länger als 5 Minuten zurückliegt.
  */
 import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { z } from 'zod'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, randomInt } from 'node:crypto'
 import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Db } from '../db.js'
+import { sha256hex } from '../db.js'
 import { validateSession, SESSION_COOKIE_NAME } from '../session.js'
-import { hashPassword } from '../password.js'
-import { todayUtc, normalizeUsername } from '../password.js'
 
 // ---------------------------------------------------------------------------
 // Lektion-Schritt-Zaehler (aus lesson-steps.json, generiert von tools/gen-lesson-steps.mjs)
@@ -45,18 +40,39 @@ function lessonExerciseSteps(lessonId: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Beitrittscode-Erzeugung
+// Klassencode: Wörter statt Zeichensalat (an der Tafel lesbar, an Schul-PCs leicht zu tippen)
 // ---------------------------------------------------------------------------
 
-/** Alphabet ohne verwechselbare Zeichen (kein 0/O, kein 1/I/l) */
-const JOIN_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
-const JOIN_CODE_LENGTH = 6
+const CODE_WORDS = [
+  'adler', 'ampel', 'anker', 'apfel', 'baum', 'berg', 'birne', 'blatt', 'blau', 'blitz', 'boot', 'brot',
+  'burg', 'dach', 'delfin', 'drache', 'eiche', 'eimer', 'elch', 'ente', 'erde', 'eule', 'falke', 'farn',
+  'feder', 'feld', 'fels', 'fisch', 'fluss', 'fuchs', 'gabel', 'garten', 'geige', 'gold', 'gras', 'hafen',
+  'hammer', 'hase', 'himmel', 'hirsch', 'honig', 'horn', 'hund', 'igel', 'insel', 'kaktus', 'kamel', 'kanu',
+  'karte', 'katze', 'kerze', 'kiwi', 'klee', 'koala', 'krone', 'kugel', 'lampe', 'linde', 'luchs', 'mantel',
+  'meer', 'melone', 'mond', 'nebel', 'nest', 'oase', 'otter', 'palme', 'panda', 'pilz', 'pirat', 'planet',
+  'rabe', 'regen', 'rose', 'sand', 'schaf', 'schiff', 'segel', 'sonne', 'spatz', 'stern', 'storch', 'tanne',
+  'tiger', 'turm', 'vogel', 'wald', 'welle', 'wiese', 'wind', 'wolf', 'wolke', 'zebra', 'zelt', 'zitrone',
+]
 
+/** Klassencode, z. B. "blau-tiger-mond-42" (etwa 26 Bit, Raten wird zusätzlich gebremst). */
 export function generateJoinCode(): string {
-  const bytes = randomBytes(JOIN_CODE_LENGTH)
-  return Array.from(bytes)
-    .map(b => JOIN_CODE_ALPHABET[b % JOIN_CODE_ALPHABET.length])
-    .join('')
+  const w = () => CODE_WORDS[randomInt(CODE_WORDS.length)]
+  return `${w()}-${w()}-${w()}-${randomInt(10, 100)}`
+}
+
+function uniqueJoinCode(db: Db): string | null {
+  for (let i = 0; i < 20; i++) {
+    const code = generateJoinCode()
+    if (!db.prepare('SELECT id FROM classes WHERE join_code = ?').get(code)) return code
+  }
+  return null
+}
+
+/** Einmal-Code für vergessene Schüler-Passwörter: 8 Zeichen ohne verwechselbare Zeichen. */
+const RESET_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
+const RESET_TTL_S = 15 * 60
+function generateResetCode(): string {
+  return Array.from({ length: 8 }, () => RESET_ALPHABET[randomInt(RESET_ALPHABET.length)]).join('')
 }
 
 // ---------------------------------------------------------------------------
@@ -136,14 +152,6 @@ const putLessonsSchema = z.object({
   })).max(50),
 })
 
-const patchStudentSchema = z.object({
-  display_name: z.string().min(1).max(64),
-})
-
-const passwordResetSchema = z.object({
-  new_password: z.string().min(8).max(128),
-})
-
 // ---------------------------------------------------------------------------
 // Plugin
 // ---------------------------------------------------------------------------
@@ -182,7 +190,7 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
               WHERE la.user_id = p.user_id
                 AND la.lesson_id = p.lesson_id
                 AND la.step = p.step
-                AND la.error_msg != ''
+                AND la.has_error = 1
                 AND la.updated_at < (unixepoch() - 300)
             )
           )
@@ -207,18 +215,12 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
       return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
     }
 
-    // Join-Code generieren (Eindeutigkeit sicherstellen)
-    let joinCode: string
-    let attempts = 0
-    do {
-      joinCode = generateJoinCode()
-      attempts++
-      if (attempts > 10) return reply.code(500).send({ fehler: 'Code-Erzeugung fehlgeschlagen.' })
-    } while (db.prepare('SELECT id FROM classes WHERE join_code = ?').get(joinCode))
+    const joinCode = uniqueJoinCode(db)
+    if (!joinCode) return reply.code(500).send({ fehler: 'Code-Erzeugung fehlgeschlagen.' })
 
     const result = db.prepare(
-      'INSERT INTO classes (teacher_id, name, join_code) VALUES (?, ?, ?)'
-    ).run(session.user_id, parsed.data.name, joinCode)
+      'INSERT INTO classes (teacher_id, name, join_code, class_salt) VALUES (?, ?, ?, ?)'
+    ).run(session.user_id, parsed.data.name, joinCode, randomBytes(16).toString('hex'))
 
     const newId = result.lastInsertRowid as number
     const cls = db.prepare('SELECT id, name, join_code, focus_lesson, archived, created_at FROM classes WHERE id = ?').get(newId)
@@ -287,21 +289,13 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const cls = requireOwnClass(db, session.user_id, classId, reply)
     if (!cls) return
 
-    // K8: Klasse loeschen - alle klassenbezogenen Daten entfernen.
-    // Durch ON DELETE CASCADE in memberships, lesson_settings, quiz_rooms werden
-    // Mitgliedschaften und Einstellungen automatisch geloescht.
-    // Fortschritt und last_attempt der Schueler muessen manuell geloescht werden
-    // (sie referenzieren nur user_id, nicht class_id).
+    // K8: Klasse löschen. Die Schüler existieren nur in dieser Klasse und werden mit allen
+    // Daten gelöscht (Fortschritt, letzte Abfrage, Sitzungen per CASCADE). Danach die Klasse
+    // selbst (cascaded: memberships, lesson_settings, quiz_rooms).
     db.transaction(() => {
-      // Schüler-IDs der Klasse holen bevor Memberships weg sind
-      const members = db.prepare('SELECT user_id FROM memberships WHERE class_id = ?').all(classId) as { user_id: number }[]
-
-      for (const m of members) {
-        db.prepare('DELETE FROM progress WHERE user_id = ?').run(m.user_id)
-        db.prepare('DELETE FROM last_attempt WHERE user_id = ?').run(m.user_id)
-      }
-
-      // Klasse loeschen (cascaded: memberships, lesson_settings, quiz_rooms)
+      db.prepare(
+        `DELETE FROM users WHERE role = 'student' AND id IN (SELECT user_id FROM memberships WHERE class_id = ?)`
+      ).run(classId)
       db.prepare('DELETE FROM classes WHERE id = ?').run(classId)
     })()
 
@@ -321,14 +315,10 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const cls = requireOwnClass(db, session.user_id, classId, reply)
     if (!cls) return
 
-    let joinCode: string
-    let attempts = 0
-    do {
-      joinCode = generateJoinCode()
-      attempts++
-      if (attempts > 10) return reply.code(500).send({ fehler: 'Code-Erzeugung fehlgeschlagen.' })
-    } while (db.prepare('SELECT id FROM classes WHERE join_code = ?').get(joinCode))
+    const joinCode = uniqueJoinCode(db)
+    if (!joinCode) return reply.code(500).send({ fehler: 'Code-Erzeugung fehlgeschlagen.' })
 
+    // Nur der Code ändert sich, das Klassen-Salz bleibt: angemeldete Schüler loggen sich mit dem neuen Code ein.
     db.prepare('UPDATE classes SET join_code = ? WHERE id = ?').run(joinCode, classId)
 
     return reply.send({ ok: true, join_code: joinCode })
@@ -356,19 +346,19 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
 
     // Schueler der Klasse
     const students = db.prepare(`
-      SELECT u.id, u.display_name
+      SELECT u.id, u.enc_name
       FROM memberships m
       JOIN users u ON u.id = m.user_id
       WHERE m.class_id = ?
-      ORDER BY u.display_name
-    `).all(classId) as { id: number; display_name: string }[]
+      ORDER BY m.joined_at
+    `).all(classId) as { id: number; enc_name: string | null }[]
 
     const nowTs = Math.floor(Date.now() / 1000)
     const stuckThresholdTs = nowTs - 300 // 5 Minuten
 
     const result = students.map(student => {
       if (!focusLessonId) {
-        return { user_id: student.id, display_name: student.display_name, status: 'kein_fokus' as const }
+        return { user_id: student.id, enc_name: student.enc_name, status: 'kein_fokus' as const }
       }
 
       // Authoritative Gesamtzahl der Uebungsschritte aus lesson-steps.json
@@ -388,9 +378,9 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
         if (s.attempts >= 3) return true
         // Pruefen ob last_attempt Fehler > 5 min zurueck
         const la = db.prepare(
-          'SELECT error_msg, updated_at FROM last_attempt WHERE user_id = ? AND lesson_id = ? AND step = ?'
-        ).get(student.id, focusLessonId, s.step) as { error_msg: string; updated_at: number } | undefined
-        return la !== undefined && la.error_msg !== '' && la.updated_at < stuckThresholdTs
+          'SELECT has_error, updated_at FROM last_attempt WHERE user_id = ? AND lesson_id = ? AND step = ?'
+        ).get(student.id, focusLessonId, s.step) as { has_error: number; updated_at: number } | undefined
+        return la !== undefined && la.has_error === 1 && la.updated_at < stuckThresholdTs
       })
 
       let status: 'fertig' | 'dran' | 'haengt_fest' | 'noch_nicht_begonnen'
@@ -414,7 +404,7 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
 
       return {
         user_id: student.id,
-        display_name: student.display_name,
+        enc_name: student.enc_name,
         status,
         steps_done: doneSteps,
         steps_total: totalSteps,
@@ -445,12 +435,12 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     if (!cls) return
 
     const students = db.prepare(`
-      SELECT u.id, u.display_name
+      SELECT u.id, u.enc_name
       FROM memberships m
       JOIN users u ON u.id = m.user_id
       WHERE m.class_id = ?
-      ORDER BY u.display_name
-    `).all(classId) as { id: number; display_name: string }[]
+      ORDER BY m.joined_at
+    `).all(classId) as { id: number; enc_name: string | null }[]
 
     const studentIds = students.map(s => s.id)
 
@@ -526,10 +516,11 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     ).get(classId, userId)
     if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
-    // Letzte Versuche (K4: nur letzte Abfrage + Fehler, kein Abfragetext ausser fuer Debugging)
+    // Letzte Versuche (K4): Abfrage und Fehlermeldung nur verschlüsselt (sealed), der Browser
+    // der Lehrkraft entschlüsselt. has_error sagt, ob der Versuch einen Fehler hatte.
     const attempts = db.prepare(
-      'SELECT lesson_id, step, query, error_msg, updated_at FROM last_attempt WHERE user_id = ? ORDER BY updated_at DESC'
-    ).all(userId) as { lesson_id: string; step: number; query: string; error_msg: string; updated_at: number }[]
+      'SELECT lesson_id, step, sealed, has_error, updated_at FROM last_attempt WHERE user_id = ? ORDER BY updated_at DESC'
+    ).all(userId) as { lesson_id: string; step: number; sealed: string; has_error: number; updated_at: number }[]
 
     return reply.send({ user_id: userId, last_attempts: attempts })
   })
@@ -613,47 +604,20 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     if (!cls) return
 
     const students = db.prepare(`
-      SELECT u.id, u.username, u.display_name, m.joined_at
+      SELECT u.id, u.enc_name, m.joined_at, u.last_login_at
       FROM memberships m
       JOIN users u ON u.id = m.user_id
       WHERE m.class_id = ?
-      ORDER BY u.display_name
-    `).all(classId) as { id: number; username: string; display_name: string; joined_at: number }[]
+      ORDER BY m.joined_at
+    `).all(classId) as { id: number; enc_name: string | null; joined_at: number; last_login_at: number | null }[]
 
     return reply.send({ students })
   })
 
   // -------------------------------------------------------------------------
-  // PATCH /api/teacher/classes/:id/students/:uid - Anzeigename umbenennen
-  // -------------------------------------------------------------------------
-  fastify.patch('/classes/:id/students/:uid', async (req, reply) => {
-    const session = await requireTeacher(db, req, reply)
-    if (!session) return
-
-    const classId = Number((req.params as { id: string; uid: string }).id)
-    const userId = Number((req.params as { id: string; uid: string }).uid)
-    if (!Number.isInteger(classId) || classId <= 0) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
-    if (!Number.isInteger(userId) || userId <= 0) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
-
-    const cls = requireOwnClass(db, session.user_id, classId, reply)
-    if (!cls) return
-
-    const member = db.prepare('SELECT id FROM memberships WHERE class_id = ? AND user_id = ?').get(classId, userId)
-    if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
-
-    const parsed = patchStudentSchema.safeParse(req.body)
-    if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
-    }
-
-    db.prepare('UPDATE users SET display_name = ? WHERE id = ?').run(parsed.data.display_name, userId)
-
-    return reply.send({ ok: true })
-  })
-
-  // -------------------------------------------------------------------------
   // DELETE /api/teacher/classes/:id/students/:uid
-  // Schueler aus Klasse entfernen + klassenbezogenen Fortschritt loeschen (K8)
+  // Schüler aus der Klasse entfernen (K8). Der Schüler existiert nur in dieser Klasse,
+  // also wird er mit allen Daten gelöscht (Fortschritt, letzte Abfrage, Sitzungen per CASCADE).
   // -------------------------------------------------------------------------
   fastify.delete('/classes/:id/students/:uid', async (req, reply) => {
     const session = await requireTeacher(db, req, reply)
@@ -670,24 +634,18 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const member = db.prepare('SELECT id FROM memberships WHERE class_id = ? AND user_id = ?').get(classId, userId)
     if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
-    // K8: Mitgliedschaft + klassenbezogener Fortschritt loeschen
-    db.transaction(() => {
-      db.prepare('DELETE FROM memberships WHERE class_id = ? AND user_id = ?').run(classId, userId)
-      // Klassenbezogenen Fortschritt loeschen (K8)
-      db.prepare('DELETE FROM progress WHERE user_id = ?').run(userId)
-      db.prepare('DELETE FROM last_attempt WHERE user_id = ?').run(userId)
-    })()
+    db.prepare("DELETE FROM users WHERE id = ? AND role = 'student'").run(userId)
 
     return reply.send({ ok: true })
   })
 
   // -------------------------------------------------------------------------
-  // POST /api/teacher/classes/:id/students/:uid/password-reset
-  // Lehrkraft setzt Einmal-Passwort fuer Schueler (K3)
-  // Neuer Hash mit gleichem Benutzernamen und Erstellungstag des Schuelers.
-  // must_change_password wird gesetzt -> Schueler muss beim naechsten Login aendern.
+  // POST /api/teacher/classes/:id/students/:uid/reset-code
+  // Einmal-Code für einen Schüler, der sein Passwort vergessen hat (K1).
+  // 15 Minuten gültig, nur als Hash gespeichert. Der Schüler legt damit selbst ein neues
+  // Passwort fest (POST /api/class-login/reset). Ein neuer Code ersetzt einen alten.
   // -------------------------------------------------------------------------
-  fastify.post('/classes/:id/students/:uid/password-reset', async (req, reply) => {
+  fastify.post('/classes/:id/students/:uid/reset-code', async (req, reply) => {
     const session = await requireTeacher(db, req, reply)
     if (!session) return
 
@@ -702,33 +660,15 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     const member = db.prepare('SELECT id FROM memberships WHERE class_id = ? AND user_id = ?').get(classId, userId)
     if (!member) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
 
-    const parsed = passwordResetSchema.safeParse(req.body)
-    if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungültige Eingabe.', details: parsed.error.flatten() })
-    }
+    const code = generateResetCode()
+    const expiresAt = Math.floor(Date.now() / 1000) + RESET_TTL_S
+    db.transaction(() => {
+      db.prepare('DELETE FROM student_reset_codes WHERE user_id = ?').run(userId)
+      db.prepare('INSERT INTO student_reset_codes (code_hash, user_id, class_id, expires_at) VALUES (?, ?, ?, ?)')
+        .run(sha256hex(code), userId, classId, expiresAt)
+    })()
 
-    // Schuelerdaten laden (Benutzername + Erstellungstag fuer K3-Hash)
-    const student = db.prepare(
-      'SELECT username, created_day, role FROM users WHERE id = ?'
-    ).get(userId) as { username: string; created_day: string; role: string } | undefined
-
-    if (!student) return reply.code(404).send({ fehler: 'Schüler nicht gefunden.' })
-    if (student.role !== 'student') {
-      return reply.code(400).send({ fehler: 'Passwort-Reset nur für Schüler möglich.' })
-    }
-
-    // K3: Hash mit demselben Benutzernamen und Tag (der Schueler bleibt als secret-Basis)
-    const newHash = await hashPassword(
-      parsed.data.new_password,
-      normalizeUsername(student.username),
-      student.created_day
-    )
-
-    db.prepare(
-      'UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?'
-    ).run(newHash, userId)
-
-    return reply.send({ ok: true })
+    return reply.send({ ok: true, code, expires_at: expiresAt })
   })
 
   // -------------------------------------------------------------------------

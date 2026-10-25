@@ -20,11 +20,13 @@ const progressItemSchema = z.object({
   updated_at: z.number().int(),
 })
 
+/** Letzte Abfrage: im Browser mit dem öffentlichen Schlüssel der Lehrkraft verschlüsselt (K4). */
 const attemptItemSchema = z.object({
   lesson_id: z.string().min(1).max(64),
   step: z.number().int().min(0),
-  query: z.string().max(10_000),
-  error_msg: z.string().max(2000),
+  /** Abfrage und Fehlermeldung verschlüsselt (Format h1.…), leer wenn keine Lehrkraft-Schlüssel vorliegen */
+  sealed: z.string().regex(/^(h1\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+)?$/).max(30_000),
+  has_error: z.boolean(),
 })
 
 const putProgressSchema = z.object({
@@ -51,7 +53,7 @@ const progressRoutes: FastifyPluginAsync<ProgressPluginOptions> = async (fastify
     ).all(session.user_id)
 
     const lastAttempts = db.prepare(
-      'SELECT lesson_id, step, query, error_msg, updated_at FROM last_attempt WHERE user_id = ?'
+      'SELECT lesson_id, step, has_error, updated_at FROM last_attempt WHERE user_id = ?'
     ).all(session.user_id)
 
     return reply.send({ progress, last_attempts: lastAttempts })
@@ -81,11 +83,11 @@ const progressRoutes: FastifyPluginAsync<ProgressPluginOptions> = async (fastify
     `)
 
     const upsertAttempt = db.prepare(`
-      INSERT INTO last_attempt (user_id, lesson_id, step, query, error_msg, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO last_attempt (user_id, lesson_id, step, query, error_msg, sealed, has_error, updated_at)
+      VALUES (?, ?, ?, '', '', ?, ?, ?)
       ON CONFLICT(user_id, lesson_id, step) DO UPDATE SET
-        query = excluded.query,
-        error_msg = excluded.error_msg,
+        sealed = excluded.sealed,
+        has_error = excluded.has_error,
         updated_at = excluded.updated_at
     `)
 
@@ -107,8 +109,8 @@ const progressRoutes: FastifyPluginAsync<ProgressPluginOptions> = async (fastify
           session.user_id,
           attempt.lesson_id,
           attempt.step,
-          attempt.query,
-          attempt.error_msg,
+          attempt.sealed,
+          attempt.has_error ? 1 : 0,
           nowTs
         )
       }
