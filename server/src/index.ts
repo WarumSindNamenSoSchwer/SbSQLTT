@@ -11,7 +11,7 @@
  */
 import { openDb } from './db.js'
 import { buildApp } from './app.js'
-import { NoopMailSender } from './mail.js'
+import { createMailSender } from './mail.js'
 import { startJobs } from './jobs.js'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -29,8 +29,8 @@ const MIGRATIONS_DIR = join(__dirname, '..', 'migrations')
 async function main() {
   const db = openDb(DB_PATH, MIGRATIONS_DIR)
 
-  // TODO: Ersetze NoopMailSender durch echte SMTP-Implementierung
-  const mail = new NoopMailSender()
+  // SMTP über noreply@, wenn /run/secrets/smtp_noreply vorhanden ist, sonst NOOP
+  const mail = createMailSender()
 
   const app = await buildApp({ db, mail, siteUrl: SITE_URL })
 
