@@ -35,13 +35,12 @@ www.tabulasql.de {
 		}
 	}
 
-	# Allgemeiner API-Reverse-Proxy (nur aktiv wenn compose.backend.yml eingebunden).
-	# Einkommentieren, sobald der api-Service laeuft:
-	# handle /api/* {
-	#     reverse_proxy api:3000 {
-	#         header_up X-Real-IP {remote_host}
-	#     }
-	# }
+	# Konten-API (compose.backend.yml), freigeschaltet am 25.10.2026.
+	# Caddy leitet WebSocket-Upgrades automatisch weiter. Der API-Server prüft Origin (CSRF)
+	# und protokolliert keine IP-Adressen (K10), deshalb kein X-Real-IP.
+	handle /api/* {
+		reverse_proxy api:3000
+	}
 
 	root * /srv/site
 	header /sql/* Cache-Control "public, max-age=31536000"
