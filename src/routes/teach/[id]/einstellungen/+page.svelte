@@ -120,7 +120,7 @@
 		<div class="danger-row">
 			<div class="setting-info">
 				<span class="setting-label">{cls?.archived ? 'Klasse wiederherstellen' : 'Klasse archivieren'}</span>
-				<span class="setting-value">{cls?.archived ? 'Klasse ist archiviert.' : 'Ausgeblendet, Daten bleiben erhalten. Jederzeit wiederherstellbar.'}</span>
+				<span class="setting-value">{cls?.archived ? 'Klasse ist archiviert.' : 'Ausgeblendet, Daten bleiben erhalten. Schüler können sich so lange nicht anmelden. Jederzeit wiederherstellbar.'}</span>
 			</div>
 			<button class="btn-secondary" onclick={handleArchive} disabled={archiveBusy}>
 				{archiveBusy ? '…' : cls?.archived ? 'Wiederherstellen' : 'Archivieren'}
@@ -129,7 +129,7 @@
 		<div class="danger-row delete-row">
 			<div class="setting-info">
 				<span class="setting-label danger-label">Klasse löschen</span>
-				<span class="setting-value">Klasse und Fortschritt in dieser Klasse werden endgültig gelöscht. Die Konten der Schüler bleiben.</span>
+				<span class="setting-value">Klasse, Schüler und ihr Fortschritt werden endgültig gelöscht.</span>
 			</div>
 			<button
 				class="btn-danger-outline"
@@ -167,7 +167,7 @@
 				<h2 class="dialog-title">Neuen Beitrittscode erzeugen?</h2>
 				<p class="dialog-body">
 					Der alte Code <strong class="mono">{cls?.join_code}</strong> wird sofort ungültig.
-					Wer bereits in der Klasse ist, bleibt drin.
+					Wer bereits in der Klasse ist, bleibt drin und meldet sich künftig mit dem neuen Code an, Name und Passwort bleiben gleich.
 				</p>
 				{#if dialogError}<div class="dialog-error">{dialogError}</div>{/if}
 				<div class="dialog-actions">

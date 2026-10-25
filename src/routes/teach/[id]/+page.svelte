@@ -240,7 +240,7 @@
 			<h2 class="empty-title">Noch niemand beigetreten</h2>
 			<p class="empty-body">Zeigen Sie diesen Code oder QR-Code. Schüler öffnen {siteHost()}/beitreten und geben den Code ein.</p>
 			<div class="empty-steps">
-				{#each [['1', 'QR-Code scannen oder Code eingeben'], ['2', 'Anmelden oder Konto erstellen'], ['3', 'Fertig. Der Schüler erscheint hier.']] as [n, t]}
+				{#each [['1', 'QR-Code scannen oder Code eingeben'], ['2', 'Name und eigenes Passwort festlegen'], ['3', 'Fertig. Der Schüler erscheint hier.']] as [n, t]}
 					<div class="empty-step">
 						<span class="step-n mono">{n}</span>
 						<span>{t}</span>
