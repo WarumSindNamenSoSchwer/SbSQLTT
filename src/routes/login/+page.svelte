@@ -606,7 +606,7 @@
 	.btn-secondary:hover { background: var(--subtle); }
 	@media print {
 		:global(body *) { visibility: hidden; }
-		.recovery-box, .recovery-box * { visibility: visible; }
+		.recovery-box { visibility: visible; }
 		.recovery-box { position: absolute; top: 40px; left: 40px; right: 40px; border: 1px solid #000; }
 	}
 

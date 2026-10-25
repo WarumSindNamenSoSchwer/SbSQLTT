@@ -59,7 +59,6 @@
 	// Zwischenstand / Rangliste
 	let myRank = $state<number | null>(null);
 	let totalParticipants = $state(0);
-	let rankings = $state<{ rank: number; display_name: string; points: number }[]>([]);
 
 	let timer: ReturnType<typeof setInterval> | null = null;
 	const pin = $derived((page.params.pin ?? '').toUpperCase());
@@ -83,7 +82,7 @@
 			if (!ACCOUNTS_LIVE) return;
 			if (session.loading) { setTimeout(check, 50); return; }
 			if (!session.user) { goto(`/login?redirect=/quiz/${pin}`); return; }
-			displayName = session.user.display_name ?? '';
+			displayName = session.displayName;
 			connect();
 		};
 		check();
@@ -145,8 +144,6 @@
 		}
 		if (msg.type === 'joined') {
 			phase = 'lobby';
-			const m = msg as { type: 'joined'; display_name?: string };
-			if (m.display_name) displayName = m.display_name;
 		}
 		if (msg.type === 'lobby_state') {
 			phase = 'lobby';
@@ -194,12 +191,12 @@
 				phase = 'reveal_wrong';
 			}
 		}
-		if (msg.type === 'leaderboard') {
-			const m = msg as { type: 'leaderboard'; rankings: { rank: number; display_name: string; points: number }[] };
-			rankings = m.rankings ?? [];
-			totalParticipants = rankings.length;
-			const me = rankings.find(r => r.display_name === displayName);
-			if (me) { myRank = me.rank; totalPoints = me.points; }
+		// Schüler bekommen keine Rangliste mit Namen, nur den eigenen Platz
+		if (msg.type === 'my_rank') {
+			const m = msg as { type: 'my_rank'; rank: number; of: number; points: number };
+			myRank = m.rank;
+			totalParticipants = m.of;
+			totalPoints = m.points;
 			phase = 'leaderboard';
 		}
 		if (msg.type === 'quiz_ended') {
@@ -216,11 +213,6 @@
 		ws?.send(JSON.stringify({ type: 'answer', question_id: qId, chosen_idx: idx }));
 	}
 
-	// Statistiken fürs Ende
-	const endCorrect = $derived(() => {
-		const me = rankings.find(r => r.display_name === displayName);
-		return me ? undefined : undefined; // aus answer_ack-Summen nicht direkt verfügbar
-	});
 </script>
 
 <svelte:head><title>Quiz · Tabula</title></svelte:head>

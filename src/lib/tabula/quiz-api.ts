@@ -6,6 +6,7 @@
  * Deutsche Fehlermeldungen aus Server-Feld "fehler".
  */
 
+import { decryptName } from './keystore.js';
 import { ApiError } from '$lib/tabula/api.js';
 
 const BASE = '/api';
@@ -84,6 +85,8 @@ export type QuizResult = {
   participants: {
     user_id: number | null;
     enc_name: string | null;
+    /** Im Browser der Lehrkraft entschlüsselt */
+    display_name: string;
     total_points: number;
     correct: number;
     total: number;
@@ -235,7 +238,10 @@ export async function apiQuizResults(sessionId: number): Promise<{ result: QuizR
       session_id: r.id,
       quiz_title: r.title,
       ended_at: r.ended_at ?? Math.floor(Date.now() / 1000),
-      participants: r.participants.map((p) => ({ user_id: p.user_id, enc_name: p.enc_name, total_points: p.total_points, correct: p.correct, total: r.question_total })),
+      participants: await Promise.all(r.participants.map(async (p, i) => ({
+        user_id: p.user_id, enc_name: p.enc_name, display_name: await decryptName(p.enc_name, i + 1),
+        total_points: p.total_points, correct: p.correct, total: r.question_total,
+      }))),
       question_stats: r.question_stats,
     },
   };

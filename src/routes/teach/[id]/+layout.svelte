@@ -42,7 +42,7 @@
 
 	/** Avatar-Initialen aus display_name */
 	const navInitials = $derived(() => {
-		const u = session.user;
+		const u = session.teacher;
 		if (!u) return '';
 		const parts = u.display_name.trim().split(/\s+/);
 		if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
@@ -51,7 +51,7 @@
 
 	/** Anzeigename (erster Vorname oder display_name) */
 	const navDisplayName = $derived(() => {
-		const u = session.user;
+		const u = session.teacher;
 		if (!u) return '';
 		// "Fr. Müller" aus name, sonst display_name kuerzen
 		if (u.name) {
@@ -208,8 +208,8 @@
 				{#if avatarMenuOpen}
 					<div class="av-menu" role="menu">
 						<div class="av-head">
-							<span class="av-display">{session.user.display_name}</span>
-							<span class="av-email">{session.user.email ?? session.user.username}</span>
+							<span class="av-display">{session.displayName}</span>
+							<span class="av-email">{session.teacher?.email ?? ''}</span>
 						</div>
 						<a role="menuitem" href="/profil" onclick={() => (avatarMenuOpen = false)} class="av-item">Profil</a>
 						<a role="menuitem" href="/teach" onclick={() => (avatarMenuOpen = false)} class="av-item">Alle Klassen</a>

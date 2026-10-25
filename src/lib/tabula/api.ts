@@ -8,6 +8,8 @@
  * - Deutsche Fehlermeldungen aus Server-Antworten (Feld „fehler")
  */
 
+import { decryptName, decryptAttempt } from './keystore.js';
+
 const BASE = '/api';
 
 export class ApiError extends Error {
@@ -273,6 +275,8 @@ export interface TeacherClass {
 export interface TeacherStudent {
   id: number;
   enc_name: string | null;
+  /** Im Browser der Lehrkraft entschlüsselt (Platzhalter „Schüler N“, wenn nicht lesbar) */
+  display_name: string;
   joined_at: number;
   last_login_at: number | null;
 }
@@ -280,6 +284,8 @@ export interface TeacherStudent {
 export interface DashboardStudent {
   user_id: number;
   enc_name: string | null;
+  /** Im Browser der Lehrkraft entschlüsselt */
+  display_name: string;
   status: 'done' | 'in_progress' | 'stuck' | 'not_started';
   /** Anzahl erledigter Uebungsschritte */
   step: number | null;
@@ -293,6 +299,8 @@ export interface DashboardStudent {
 export interface MatrixRow {
   user_id: number;
   enc_name: string | null;
+  /** Im Browser der Lehrkraft entschlüsselt */
+  display_name: string;
   cells: Array<{ status: 'done' | 'started' | 'stuck' | 'open' | 'locked' }>;
   progress: string;
 }
@@ -311,6 +319,9 @@ export interface LastAttempt {
   sealed: string;
   has_error: number;
   updated_at: number;
+  /** Im Browser der Lehrkraft entschlüsselt (leer, wenn nicht lesbar) */
+  query: string;
+  error_msg: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -359,12 +370,14 @@ export async function apiTeacherDashboard(id: number): Promise<{ students: Dashb
     user_id: number; enc_name: string | null; status: string;
     steps_done?: number; steps_total?: number; current_step?: number | null; attempts?: number; last_active?: number | null;
   }> }>('GET', `/teacher/classes/${id}/dashboard`);
+  const names = await Promise.all(res.students.map((s, i) => decryptName(s.enc_name, i + 1)));
   return {
     focus_lesson: res.focus_lesson,
     updated_at: Math.floor(Date.now() / 1000),
-    students: res.students.map((s) => ({
+    students: res.students.map((s, i) => ({
       user_id: s.user_id,
       enc_name: s.enc_name,
+      display_name: names[i],
       status: STATUS[s.status] ?? 'not_started',
       // step = Anzahl erledigter Übungen, total_steps = Übungen der Fokus-Lektion
       step: s.steps_total != null ? (s.steps_done ?? 0) : null,
@@ -395,19 +408,22 @@ export async function apiTeacherMatrix(id: number): Promise<{ rows: MatrixRow[];
   const res = await request<{ students: Array<{ id: number; enc_name: string | null }>; lesson_ids?: string[]; matrix: Record<string, Record<string, string>> }>(
     'GET', `/teacher/classes/${id}/matrix`);
   const ids = res.lesson_ids ?? [];
+  const names = await Promise.all(res.students.map((s, i) => decryptName(s.enc_name, i + 1)));
   return {
     lesson_ids: ids,
-    rows: res.students.map((s) => {
+    rows: res.students.map((s, i) => {
       const cells = ids.map((lid) => ({ status: CELL[res.matrix[lid]?.[s.id] ?? ''] ?? 'open' }));
       const done = cells.filter((c) => c.status === 'done').length;
-      return { user_id: s.id, enc_name: s.enc_name, cells, progress: `${done} / ${ids.length}` };
+      return { user_id: s.id, enc_name: s.enc_name, display_name: names[i], cells, progress: `${done} / ${ids.length}` };
     }),
   };
 }
 
-/** GET /api/teacher/classes/:id/students */
-export function apiTeacherGetStudents(id: number): Promise<{ students: TeacherStudent[] }> {
-  return request('GET', `/teacher/classes/${id}/students`);
+/** GET /api/teacher/classes/:id/students (Namen im Browser entschlüsselt) */
+export async function apiTeacherGetStudents(id: number): Promise<{ students: TeacherStudent[] }> {
+  const res = await request<{ students: Omit<TeacherStudent, 'display_name'>[] }>('GET', `/teacher/classes/${id}/students`);
+  const names = await Promise.all(res.students.map((s, i) => decryptName(s.enc_name, i + 1)));
+  return { students: res.students.map((s, i) => ({ ...s, display_name: names[i] })) };
 }
 
 /** DELETE /api/teacher/classes/:id/students/:uid */
@@ -420,9 +436,12 @@ export async function apiTeacherLastAttempt(
   classId: number,
   userId: number,
 ): Promise<{ last_attempt: LastAttempt | null }> {
-  const res = await request<{ last_attempts: LastAttempt[] }>('GET', `/teacher/classes/${classId}/students/${userId}/last-attempt`);
-  // Server liefert neueste zuerst
-  return { last_attempt: res.last_attempts?.[0] ?? null };
+  const res = await request<{ last_attempts: Omit<LastAttempt, 'query' | 'error_msg'>[] }>('GET', `/teacher/classes/${classId}/students/${userId}/last-attempt`);
+  // Server liefert neueste zuerst; Abfrage und Fehlermeldung entschlüsselt nur dieser Browser
+  const la = res.last_attempts?.[0];
+  if (!la) return { last_attempt: null };
+  const open = await decryptAttempt(la.sealed);
+  return { last_attempt: { ...la, query: open?.q ?? '', error_msg: open?.e ?? (la.has_error ? 'Fehler (nicht lesbar)' : '') } };
 }
 
 /** PUT /api/teacher/classes/:id/lessons */

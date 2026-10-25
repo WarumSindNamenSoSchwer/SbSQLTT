@@ -3,11 +3,11 @@
 	import { page } from '$app/state';
 	import {
 		apiTeacherGetStudents,
-		apiTeacherRenameStudent,
 		apiTeacherRemoveStudent,
-		apiTeacherPasswordReset,
+		apiTeacherResetCode,
 		type TeacherStudent,
 	} from '$lib/tabula/api.js';
+	import { session } from '$lib/tabula/session.svelte.js';
 
 	const ctx = getContext<{ cls: any; reload: () => void }>('teachClass');
 	let classId = $derived(Number(page.params.id));
@@ -17,34 +17,30 @@
 	let searchQuery = $state('');
 	let openMenuId = $state<number | null>(null);
 
-	// Dialogs
 	type Dialog =
-		| { type: 'rename'; student: TeacherStudent; newName: string }
 		| { type: 'remove'; student: TeacherStudent }
-		| { type: 'reset'; student: TeacherStudent; generatedPw: string; confirmed: boolean };
+		| { type: 'reset'; student: TeacherStudent; code: string | null; expires: number };
 
 	let dialog = $state<Dialog | null>(null);
 	let dialogBusy = $state(false);
 	let dialogError = $state<string | null>(null);
-	let pwCopied = $state(false);
+	let now = $state(Math.floor(Date.now() / 1000));
 
 	onMount(() => {
 		loadStudents();
 		document.addEventListener('click', closeMenuOnOutside);
-		return () => document.removeEventListener('click', closeMenuOnOutside);
+		const t = setInterval(() => (now = Math.floor(Date.now() / 1000)), 1000);
+		return () => { document.removeEventListener('click', closeMenuOnOutside); clearInterval(t); };
 	});
 
 	function closeMenuOnOutside(e: MouseEvent) {
-		if (!(e.target as Element).closest('.student-menu-wrap')) {
-			openMenuId = null;
-		}
+		if (!(e.target as Element).closest('.student-menu-wrap')) openMenuId = null;
 	}
 
 	async function loadStudents() {
 		loading = true;
 		try {
-			const res = await apiTeacherGetStudents(classId);
-			students = res.students;
+			students = (await apiTeacherGetStudents(classId)).students;
 		} catch {
 			students = [];
 		} finally {
@@ -54,22 +50,13 @@
 
 	const filteredStudents = $derived(
 		searchQuery.trim()
-			? students.filter(s =>
-				s.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				s.username.toLowerCase().includes(searchQuery.toLowerCase())
-			)
+			? students.filter((s) => s.display_name.toLowerCase().includes(searchQuery.toLowerCase()))
 			: students
 	);
 
-	function relTime(ts: number): string {
+	function fmtDate(ts: number | null): string {
 		if (!ts) return '–';
 		return new Date(ts * 1000).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' });
-	}
-
-	function openRename(s: TeacherStudent) {
-		openMenuId = null;
-		dialog = { type: 'rename', student: s, newName: s.display_name };
-		dialogError = null;
 	}
 
 	function openRemove(s: TeacherStudent) {
@@ -78,27 +65,19 @@
 		dialogError = null;
 	}
 
-	function openReset(s: TeacherStudent) {
+	async function openReset(s: TeacherStudent) {
 		openMenuId = null;
-		dialog = { type: 'reset', student: s, generatedPw: generatePassword(), confirmed: false };
+		dialog = { type: 'reset', student: s, code: null, expires: 0 };
 		dialogError = null;
-		pwCopied = false;
-	}
-
-	/** Gut lesbares Passwort ohne 0/O/1/l/I - ähnlich Beitrittscode-Alphabet */
-	function generatePassword(): string {
-		const words = ['tafel', 'kreide', 'lineal', 'heft', 'karte', 'netz', 'tisch', 'buch'];
-		const w1 = words[Math.floor(Math.random() * words.length)];
-		const w2 = words.filter(w => w !== w1)[Math.floor(Math.random() * (words.length - 1))];
-		const n = String(Math.floor(Math.random() * 90) + 10);
-		return `${w1}-${n}-${w2}`;
-	}
-
-	async function copyPw() {
-		if (dialog?.type !== 'reset') return;
-		await navigator.clipboard.writeText(dialog.generatedPw);
-		pwCopied = true;
-		setTimeout(() => (pwCopied = false), 2000);
+		dialogBusy = true;
+		try {
+			const r = await apiTeacherResetCode(classId, s.id);
+			if (dialog?.type === 'reset') dialog = { ...dialog, code: r.code, expires: r.expires_at };
+		} catch (err) {
+			dialogError = err instanceof Error ? err.message : 'Fehler.';
+		} finally {
+			dialogBusy = false;
+		}
 	}
 
 	function closeDialog() {
@@ -107,37 +86,34 @@
 		dialogBusy = false;
 	}
 
-	async function submitDialog() {
-		if (!dialog) return;
+	async function confirmRemove() {
+		if (dialog?.type !== 'remove') return;
 		dialogBusy = true;
 		dialogError = null;
-
 		try {
-			if (dialog.type === 'rename') {
-				const newName = dialog.newName.trim();
-				if (!newName) { dialogError = 'Name darf nicht leer sein.'; dialogBusy = false; return; }
-				await apiTeacherRenameStudent(classId, dialog.student.id, newName);
-				students = students.map(s => s.id === dialog!.student.id ? { ...s, display_name: newName } : s);
-				ctx?.reload();
-				closeDialog();
-			} else if (dialog.type === 'remove') {
-				await apiTeacherRemoveStudent(classId, dialog.student.id);
-				students = students.filter(s => s.id !== dialog!.student.id);
-				ctx?.reload();
-				closeDialog();
-			} else if (dialog.type === 'reset') {
-				await apiTeacherPasswordReset(classId, dialog.student.id, dialog.generatedPw);
-				closeDialog();
-			}
+			await apiTeacherRemoveStudent(classId, dialog.student.id);
+			const id = dialog.student.id;
+			students = students.filter((s) => s.id !== id);
+			ctx?.reload();
+			closeDialog();
 		} catch (err) {
 			dialogError = err instanceof Error ? err.message : 'Fehler.';
 		} finally {
 			dialogBusy = false;
 		}
 	}
+
+	const remaining = $derived(dialog?.type === 'reset' && dialog.code ? Math.max(0, dialog.expires - now) : 0);
+	const remainingText = $derived(`${Math.floor(remaining / 60)}:${String(remaining % 60).padStart(2, '0')}`);
 </script>
 
 <div class="schueler-wrap">
+	{#if session.needsKeyRecovery}
+		<div class="key-hint" role="status">
+			Die Namen sind gerade nicht lesbar. Stellen Sie im <a href="/profil">Profil</a> Ihren Schlüssel mit dem Wiederherstellungscode wieder her.
+		</div>
+	{/if}
+
 	<div class="toolbar">
 		<div class="search-field">
 			<span class="search-ico" aria-hidden="true">⌕</span>
@@ -153,23 +129,23 @@
 			{#if searchQuery.trim()}
 				<span>Keine Schüler gefunden für „{searchQuery}".</span>
 			{:else}
-				<span>Noch niemand beigetreten. Teilen Sie den Beitrittscode.</span>
+				<span>Noch niemand beigetreten. Zeigen Sie den Klassencode oder den QR-Code.</span>
 			{/if}
 		</div>
 	{:else}
 		<div class="students-table">
 			<div class="table-header">
-				<span>ANZEIGENAME</span>
-				<span>BENUTZERNAME</span>
+				<span>NAME</span>
 				<span>BEIGETRETEN</span>
-				<span>FORTSCHRITT</span>
+				<span>ZULETZT ANGEMELDET</span>
+				<span></span>
 				<span></span>
 			</div>
 			{#each filteredStudents as s (s.id)}
 				<div class="table-row">
 					<span class="row-name">{s.display_name}</span>
-					<span class="row-username mono">{s.username}</span>
-					<span class="row-joined">{relTime(s.joined_at)}</span>
+					<span class="row-joined">{fmtDate(s.joined_at)}</span>
+					<span class="row-joined">{fmtDate(s.last_login_at)}</span>
 					<span class="row-progress"></span>
 					<span class="student-menu-wrap">
 						<button
@@ -179,8 +155,7 @@
 						>⋯</button>
 						{#if openMenuId === s.id}
 							<div class="student-menu" role="menu">
-								<button onclick={() => openRename(s)}>Umbenennen</button>
-								<button onclick={() => openReset(s)}>Passwort zurücksetzen</button>
+								<button onclick={() => openReset(s)}>Passwort vergessen: Code erzeugen</button>
 								<button class="danger" onclick={() => openRemove(s)}>Aus Klasse entfernen</button>
 							</div>
 						{/if}
@@ -188,61 +163,45 @@
 				</div>
 			{/each}
 		</div>
+		<p class="privacy-note">Die Namen entschlüsselt nur Ihr Browser. Schüler ändern ihren Namen selbst im Profil.</p>
 	{/if}
 </div>
 
 {#if dialog}
 	<div class="dialog-overlay" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeDialog(); }}>
 		<div role="dialog" aria-modal="true" class="dialog-box">
-			{#if dialog.type === 'rename'}
-				<h2 class="dialog-title">Schüler umbenennen</h2>
-				<p class="dialog-body">Neuer Anzeigename für {dialog.student.display_name}:</p>
-				<input
-					type="text"
-					class="dialog-input"
-					bind:value={dialog.newName}
-					placeholder="Anzeigename"
-					onkeydown={(e) => e.key === 'Enter' && submitDialog()}
-				/>
-				{#if dialogError}<div class="dialog-error">{dialogError}</div>{/if}
-				<div class="dialog-actions">
-					<button class="btn-secondary" onclick={closeDialog} disabled={dialogBusy}>Abbrechen</button>
-					<button class="btn-primary" onclick={submitDialog} disabled={dialogBusy}>
-						{dialogBusy ? 'Wird gespeichert …' : 'Speichern'}
-					</button>
-				</div>
-
-			{:else if dialog.type === 'remove'}
+			{#if dialog.type === 'remove'}
 				<h2 class="dialog-title">Schüler entfernen?</h2>
 				<p class="dialog-body">
-					<strong>{dialog.student.display_name}</strong> wird aus der Klasse entfernt.
-					Der Fortschritt dieser Person in der Klasse wird gelöscht. Das Konto bleibt erhalten.
+					<strong>{dialog.student.display_name}</strong> wird aus der Klasse entfernt. Der Fortschritt wird sofort gelöscht.
+					Zum Wiedereinsteigen müsste neu beigetreten werden.
 				</p>
 				{#if dialogError}<div class="dialog-error">{dialogError}</div>{/if}
 				<div class="dialog-actions">
 					<button class="btn-secondary" onclick={closeDialog} disabled={dialogBusy}>Abbrechen</button>
-					<button class="btn-danger" onclick={submitDialog} disabled={dialogBusy}>
-						{dialogBusy ? 'Wird entfernt …' : 'Entfernen'}
-					</button>
+					<button class="btn-danger" onclick={confirmRemove} disabled={dialogBusy}>{dialogBusy ? 'Wird entfernt …' : 'Entfernen'}</button>
 				</div>
 
 			{:else if dialog.type === 'reset'}
-				<h2 class="dialog-title">Neues Passwort für {dialog.student.display_name}</h2>
+				<h2 class="dialog-title">Einmal-Code für {dialog.student.display_name}</h2>
 				<p class="dialog-body">
-					Geben Sie {dialog.student.display_name} dieses Einmal-Passwort.
-					Beim nächsten Anmelden muss ein eigenes Passwort festgelegt werden.
+					{dialog.student.display_name} geht auf „Anmelden“ → „Passwort vergessen?“ und gibt Klassencode, Namen und diesen Code ein.
+					Danach legt {dialog.student.display_name} selbst ein neues Passwort fest. Der Fortschritt bleibt erhalten.
 				</p>
-				<div class="pw-display">
-					<span class="pw-text mono">{dialog.generatedPw}</span>
-					<button class="pw-copy-btn" onclick={copyPw}>{pwCopied ? '✓ Kopiert' : 'Kopieren'}</button>
-				</div>
-				<p class="pw-hint">Gut lesbar. Kein 0/O, kein 1/l.</p>
+				{#if dialog.code}
+					<div class="pw-display">
+						<span class="pw-text mono">{dialog.code}</span>
+					</div>
+					<p class="pw-hint">{remaining > 0 ? `Gültig noch ${remainingText} Minuten, nur einmal.` : 'Abgelaufen. Bitte neuen Code erzeugen.'}</p>
+				{:else if dialogBusy}
+					<div class="spinner-wrap"><span class="spinner"></span></div>
+				{/if}
 				{#if dialogError}<div class="dialog-error">{dialogError}</div>{/if}
 				<div class="dialog-actions">
-					<button class="btn-secondary" onclick={closeDialog} disabled={dialogBusy}>Abbrechen</button>
-					<button class="btn-primary" onclick={submitDialog} disabled={dialogBusy}>
-						{dialogBusy ? 'Wird gesetzt …' : 'Fertig'}
-					</button>
+					{#if remaining === 0 && dialog.code}
+						<button class="btn-secondary" onclick={() => dialog?.type === 'reset' && openReset(dialog.student)} disabled={dialogBusy}>Neuer Code</button>
+					{/if}
+					<button class="btn-primary" onclick={closeDialog}>Fertig</button>
 				</div>
 			{/if}
 		</div>
@@ -250,6 +209,10 @@
 {/if}
 
 <style>
+	.key-hint { padding: 12px 16px; border-radius: 10px; background: var(--warn-bg, #fef3c7); color: var(--warn-ink, #92400e); font-size: 14px; line-height: 20px; }
+	.key-hint a { color: inherit; text-decoration: underline; font-weight: 500; }
+	.privacy-note { font-size: 13px; color: var(--ink-3); margin: 0; }
+
 	.schueler-wrap { padding: 24px 40px; display: flex; flex-direction: column; gap: 16px; }
 	@media (max-width: 767px) { .schueler-wrap { padding: 16px; } }
 
@@ -272,7 +235,6 @@
 	.table-row:last-child { border-bottom: none; }
 
 	.row-name { font-weight: 500; }
-	.row-username { font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
 	.row-joined { color: var(--ink-2); }
 
 	.student-menu-wrap { position: relative; display: flex; justify-content: center; }
@@ -289,14 +251,11 @@
 	.dialog-box { background: var(--surface); border-radius: 10px; box-shadow: var(--shadow-pop); padding: 24px; display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 460px; }
 	.dialog-title { font-size: 18px; font-weight: 600; }
 	.dialog-body { font-size: 15px; line-height: 23px; color: var(--ink-2); }
-	.dialog-input { height: 44px; padding: 0 12px; border-radius: 6px; border: 1.5px solid var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--surface); font: inherit; font-size: 15px; outline: none; }
 	.dialog-error { padding: 10px 12px; border-radius: 6px; background: var(--danger-soft); border: 1px solid var(--danger-line); color: var(--danger-ink); font-size: 14px; }
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
 
 	.pw-display { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 10px; background: var(--subtle); }
 	.pw-text { font-family: var(--mono); font-size: 24px; font-weight: 500; letter-spacing: 3px; flex: 1; }
-	.pw-copy-btn { font-size: 14px; font-weight: 500; color: var(--accent-strong); cursor: pointer; white-space: nowrap; }
-	.pw-copy-btn:hover { text-decoration: underline; }
 	.pw-hint { font-size: 13px; color: var(--ink-3); }
 
 	.btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 16px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }

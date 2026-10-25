@@ -407,7 +407,6 @@
 	input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); border-width: 1.5px; }
 	input:disabled { opacity: 0.6; cursor: not-allowed; }
 	.field-err { font-size: 13px; color: var(--danger-ink); }
-	.must-change { margin: 0 0 20px; padding: 12px 16px; border-radius: 10px; background: var(--warn-bg, #fef3c7); color: var(--warn-ink, #92400e); font-size: 14px; line-height: 1.5; }
 	.edit-btns { display: flex; gap: 10px; }
 	.btn-save { height: 36px; padding: 0 14px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
 	.btn-save:hover:not(:disabled) { background: var(--accent-strong); }
@@ -417,8 +416,6 @@
 
 	/* Sonstiges */
 	.section-gap { display: flex; flex-direction: column; gap: 6px; }
-	.link-accent { font-size: 14px; font-weight: 500; color: var(--accent-strong); text-decoration: none; }
-	.link-accent:hover { text-decoration: underline; }
 	.btn-logout { height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--line-strong); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; align-self: flex-start; }
 	.btn-logout:hover { background: var(--subtle) !important; }
 
@@ -460,7 +457,7 @@
 	.privacy { font-size: 13px; line-height: 18px; color: var(--ink-3); margin: 0; }
 	@media print {
 		:global(body *) { visibility: hidden; }
-		.code-val, .code-val * { visibility: visible; }
+		.code-val { visibility: visible; }
 		.code-val { position: absolute; top: 40px; left: 40px; right: 40px; }
 	}
 

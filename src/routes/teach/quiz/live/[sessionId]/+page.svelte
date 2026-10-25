@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { decryptName } from '$lib/tabula/keystore.js';
 	import { siteOrigin, siteHost } from '$lib/tabula/site.js';
 	import '$lib/tabula/theme.css';
 	import { onMount, onDestroy } from 'svelte';
@@ -125,7 +126,9 @@
 		if (msg.type === 'lobby_state') {
 			const m = msg as any;
 			phase = 'lobby';
-			participants = m.participants ?? [];
+			// Namen kommen verschlüsselt, nur dieser Browser kann sie lesen
+			const list = (m.participants ?? []) as { user_id: number | null; enc_name: string | null }[];
+			void Promise.all(list.map((p, i) => decryptName(p.enc_name, i + 1))).then((n) => (participants = n));
 			expected = m.expected ?? null;
 			if (m.pin) pin = m.pin;
 			if (m.quiz_title) quizTitle = m.quiz_title;
@@ -163,8 +166,11 @@
 		}
 		if (msg.type === 'leaderboard') {
 			const m = msg as any;
-			rankings = m.rankings ?? [];
-			finalRankings = rankings;
+			const raw = (m.rankings ?? []) as { rank: number; user_id: number | null; enc_name: string | null; points: number }[];
+			void Promise.all(raw.map((r) => decryptName(r.enc_name, r.rank))).then((names) => {
+				rankings = raw.map((r, i) => ({ rank: r.rank, display_name: names[i], points: r.points }));
+				finalRankings = rankings;
+			});
 			// Nach reveal kommt leaderboard → zeige Zwischenstand
 			if (phase === 'reveal') phase = 'leaderboard';
 		}

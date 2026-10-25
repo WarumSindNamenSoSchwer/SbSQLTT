@@ -13,7 +13,6 @@
 		apiQuizAddQuestion,
 		apiQuizUpdateQuestion,
 		apiQuizDeleteQuestion,
-		apiQuizStart,
 		type QuizSetDetail,
 		type QuizQuestion,
 	} from '$lib/tabula/quiz-api.js';
@@ -130,16 +129,10 @@
 		}
 	}
 
-	async function startQuiz() {
+	/** Starten läuft über die Quiz-Übersicht, dort wird die Klasse gewählt (Quiz nur innerhalb einer Klasse). */
+	function startQuiz() {
 		if (!quiz || quiz.questions.length === 0) return;
-		busy = true;
-		try {
-			const s = await apiQuizStart(quizId);
-			goto(`/teach/quiz/live/${s.session_id}`);
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Start fehlgeschlagen.';
-			busy = false;
-		}
+		goto('/teach/quiz?tab=mine');
 	}
 
 	const letterLabels = ['A', 'B', 'C', 'D'];

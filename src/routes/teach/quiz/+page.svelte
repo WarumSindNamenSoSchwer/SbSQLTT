@@ -6,6 +6,8 @@
 	import Edgar from '$lib/edgar/Edgar.svelte';
 	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
 	import { session } from '$lib/tabula/session.svelte.js';
+	import { page } from '$app/state';
+	import { apiTeacherGetClasses, type TeacherClass } from '$lib/tabula/api.js';
 	import {
 		apiQuizList,
 		apiQuizDelete,
@@ -31,11 +33,29 @@
 	// Vorschau-Modal
 	let previewEntry = $state<QuizBankEntry | null>(null);
 
+	// Klasse (Pflicht: Quiz nur innerhalb einer Klasse)
+	let classes = $state<TeacherClass[]>([]);
+	let classId = $state<number | null>(null);
+	async function loadClasses() {
+		try {
+			classes = (await apiTeacherGetClasses()).classes.filter((c) => !c.archived);
+			const wanted = Number(page.url.searchParams.get('klasse'));
+			classId = classes.find((c) => c.id === wanted)?.id ?? classes[0]?.id ?? null;
+		} catch {
+			classes = [];
+		}
+	}
+	function needClass(): number | null {
+		if (classId == null) error = 'Bitte legen Sie zuerst eine Klasse an. Ein Quiz läuft immer innerhalb einer Klasse.';
+		return classId;
+	}
+
 	onMount(() => {
 		const sync = () => (dark = !document.documentElement.classList.contains('light'));
 		sync();
 		const mo = new MutationObserver(sync);
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+		if (page.url.searchParams.get('tab') === 'mine') activeTab = 'mine';
 		const check = () => {
 			if (!ACCOUNTS_LIVE) return;
 			if (session.loading) { setTimeout(check, 50); return; }
@@ -43,6 +63,7 @@
 			if (session.user.role !== 'teacher') { goto('/teach'); return; }
 			load();
 			loadBank();
+			loadClasses();
 		};
 		check();
 		return () => mo.disconnect();
@@ -72,10 +93,12 @@
 	}
 
 	async function startFromBank(entry: QuizBankEntry) {
-		bankBusy = entry.lesson_id;
 		error = null;
+		const cid = needClass();
+		if (cid == null) return;
+		bankBusy = entry.lesson_id;
 		try {
-			const s = await apiQuizStartFromBank(entry.lesson_id);
+			const s = await apiQuizStartFromBank(entry.lesson_id, { class_id: cid });
 			goto(`/teach/quiz/live/${s.session_id}`);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Start fehlgeschlagen.';
@@ -84,9 +107,12 @@
 	}
 
 	async function startQuiz(q: QuizSet) {
+		error = null;
+		const cid = needClass();
+		if (cid == null) return;
 		busy = q.id;
 		try {
-			const s = await apiQuizStart(q.id);
+			const s = await apiQuizStart(q.id, { class_id: cid });
 			goto(`/teach/quiz/live/${s.session_id}`);
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Start fehlgeschlagen.';
@@ -171,6 +197,18 @@
 				{#if error}
 					<div class="error-box">{error}</div>
 				{/if}
+
+				<div class="class-pick">
+					<label for="quiz-class">Für Klasse</label>
+					{#if classes.length > 0}
+						<select id="quiz-class" bind:value={classId}>
+							{#each classes as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
+						</select>
+						<span class="class-pick-hint">Nur Schüler dieser Klasse können mitmachen.</span>
+					{:else}
+						<a href="/teach/neu" class="breadcrumb">Erst eine Klasse anlegen →</a>
+					{/if}
+				</div>
 
 				<!-- Tabs -->
 				<div class="tabs">
@@ -300,6 +338,10 @@
 {/if}
 
 <style>
+	.class-pick { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+	.class-pick label { font-weight: 500; }
+	.class-pick select { height: 36px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); font: inherit; }
+	.class-pick-hint { color: var(--ink-3); font-size: 13px; }
 	.page { display: flex; flex-direction: column; min-height: 100svh; }
 	.center { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
 	.form-wrap { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 20px; }
