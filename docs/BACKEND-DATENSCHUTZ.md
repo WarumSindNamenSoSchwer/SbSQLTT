@@ -1,24 +1,30 @@
 # Backend: Datenschutz-Vorgaben (verbindlich)
 
-Stand: 21.10.2026. Diese Datei legt fest, **welche Daten das Backend (Konten, Klassen, Live-Quiz) verarbeiten darf und wie lange**.
+Stand: 25.10.2026. Diese Datei legt fest, **welche Daten das Backend (Lehrkraft-Konten, Klassen-Login der Schüler, Live-Quiz) verarbeiten darf und wie lange**.
 Die Datenschutzerklärung (`src/lib/tabula/privacy.ts`, Quellen-IDs K1 bis K12) beschreibt genau diese Vorgaben.
 Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geändert werden. Jede Vorgabe hat unten einen Prüfpunkt.
 
-## K1 Schülerkonto
-- Pflicht: Benutzername, Anzeigename, Passwort. Beides darf ein Fantasiename sein, die Seite fordert keinen echten Namen.
-- Optional: E-Mail-Adresse, nur für das Zurücksetzen des Passworts.
-- Optional: Klassencode beim Registrieren (dann K4).
-- Keine weiteren Pflichtfelder (kein Geburtsdatum, keine Schule, kein Geschlecht).
+## K1 Schüler (Klassen-Login, keine Schülerkonten)
+Umsetzungsplan: `docs/KLASSEN-LOGIN.md`.
+- Es gibt keine Schülerkonten, keine Registrierung ohne Klasse, keinen Benutzernamen, keine E-Mail-Adresse.
+- Beitritt per QR-Code oder Klassencode, Anmeldung an jedem Gerät mit Klassencode, Name und eigenem Passwort (mindestens 8 Zeichen).
+- Der Browser leitet aus Passwort, Klassen-Salz und Name einen Schlüssel ab (Argon2id). Name und Passwort verlassen das Gerät nie.
+- Der Server speichert je Schüler nur: zufällige Nummer, Klasse, SHA-256 des abgeleiteten Schlüssels, verschlüsselten Namen (nur für die Lehrkraft lesbar), Zeitpunkt von Beitritt und letzter Anmeldung.
+- Kein Klarname, kein Passwort, keine E-Mail, kein Alter, keine IP beim Server.
+- Passwort vergessen: Die Lehrkraft erzeugt einen Einmal-Code (15 Minuten gültig, nur als Hash gespeichert), damit legt der Schüler selbst ein neues Passwort fest.
 
 ## K2 Lehrkraftkonto
-- Pflicht: Name, E-Mail-Adresse, Passwort, Bestätigung der Nutzungsbedingungen.
+- Pflicht: Name, E-Mail-Adresse, Passwort, Bestätigung, dass die Datenschutzhinweise gelesen wurden.
 - Optional: Schule.
+- Schlüsselpaar der Lehrkraft (RSA-OAEP 3072), erzeugt in ihrem Browser bei der Registrierung. Der öffentliche Teil liegt offen beim Server. Der private Teil liegt nur verschlüsselt beim Server: einmal mit dem Passwort der Lehrkraft, einmal mit ihrem Wiederherstellungscode (beides über Argon2id und AES-GCM im Browser). Der Server kann ihn nicht lesen.
+- Wiederherstellungscode: einmal bei der Registrierung angezeigt, zum Ausdrucken. Wird nie an den Server geschickt.
 
 ## K3 Passwörter
+Gilt für Lehrkräfte. Schüler siehe K1 (Ableitung im Browser, Server speichert nur SHA-256 des abgeleiteten Schlüssels).
 - Speicherung nur als Hash mit Argon2id (mind. 19 MiB, 2 Iterationen, Parallelität 1) und Salt, wie OWASP Password Storage Cheat Sheet.
 - Eingaben in den Hash (Vorgabe Muri, 21.10.2026):
   - Passwort (Klartext, nur im Arbeitsspeicher),
-  - **zufälliger Salt** je Konto (16 Byte, kryptografisch zufällig) – bleibt Pflicht, siehe Begründung,
+  - **zufälliger Salt** je Konto (16 Byte, kryptografisch zufällig), bleibt Pflicht, siehe Begründung,
   - **Benutzername** (klein geschrieben, Unicode-NFC) und **Erstellungstag des Kontos** (UTC, `YYYY-MM-DD`) als Argon2-Eingabe `"tabula:v1:" + benutzername + ":" + erstellungstag`.
   - Umsetzung (server/src/password.ts): als Argon2-Parameter **`secret`**, nicht als „associated data“. Grund: Das npm-Paket `argon2` legt „associated data“ im gespeicherten Hash ab und verwendet beim Prüfen den gespeicherten Wert, die Bindung ans Konto würde also nicht erzwungen. `secret` wird nicht gespeichert und muss beim Prüfen stimmen. Test belegt: Hash von Konto A schlägt bei Konto B fehl.
 - Gespeichert werden Hash, Salt und Parameter (PHC-Format). Erstellungstag liegt ohnehin im Konto.
@@ -33,14 +39,14 @@ Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geände
 ## K4 Klassen und Lernfortschritt
 - Beitritt nur per Klassencode oder QR-Code, durch Handlung des Schülers.
 - Gespeichert je Schüler: Klassenzugehörigkeit, je Lektion und Schritt: erledigt ja/nein, Anzahl Versuche, Zeitpunkt.
-- Für „hängt fest“: nur die **letzte** Abfrage und Fehlermeldung je Übung. Wird beim nächsten Versuch überschrieben.
-- Sichtbar nur für die Lehrkraft(en) dieser Klasse. Keine Sichtbarkeit für andere Schüler (Ausnahme Quiz-Rangliste K5).
-- Ohne Klasse: Fortschritt wird nur zum Abgleich zwischen Geräten gespeichert, niemand sonst sieht ihn.
-- Beim ersten Anmelden wird der bisher im Browser gespeicherte Fortschritt (`tabula-progress`) einmalig übernommen.
+- Für „hängt fest“: nur die **letzte** Abfrage und Fehlermeldung je Übung, im Browser des Schülers mit dem öffentlichen Schlüssel der Lehrkraft verschlüsselt. Der Server sieht nur, ob der letzte Versuch einen Fehler hatte. Wird beim nächsten Versuch überschrieben.
+- Sichtbar nur für die Lehrkraft dieser Klasse. Keine Sichtbarkeit für andere Schüler (Ausnahme Quiz-Rangliste am Beamer, K5).
+- Beim ersten Klassen-Login wird der bisher im Browser gespeicherte Fortschritt (`tabula-progress`) einmalig übernommen.
 
 ## K5 Live-Quiz
-- Gespeichert während des Quiz: Teilnahme, gewählte Antwort je Frage, Antwortzeit, Punkte.
-- Rangliste zeigt Anzeigenamen der Teilnehmenden im Raum (Beamer).
+- Nur innerhalb einer Klasse, nur für angemeldete Schüler dieser Klasse.
+- Gespeichert während des Quiz: Teilnahme, gewählte Antwort je Frage, Antwortzeit, Punkte. Kein Name beim Server.
+- Rangliste mit Namen nur am Beamer: Die Namen entschlüsselt der Browser der Lehrkraft. Auf dem Handy sieht jeder Schüler nur seinen eigenen Platz.
 - Einzelne Antworten und Punkte werden 24 Stunden nach Quiz-Ende gelöscht. Danach bleibt nur die Auswertung je Frage ohne Namen (Anteil richtig).
 - Echtzeit über WebSocket zum eigenen Server, kein Drittanbieter.
 
@@ -50,15 +56,16 @@ Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geände
 - Keine anderen Cookies.
 
 ## K7 E-Mails
-- Nur Systemmails: Passwort zurücksetzen (Link 1 Stunde gültig, einmalig nutzbar), Bestätigung der E-Mail-Adresse von Lehrkräften.
+- Nur Systemmails an Lehrkräfte: Passwort zurücksetzen (Link 1 Stunde gültig, einmalig nutzbar), Bestätigung der E-Mail-Adresse, Hinweis vor automatischer Löschung. Schüler bekommen keine Mails.
 - Versand über den Mailserver von Hetzner (Absender noreply@tabulasql.de, Port 587 mit STARTTLS). Keine Newsletter, keine Werbung.
 - Umgesetzt (21.10.2026): Bestätigungslink 24 Stunden gültig, einmalig, nur SHA-256 des Tokens gespeichert, abgelaufene Token löscht der Aufräumjob. Belegt durch `tests/email-verify.test.ts`.
 
 ## K8 Löschung
-- Konto jederzeit selbst löschbar (Einstellungen), Löschung sofort mit allen Fortschritts- und Quizdaten.
-- Lehrkraft entfernt Schüler aus Klasse: Zugehörigkeit und klassenbezogener Fortschritt werden gelöscht.
-- Klasse gelöscht: alle Zugehörigkeiten und klassenbezogenen Daten werden gelöscht.
-- Konten ohne Anmeldung seit 12 Monaten werden automatisch gelöscht (mit Hinweis per E-Mail 30 Tage vorher, falls E-Mail hinterlegt).
+- Lehrkraft-Konto jederzeit selbst löschbar (Einstellungen), Löschung sofort mit allen Klassen und deren Daten.
+- Schüler tritt selbst aus der Klasse aus: alle seine Daten werden sofort gelöscht.
+- Lehrkraft entfernt Schüler aus Klasse: alle Daten dieses Schülers werden gelöscht.
+- Klasse gelöscht: alle Schüler der Klasse und deren Daten werden gelöscht.
+- Lehrkraft-Konten und Schüler ohne Anmeldung seit 12 Monaten werden automatisch gelöscht (Lehrkräfte bekommen 30 Tage vorher einen Hinweis per E-Mail).
 - Sicherungskopien der Datenbank: verschlüsselt, auf dem Server in Deutschland, höchstens 7 Tage aufbewahrt. Gelöschte Daten verschwinden spätestens dann auch aus den Sicherungen.
 
 ## K9 Kein Tracking, kein Profiling
@@ -66,7 +73,7 @@ Weicht die Umsetzung ab, muss zuerst diese Datei und dann die Erklärung geände
 - Fortschrittsdaten dienen nur dem Lernen und der Unterstützung durch die Lehrkraft, nicht der Benotung durch Tabula.
 
 ## K10 Anmeldeschutz
-- Begrenzung der Anmeldeversuche pro Konto und Adresse nur im Arbeitsspeicher (keine dauerhafte Speicherung von IP-Adressen).
+- Begrenzung der Anmeldeversuche nur im Arbeitsspeicher (keine dauerhafte Speicherung von IP-Adressen): Lehrkräfte je Konto, Schüler je Klasse (der Server kennt keine Schülernamen).
 - Zugriffsprotokoll bleibt aus (siehe Caddyfile), Server-Protokolle max. 14 Tage, IPs gekürzt.
 
 ## K11 Ort

@@ -2,7 +2,7 @@
 // und docs/DATENSCHUTZ-QUELLEN.md). [T…] = eigene technische Prüfung, [R…] = Rechtsquelle,
 // [A…] = Anbieter-Dokumentation. Platzhalter in {{…}} müssen vor Veröffentlichung gefüllt werden.
 
-export const STAND = '21. Oktober 2026';
+export const STAND = '25. Oktober 2026';
 
 /** Verantwortlicher. Bis Name und Anschrift feststehen, bleibt die Seite als Entwurf markiert. */
 export const CONTROLLER = {
@@ -23,11 +23,11 @@ export const SECTIONS: Section[] = [
 		blocks: [
 			{
 				list: [
-					'Tabula setzt keine Cookies und bindet keine Inhalte, Schriften oder Skripte von fremden Servern ein. Dein Browser spricht beim Besuch nur mit www.tabulasql.de.',
+					'Tabula setzt ohne Anmeldung keine Cookies und bindet keine Inhalte, Schriften oder Skripte von fremden Servern ein. Dein Browser spricht beim Besuch nur mit www.tabulasql.de.',
 					'Es gibt kein Tracking, keine Reichweitenmessung und keine Werbung.',
 					'SQL-Abfragen und Übungsdatenbanken laufen vollständig in deinem Browser. Was du in den Editor schreibst, wird nicht an uns übertragen.',
-					'Lernen geht ohne Konto. Wer ein Konto anlegt, braucht als Schüler nur Benutzername, Anzeigename und Passwort. Ein echter Name oder eine E-Mail-Adresse ist nicht nötig.',
-					'Fortschritt sehen nur du und die Lehrkraft deiner Klasse. Daten werden nicht verkauft, nicht weitergegeben und nicht für Werbung genutzt.',
+					'Lernen geht ohne Anmeldung. Schüler haben kein Konto: Sie melden sich über ihre Klasse mit Klassencode, Name und Passwort an. Name und Passwort verlassen dabei nie dein Gerät. Wir sehen von Schülern keine Namen, nur eine Nummer und den Fortschritt.',
+					'Deinen Namen und deinen Fortschritt sieht nur die Lehrkraft deiner Klasse. Daten werden nicht verkauft, nicht weitergegeben und nicht für Werbung genutzt.',
 					'Der Server führt kein Zugriffsprotokoll über einzelne Seitenaufrufe. Technische Protokolle werden nach höchstens 14 Tagen gelöscht.'
 				],
 				src: ['T1', 'T2', 'T3', 'T5', 'T6', 'K1', 'K4', 'K9']
@@ -99,7 +99,7 @@ export const SECTIONS: Section[] = [
 		title: 'Speicherung in deinem Browser',
 		blocks: [
 			{
-				p: 'Ohne Anmeldung setzt Tabula keine Cookies. Damit die Website funktioniert, wie du es erwartest, legt sie aber in bestimmten Fällen kleine Einträge im Speicher deines Browsers ab (Web Storage). Diese Einträge werden nicht an uns übertragen, mit einer Ausnahme: Beim ersten Anmelden übernehmen wir einmalig deinen Lernfortschritt in dein Konto.',
+				p: 'Ohne Anmeldung setzt Tabula keine Cookies. Damit die Website funktioniert, wie du es erwartest, legt sie aber in bestimmten Fällen kleine Einträge im Speicher deines Browsers ab (Web Storage und IndexedDB). Diese Einträge werden nicht an uns übertragen, mit einer Ausnahme: Beim ersten Klassen-Login übernehmen wir einmalig deinen Lernfortschritt in die Klasse.',
 				src: ['T1', 'T11', 'K4']
 			},
 			{
@@ -107,16 +107,18 @@ export const SECTIONS: Section[] = [
 					'tabula-progress (localStorage): welche Lektionen und Schritte du erledigt hast. Wird erst angelegt, wenn du in einer Lektion auf „Weiter“ klickst.',
 					'tabula-theme (localStorage): ob du die helle oder dunkle Darstellung gewählt hast. Wird erst angelegt, wenn du den Schalter benutzt.',
 					'tabula-guest-hint (localStorage): dass du den Hinweis zur Anmeldung geschlossen hast. Wird erst angelegt, wenn du ihn schließt.',
+					'tabula-student (sessionStorage): als angemeldeter Schüler dein Name, damit die Seite dich begrüßen und du Name oder Passwort ändern kannst. Wird beim Abmelden und beim Schließen des Tabs gelöscht.',
+					'tabula-teacher-key (IndexedDB): als angemeldete Lehrkraft dein Schlüssel, mit dem dein Browser die Namen deiner Schüler lesen kann. Er ist so gespeichert, dass ihn kein Skript auslesen kann, und wird beim Abmelden gelöscht.',
 					'sveltekit:scroll und sveltekit:snapshot (sessionStorage): Scrollposition beim Zurückblättern. Wird beim Wechsel zwischen Seiten angelegt und beim Schließen des Tabs gelöscht.'
 				],
-				src: ['T11', 'T12', 'A4', 'A5']
+				src: ['T11', 'T12', 'A4', 'A5', 'K1', 'K2']
 			},
 			{
 				p: 'Der localStorage bleibt erhalten, bis du ihn löschst, zum Beispiel über die Browser-Einstellungen „Website-Daten löschen“. Im privaten Modus löscht der Browser ihn beim Schließen des letzten privaten Fensters.',
 				src: ['A4', 'A5']
 			},
 			{
-				p: 'Rechtsgrundlage für das Speichern und Auslesen ist § 25 Abs. 2 Nr. 2 TDDDG. Eine Einwilligung ist nicht nötig, weil jeder Eintrag erst durch deine eigene Handlung entsteht und unbedingt erforderlich ist, um die von dir gewünschte Funktion bereitzustellen (Fortschritt merken, Darstellung merken). Die Datenschutzaufsichtsbehörden stellen ausdrücklich auf solche bewusst genutzten Funktionen ab und verlangen, dass die Speicherung erst nach der Nutzerhandlung erfolgt. Ohne Konto bleiben diese Daten nur auf deinem Gerät.',
+				p: 'Rechtsgrundlage für das Speichern und Auslesen ist § 25 Abs. 2 Nr. 2 TDDDG. Eine Einwilligung ist nicht nötig, weil jeder Eintrag erst durch deine eigene Handlung entsteht und unbedingt erforderlich ist, um die von dir gewünschte Funktion bereitzustellen (Fortschritt merken, Darstellung merken, angemeldet bleiben). Die Datenschutzaufsichtsbehörden stellen ausdrücklich auf solche bewusst genutzten Funktionen ab und verlangen, dass die Speicherung erst nach der Nutzerhandlung erfolgt. Ohne Konto bleiben diese Daten nur auf deinem Gerät.',
 				src: ['R5', 'R14']
 			}
 		]
@@ -141,31 +143,39 @@ export const SECTIONS: Section[] = [
 	},
 	{
 		id: 'konten',
-		title: 'Konten für Schüler und Lehrkräfte',
+		title: 'Anmeldung für Schüler und Lehrkräfte',
 		blocks: [
 			{
-				p: 'Ein Konto ist freiwillig. Alle Lektionen funktionieren auch ohne Anmeldung. Ein Konto brauchst du, wenn dein Fortschritt auf mehreren Geräten gleich sein soll, wenn du einer Klasse beitrittst oder am Live-Quiz teilnimmst.',
+				p: 'Anmelden ist freiwillig. Alle Lektionen funktionieren auch ohne Anmeldung. Schüler melden sich nur über eine Klasse an, wenn ihre Lehrkraft eine eingerichtet hat. Ein eigenes Schülerkonto gibt es nicht.',
 				src: ['K1', 'K4', 'K5']
 			},
 			{
-				p: 'Für ein Schülerkonto speichern wir:',
+				p: 'So funktioniert der Klassen-Login: Du trittst per QR-Code oder Klassencode bei und wählst einen Namen und ein Passwort. Bei jeder Anmeldung gibst du Klassencode, Name und Passwort ein. Dein Browser berechnet daraus einen Schlüssel (Argon2id). Nur ein Prüfwert dieses Schlüssels geht an uns. Deinen Namen verschlüsselt dein Browser so, dass ihn nur deine Lehrkraft lesen kann. Name und Passwort verlassen dein Gerät nie.',
+				src: ['K1', 'R21']
+			},
+			{
+				p: 'Für jeden Schüler speichern wir:',
 				src: ['K1']
 			},
 			{
 				list: [
-					'Benutzername (zum Anmelden) und Anzeigename (sieht deine Lehrkraft). Beides darf ein ausgedachter Name sein.',
-					'Passwort, nur als nicht umkehrbarer Hash (Argon2id mit zufälligem Salt, zusätzlich an Benutzername und Erstellungstag gebunden). Dein Passwort selbst kennen wir nicht.',
-					'Freiwillig: E-Mail-Adresse, nur um ein vergessenes Passwort zurückzusetzen.',
-					'Zeitpunkt der Registrierung und der letzten Anmeldung.'
+					'eine zufällige Nummer und die Klasse,',
+					'den Prüfwert deines Anmeldeschlüssels (SHA-256), aus dem sich weder Name noch Passwort zurückrechnen lassen,',
+					'deinen Namen, verschlüsselt mit dem Schlüssel deiner Lehrkraft. Wir können ihn nicht lesen.',
+					'Zeitpunkt des Beitritts und der letzten Anmeldung.'
 				],
-				src: ['K1', 'K3', 'K8', 'R21']
+				src: ['K1', 'K3']
 			},
 			{
-				p: 'Für ein Lehrkraftkonto speichern wir Name, E-Mail-Adresse, Passwort-Hash, freiwillig die Schule sowie die Zeitpunkte von Registrierung und letzter Anmeldung.',
+				p: 'Hast du dein Passwort vergessen, erzeugt deine Lehrkraft einen Einmal-Code, der 15 Minuten gilt. Damit legst du selbst ein neues Passwort fest. Wir speichern den Code nur als Hash.',
+				src: ['K1']
+			},
+			{
+				p: 'Für ein Lehrkraftkonto speichern wir Name, E-Mail-Adresse, Passwort-Hash (Argon2id), freiwillig die Schule sowie die Zeitpunkte von Registrierung und letzter Anmeldung. Dazu kommt ein Schlüsselpaar, das der Browser der Lehrkraft bei der Registrierung erzeugt. Den öffentlichen Teil speichern wir offen, damit die Browser der Schüler Namen dafür verschlüsseln können. Den privaten Teil speichern wir nur verschlüsselt, einmal mit dem Passwort der Lehrkraft und einmal mit ihrem Wiederherstellungscode. Wir können ihn nicht lesen.',
 				src: ['K2', 'K3']
 			},
 			{
-				p: 'Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO: Die Daten sind nötig, um das Konto bereitzustellen, das du angelegt hast. Ohne Benutzername und Passwort (bei Lehrkräften zusätzlich E-Mail-Adresse) kann kein Konto angelegt werden. Alles andere ist freiwillig.',
+				p: 'Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO: Die Daten sind nötig, um die Anmeldung bereitzustellen, die du nutzt. Ohne Klassencode, Name und Passwort (bei Lehrkräften Name, E-Mail-Adresse und Passwort) ist keine Anmeldung möglich. Alles andere ist freiwillig.',
 				src: ['R3', 'R7', 'K1', 'K2']
 			}
 		]
@@ -175,7 +185,7 @@ export const SECTIONS: Section[] = [
 		title: 'Klassen und Lernfortschritt',
 		blocks: [
 			{
-				p: 'Du trittst einer Klasse nur selbst bei, mit dem Klassencode oder QR-Code deiner Lehrkraft. Danach speichern wir je Lektion und Schritt, ob du ihn erledigt hast, wie viele Versuche du gebraucht hast und wann. Hängst du an einer Übung fest, speichern wir nur deine letzte Abfrage und die letzte Fehlermeldung, damit die Lehrkraft dir helfen kann. Beim nächsten Versuch wird sie überschrieben.',
+				p: 'Nach dem Beitritt speichern wir je Lektion und Schritt, ob du ihn erledigt hast, wie viele Versuche du gebraucht hast und wann. Hängst du an einer Übung fest, speichern wir deine letzte Abfrage und die letzte Fehlermeldung, damit die Lehrkraft dir helfen kann. Beides verschlüsselt dein Browser vorher mit dem Schlüssel deiner Lehrkraft, wir sehen nur, ob der letzte Versuch einen Fehler hatte. Beim nächsten Versuch wird es überschrieben.',
 				src: ['K4']
 			},
 			{
@@ -183,7 +193,7 @@ export const SECTIONS: Section[] = [
 				src: ['K4', 'K9', 'R22']
 			},
 			{
-				p: 'Bist du in keiner Klasse, speichern wir deinen Fortschritt nur, damit er auf all deinen Geräten gleich ist. Beim ersten Anmelden übernehmen wir einmalig den Fortschritt, den dein Browser bis dahin lokal gespeichert hat.',
+				p: 'Beim ersten Klassen-Login übernehmen wir einmalig den Fortschritt, den dein Browser bis dahin lokal gespeichert hat.',
 				src: ['K4']
 			},
 			{
@@ -197,7 +207,7 @@ export const SECTIONS: Section[] = [
 		title: 'Live-Quiz',
 		blocks: [
 			{
-				p: 'Startet deine Lehrkraft ein Quiz und trittst du bei, speichern wir deine Teilnahme, deine Antwort auf jede Frage, die Antwortzeit und deine Punkte. Im Raum wird eine Rangliste mit Anzeigenamen gezeigt. Die Verbindung läuft über WebSocket direkt zu unserem Server.',
+				p: 'Startet deine Lehrkraft ein Quiz für deine Klasse und trittst du bei, speichern wir deine Teilnahme, deine Antwort auf jede Frage, die Antwortzeit und deine Punkte, aber keinen Namen. Am Beamer zeigt der Browser deiner Lehrkraft eine Rangliste mit Namen, die er selbst entschlüsselt. Auf deinem Handy siehst du nur deinen eigenen Platz. Die Verbindung läuft über WebSocket direkt zu unserem Server.',
 				src: ['K5', 'K11']
 			},
 			{
@@ -229,7 +239,7 @@ export const SECTIONS: Section[] = [
 		title: 'E-Mails von Tabula',
 		blocks: [
 			{
-				p: 'Wir senden nur E-Mails, die für dein Konto nötig sind: einen Link zum Zurücksetzen des Passworts (1 Stunde gültig, nur einmal nutzbar) und bei Lehrkräften die Bestätigung der E-Mail-Adresse. Absender ist noreply@tabulasql.de, der Versand läuft über den Mailserver der Hetzner Online GmbH. Newsletter oder Werbung senden wir nicht.',
+				p: 'Wir senden nur E-Mails an Lehrkräfte, die für ihr Konto nötig sind: einen Link zum Zurücksetzen des Passworts (1 Stunde gültig, nur einmal nutzbar), die Bestätigung der E-Mail-Adresse und einen Hinweis vor der automatischen Löschung. Schüler bekommen keine E-Mails. Absender ist noreply@tabulasql.de, der Versand läuft über den Mailserver der Hetzner Online GmbH. Newsletter oder Werbung senden wir nicht.',
 				src: ['K7', 'T16', 'A1']
 			},
 			{
@@ -244,9 +254,9 @@ export const SECTIONS: Section[] = [
 		blocks: [
 			{
 				list: [
-					'Konto: bis du es löschst. Das geht jederzeit selbst in den Einstellungen und entfernt sofort alle Fortschritts- und Quizdaten.',
-					'Konten ohne Anmeldung seit 12 Monaten löschen wir automatisch. Ist eine E-Mail-Adresse hinterlegt, erinnern wir 30 Tage vorher.',
-					'Entfernt dich die Lehrkraft aus einer Klasse oder löscht sie die Klasse, werden Zugehörigkeit und klassenbezogener Fortschritt gelöscht.',
+					'Lehrkraftkonto: bis die Lehrkraft es löscht. Das geht jederzeit selbst in den Einstellungen und entfernt sofort alle Klassen mit allen Daten.',
+					'Schüler: bis du aus der Klasse austrittst, die Lehrkraft dich entfernt oder die Klasse löscht. Dann löschen wir sofort alle deine Daten.',
+					'Ohne Anmeldung seit 12 Monaten löschen wir automatisch. Lehrkräfte erinnern wir 30 Tage vorher per E-Mail.',
 					'Einzelne Quiz-Antworten: 24 Stunden nach Quiz-Ende.',
 					'Sicherungskopien der Datenbank: verschlüsselt, auf unserem Server in Deutschland, höchstens 7 Tage. Gelöschte Daten verschwinden spätestens dann auch aus den Sicherungen.',
 					'Server-Protokolle: höchstens 14 Tage (siehe Abschnitt „Aufruf der Website“).'
@@ -260,7 +270,7 @@ export const SECTIONS: Section[] = [
 		title: 'Hinweis für Schüler und Eltern',
 		blocks: [
 			{
-				p: 'Tabula richtet sich an Schüler ab Klasse 10. Kinder und Jugendliche verdienen bei ihren Daten besonderen Schutz. Deshalb fragen wir bei Schülern keinen echten Namen, kein Alter und keine E-Mail-Adresse ab, zeigen keine Werbung und erstellen keine Profile. Eltern können alle Rechte aus Abschnitt „Deine Rechte“ für ihr Kind über kontakt@tabulasql.de geltend machen.',
+				p: 'Tabula richtet sich an Schüler ab Klasse 10. Kinder und Jugendliche verdienen bei ihren Daten besonderen Schutz. Deshalb haben Schüler kein Konto, wir fragen kein Alter und keine E-Mail-Adresse ab, sehen keine Schülernamen, zeigen keine Werbung und erstellen keine Profile. Eltern können alle Rechte aus Abschnitt „Deine Rechte“ für ihr Kind über kontakt@tabulasql.de geltend machen. Weil wir Schüler nur als Nummer kennen, brauchen wir dazu die Hilfe der Lehrkraft.',
 				src: ['R22', 'K1', 'K9']
 			}
 		]
@@ -320,7 +330,7 @@ export const SECTIONS: Section[] = [
 		title: 'Empfänger und Drittländer',
 		blocks: [
 			{
-				p: 'Innerhalb von Tabula sieht nur die Lehrkraft deiner Klasse deinen Fortschritt, beim Quiz sehen die Teilnehmenden im Raum die Rangliste mit Anzeigenamen. Außerhalb von Tabula ist Empfänger nur die Hetzner Online GmbH als Auftragsverarbeiter. Wir übermitteln keine Daten in Länder außerhalb der EU und geben sie nicht an Dritte weiter. Es findet keine automatisierte Entscheidungsfindung und kein Profiling statt.',
+				p: 'Innerhalb von Tabula sieht nur die Lehrkraft deiner Klasse deinen Namen und Fortschritt, beim Quiz sieht die Klasse die Rangliste am Beamer. Außerhalb von Tabula ist Empfänger nur die Hetzner Online GmbH als Auftragsverarbeiter. Wir übermitteln keine Daten in Länder außerhalb der EU und geben sie nicht an Dritte weiter. Es findet keine automatisierte Entscheidungsfindung und kein Profiling statt.',
 				src: ['K4', 'K5', 'A1', 'A3', 'K11', 'K9', 'R7', 'T2', 'T5']
 			}
 		]
@@ -348,7 +358,7 @@ export const SECTIONS: Section[] = [
 				src: ['R17']
 			},
 			{
-				p: 'Dein Konto kannst du jederzeit selbst löschen. Für alles andere genügt eine formlose E-Mail an kontakt@tabulasql.de. Wir antworten unverzüglich, spätestens innerhalb eines Monats, und kostenlos.',
+				p: 'Als Schüler kannst du jederzeit selbst aus deiner Klasse austreten, als Lehrkraft dein Konto selbst löschen. Für alles andere genügt eine formlose E-Mail an kontakt@tabulasql.de. Wir antworten unverzüglich, spätestens innerhalb eines Monats, und kostenlos.',
 				src: ['R18', 'K8']
 			},
 			{
@@ -366,7 +376,7 @@ export const SECTIONS: Section[] = [
 		title: 'Sicherheit',
 		blocks: [
 			{
-				p: 'Wir schützen den Server mit technischen und organisatorischen Maßnahmen nach Art. 32 DSGVO: Anmeldung am Server nur mit Schlüssel (keine Passwörter, kein Root-Login), automatische Sicherheitsupdates und eine Sperre von Adressen nach wiederholten Fehlversuchen beim Login (fail2ban: 5 Fehlversuche in 10 Minuten führen zu 10 Minuten Sperre, die Sperrliste wird nach einem Tag bereinigt). Passwörter speichern wir nur als Argon2id-Hash. Fehlversuche beim Anmelden in Tabula begrenzen wir nur im Arbeitsspeicher, ohne IP-Adressen dauerhaft zu speichern.',
+				p: 'Wir schützen den Server mit technischen und organisatorischen Maßnahmen nach Art. 32 DSGVO: Anmeldung am Server nur mit Schlüssel (keine Passwörter, kein Root-Login), automatische Sicherheitsupdates und eine Sperre von Adressen nach wiederholten Fehlversuchen beim Login (fail2ban: 5 Fehlversuche in 10 Minuten führen zu 10 Minuten Sperre, die Sperrliste wird nach einem Tag bereinigt). Passwörter von Lehrkräften speichern wir nur als Argon2id-Hash, Passwörter von Schülern erreichen uns gar nicht. Fehlversuche beim Anmelden in Tabula begrenzen wir nur im Arbeitsspeicher, ohne IP-Adressen dauerhaft zu speichern.',
 				src: ['R11', 'T18', 'K3', 'K10', 'R21']
 			}
 		]
@@ -422,8 +432,8 @@ export const SOURCES: Source[] = [
 	{ id: 'R26', label: 'Verordnung (EU) 2024/3228: OS-Plattform seit 20.07.2025 eingestellt, Hinweispflicht entfallen', url: 'https://eur-lex.europa.eu/legal-content/DE/ALL/?uri=CELEX:32024R3228' },
 	{ id: 'A7', label: 'Berliner Beauftragte für Datenschutz und Informationsfreiheit, Impressum (Anschrift)', url: 'https://www.datenschutz-berlin.de/impressum' },
 	// Verbindliche Vorgaben für Konten, Klassen und Quiz (docs/BACKEND-DATENSCHUTZ.md); Freigabe-Checkliste dort
-	{ id: 'K1', label: 'docs/BACKEND-DATENSCHUTZ.md K1: Schülerkonto: Pflichtfelder Benutzername, Anzeigename, Passwort; E-Mail und Klassencode optional', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
-	{ id: 'K2', label: 'docs/BACKEND-DATENSCHUTZ.md K2: Lehrkraftkonto: Name, E-Mail, Passwort, Nutzungsbedingungen; Schule optional', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
+	{ id: 'K1', label: 'docs/BACKEND-DATENSCHUTZ.md K1: Schüler ohne Konto, Klassen-Login mit Ableitung im Browser, Server speichert nur Nummer, Prüfwert und verschlüsselten Namen', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
+	{ id: 'K2', label: 'docs/BACKEND-DATENSCHUTZ.md K2: Lehrkraftkonto: Name, E-Mail, Passwort; Schule optional; Schlüsselpaar mit verschlüsseltem privaten Teil', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
 	{ id: 'K3', label: 'docs/BACKEND-DATENSCHUTZ.md K3: Passwörter nur als Argon2id-Hash mit Salt, gebunden an Benutzername und Erstellungstag, nie im Klartext', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
 	{ id: 'K4', label: 'docs/BACKEND-DATENSCHUTZ.md K4: Klassen und Fortschritt: Beitritt per Code/QR, gespeicherte Felder, nur letzte Abfrage, Sichtbarkeit nur Lehrkraft, einmalige Übernahme des Browser-Fortschritts', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
 	{ id: 'K5', label: 'docs/BACKEND-DATENSCHUTZ.md K5: Live-Quiz: gespeicherte Daten, Rangliste, Löschung 24 h nach Ende, WebSocket zum eigenen Server', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
