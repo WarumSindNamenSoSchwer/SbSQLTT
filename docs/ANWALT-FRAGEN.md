@@ -72,7 +72,7 @@ Sicherheit allgemein: HTTPS, Server-Zugang nur per SSH-Schlüssel, kein Root-Log
 
 ## Teil 2: Fragen
 
-1. Klassen-Login: Ich sehe von Schülern nur Nummern und Fortschritt, keine Namen. Sind das für mich überhaupt personenbezogene Daten (EuGH C-413/23 P)? Ich liefere allerdings den Code aus, der die Verschlüsselung macht.
+1. Klassen-Login: Ich sehe von Schülern nur Nummern und Fortschritt, keine Namen. Sind das für mich überhaupt personenbezogene Daten (EuGH C-413/23 P)? Den privaten Schlüssel erzeugt der Browser der Lehrkraft, ich bekomme ihn nur verschlüsselt und kann ihn nicht lesen. Das Programm dafür kommt allerdings von meinem Server. Der Quellcode ist öffentlich.
 2. Falls ja: Reicht Art. 6 Abs. 1 lit. b DSGVO, obwohl die meisten Schüler minderjährig sind (§§ 107 ff. BGB)? Oder brauche ich eine Einwilligung nach Art. 8 DSGVO, unter 16 also durch die Eltern?
 3. Lehrkraft nutzt Tabula ohne Beschluss der Schule: Bin ich allein verantwortlich, brauche ich einen AV-Vertrag mit der Schule, oder ist es gemeinsame Verantwortung nach Art. 26 DSGVO?
 4. Muss die Schulleitung den Einsatz freigeben? Falls ja: Muss ich Lehrkräfte bei der Registrierung darauf hinweisen?
