@@ -81,6 +81,6 @@ Sicherheit allgemein: HTTPS, Server-Zugang nur per SSH-Schlüssel, kein Root-Log
 6. Passwort vergessen bei Schülern: Die Lehrkraft erzeugt einen Einmal-Code (15 Minuten gültig), der Schüler legt damit selbst ein neues Passwort fest. Passt das so?
 7. Quiz-Rangliste mit Namen am Beamer: Passt das so, oder brauche ich eine Einwilligung oder eine anonyme Teilnahme?
 8. Impressum (tabulasql.de/impressum): Reicht das so?
-9. Die Datenschutzerklärung (tabulasql.de/datenschutz) beschreibt noch die alten Schülerkonten und wird an diese Übersicht angepasst. Muss darüber hinaus etwas rein?
+9. Datenschutzerklärung (tabulasql.de/datenschutz): Sie beschreibt schon den Klassen-Login aus Teil 1. Muss noch etwas rein oder raus?
 10. Nutzungsbedingungen gibt es keine. Lehrkräfte bestätigen bei der Registrierung nur, dass sie die Datenschutzhinweise gelesen haben. Brauche ich welche, und wenn ja, was muss rein?
 11. Reicht Teil 1 als Verzeichnis von Verarbeitungstätigkeiten nach Art. 30 DSGVO, oder fehlt etwas?
