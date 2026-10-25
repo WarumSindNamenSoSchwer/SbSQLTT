@@ -15,11 +15,11 @@ Allgemein: Server bei Hetzner in Nürnberg, Mails ebenfalls über Hetzner, AV-Ve
 - Wer sieht es: nur ich
 
 ### 2. Speicherung im Browser
-- Daten: Lernfortschritt, helle oder dunkle Darstellung, geschlossene Hinweise
-- Zweck: Fortschritt ohne Konto merken
+- Daten: Lernfortschritt, helle oder dunkle Darstellung, geschlossene Hinweise. Bei angemeldeten Schülern der eigene Name im Tab-Speicher (für die Begrüßung und zum Ändern von Name oder Passwort). Bei angemeldeten Lehrkräften der entschlüsselte Schlüssel, damit sie die Namen ihrer Schüler lesen kann.
+- Zweck: Fortschritt ohne Anmeldung merken, Anmeldung bedienen
 - Rechtsgrundlage: § 25 Abs. 2 Nr. 2 TDDDG
-- Speicherung: nur im Browser. Beim ersten Klassen-Login wird der Fortschritt einmalig in die Klasse übernommen.
-- Dauer: bis der Nutzer es im Browser löscht
+- Speicherung: nur im Browser, wird nicht an mich übertragen. Beim ersten Klassen-Login wird der Fortschritt einmalig in die Klasse übernommen.
+- Dauer: Fortschritt bis der Nutzer ihn im Browser löscht. Name des Schülers bis zum Schließen des Tabs oder Abmelden. Schlüssel der Lehrkraft bis zum Abmelden.
 
 ### 3. Kontaktformular und E-Mail
 - Daten: Name, E-Mail, Schule (freiwillig), Nachricht
@@ -30,7 +30,7 @@ Allgemein: Server bei Hetzner in Nürnberg, Mails ebenfalls über Hetzner, AV-Ve
 - Wer sieht es: nur ich
 
 ### 4. Lehrkraft-Konto
-- Daten: Name, E-Mail (wird per Link bestätigt), Passwort als Hash (Argon2id), Schule (freiwillig), Zeitpunkt von Registrierung und letzter Anmeldung, Klassenschlüssel (mit Passwort und Wiederherstellungscode der Lehrkraft verschlüsselt, für mich nicht lesbar)
+- Daten: Name, E-Mail (wird per Link bestätigt), Passwort als Hash (Argon2id), Schule (freiwillig), Zeitpunkt von Registrierung und letzter Anmeldung, Schlüsselpaar der Lehrkraft (öffentlicher Teil offen, privater Teil mit ihrem Passwort und ihrem Wiederherstellungscode verschlüsselt, für mich nicht lesbar)
 - Zweck: Konto bereitstellen, Klassen und Quiz verwalten
 - Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
 - Speicherung: Datenbank auf dem Server
@@ -38,17 +38,18 @@ Allgemein: Server bei Hetzner in Nürnberg, Mails ebenfalls über Hetzner, AV-Ve
 - Wer sieht es: nur ich (technisch)
 
 ### 5. Schüler (Klassen-Login)
-Es gibt keine Schülerkonten. Schüler treten per QR-Code einer Klasse bei und melden sich danach an jedem PC mit Klassencode, Name und eigenem Passwort an. Der Browser macht daraus einen Schlüssel. Name und Passwort verlassen den PC nie.
-- Daten beim Server: zufällige Nummer, Klasse, Prüfwert des Login-Schlüssels, Name und letzte Abfrage mit Fehlermeldung (beides verschlüsselt, nur die Lehrkraft kann es lesen), je Übung erledigt ja/nein, Anzahl Versuche, Zeitpunkt, letzte Anmeldung
+Es gibt keine Schülerkonten. Schüler treten per QR-Code einer Klasse bei und melden sich danach an jedem PC mit Klassencode, Name und eigenem Passwort an. Der Browser macht daraus einen Schlüssel. Name und Passwort verlassen den PC nie. Den Namen verschlüsselt der Browser des Schülers mit dem öffentlichen Schlüssel der Lehrkraft.
+- Daten beim Server: zufällige Nummer, Klasse, Prüfwert des Login-Schlüssels, verschlüsselter Name, verschlüsselte letzte Abfrage mit Fehlermeldung, ob der letzte Versuch einen Fehler hatte, je Übung erledigt ja/nein, Anzahl Versuche, Zeitpunkt, letzte Anmeldung
 - Nicht beim Server: Klarname, Passwort, E-Mail, Alter
 - Zweck: Fortschritt auf jedem PC, Lehrkraft sieht, wo jemand festhängt
 - Rechtsgrundlage: bisher Art. 6 Abs. 1 lit. b DSGVO, siehe Fragen 1 und 2
 - Dauer: bis der Schüler austritt, die Lehrkraft ihn entfernt oder die Klasse löscht, sonst 12 Monate nach der letzten Anmeldung. Die letzte Abfrage wird bei jedem Versuch überschrieben.
 - Wer sieht es: die Lehrkraft der Klasse. Ich sehe nur Nummern und Fortschritt.
+- Passwort vergessen: Die Lehrkraft erzeugt einen Einmal-Code (15 Minuten gültig), damit legt der Schüler ein neues Passwort fest.
 
-### 6. Live-Quiz
+### 6. Live-Quiz (nur innerhalb einer Klasse)
 - Daten: Teilnahme, Antwort je Frage, Antwortzeit, Punkte
-- Zweck: Quiz im Unterricht, Rangliste am Beamer (die Namen entschlüsselt nur der Browser der Lehrkraft)
+- Zweck: Quiz im Unterricht, Rangliste am Beamer (die Namen entschlüsselt nur der Browser der Lehrkraft). Auf dem Handy sieht jeder Schüler nur seinen eigenen Platz.
 - Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO
 - Dauer: einzelne Antworten 24 Stunden nach Quiz-Ende, danach nur der Anteil richtiger Antworten je Frage ohne Bezug zu Schülern
 - Wer sieht es: Lehrkraft, die Klasse sieht die Rangliste im Raum

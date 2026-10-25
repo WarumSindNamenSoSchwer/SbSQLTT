@@ -13,17 +13,19 @@ Der Betreiber hält nie Namen oder Passwörter von Schülern. Auf dem Server lie
 - **Quiz:** QR füllt Klasse und Quiz aus, Schüler gibt Name und Passwort ein.
 
 ## Technik
-- Browser: `schlüssel = Argon2id(Passwort, Salz aus Klassencode + Name)`, etwa 1 Sekunde. Name und Passwort verlassen den PC nie.
+- Browser: `schlüssel = Argon2id(Passwort, Salz aus Klassen-Salz + Name)`, etwa 1 Sekunde. Name und Passwort verlassen den PC nie. Das Klassen-Salz ist ein Zufallswert der Klasse, so bleibt der Klassencode änderbar.
 - Server speichert nur `SHA-256(schlüssel)` und vergleicht. Passwort oder Name ändern: alter Schlüssel wird gegen neuen getauscht.
-- Klasse hat ein Schlüsselpaar, erzeugt im Browser der Lehrkraft. Der Schüler-Browser verschlüsselt Namen und letzte Abfrage mit dem öffentlichen Teil.
-- Der private Teil liegt zweimal verschlüsselt beim Server: mit dem Passwort der Lehrkraft und mit ihrem Wiederherstellungscode.
+- Die Lehrkraft hat ein Schlüsselpaar (RSA-OAEP), erzeugt in ihrem Browser bei der Registrierung. Der Schüler-Browser verschlüsselt Namen und letzte Abfrage mit dem öffentlichen Teil (RSA-OAEP plus AES-GCM).
+- Der private Teil liegt zweimal verschlüsselt beim Server: mit dem Passwort der Lehrkraft und mit ihrem Wiederherstellungscode. Nach dem Anmelden liegt er entschlüsselt im Browser der Lehrkraft (IndexedDB, nicht exportierbar) bis zum Abmelden.
 - Lehrkraft-Passwort vergessen: E-Mail-Reset wie bisher. Mit Wiederherstellungscode sind die Namen sofort wieder da, ohne Code kommen sie zurück, sobald sich die Schüler wieder anmelden (neues Schlüsselpaar).
-- Gleicher Name in einer Klasse: Hinweis „Name schon vergeben“.
-- Domain: QR-Codes und Links zeigen auf `https://www.tabulasql.de/...`, das Anmelde-Cookie gilt für diese Domain. Die Schlüssel hängen nicht an der Domain (Salz nur aus Klassencode und Name), ein Domainwechsel kostet also keine Daten.
+- Gleicher Name in einer Klasse ist erlaubt, solange das Passwort anders ist (der Server kennt keine Namen und kann nicht prüfen). Gleicher Name und gleiches Passwort: „Bitte anderes Passwort wählen“.
+- „Hängt fest“: Der Server sieht nur, ob der letzte Versuch einen Fehler hatte (Flag), nicht die Abfrage.
+- Quiz nur innerhalb einer Klasse. Auf dem Handy sieht jeder Schüler nur seinen eigenen Platz, die Rangliste mit Namen nur der Beamer.
+- Domain: QR-Codes und Links zeigen auf `https://www.tabulasql.de/...`, das Anmelde-Cookie gilt für diese Domain. Die Schlüssel hängen nicht an der Domain (Salz nur aus Klassen-Salz und Name), ein Domainwechsel kostet also keine Daten.
 
 ## Schutz gegen Raten
 1. Passwort mindestens 8 Zeichen.
-2. Fehlversuche begrenzen **je Klasse und Name** (nicht je IP, weil eine ganze Schule hinter einer IP sitzt).
+2. Fehlversuche begrenzen **je Klasse** (der Server kennt keine Namen, und eine ganze Schule sitzt hinter einer IP). Großzügig genug für 30 Schüler mit Tippfehlern.
 3. Langsame Ableitung im Browser (Argon2id, Ziel etwa 1 Sekunde).
 
 Restrisiko: Wer die Datenbank hat und Klassencode und Namen kennt, kann schwache Passwörter offline raten. Wird so akzeptiert.
