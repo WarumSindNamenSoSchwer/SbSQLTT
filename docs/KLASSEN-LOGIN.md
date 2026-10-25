@@ -19,6 +19,7 @@ Der Betreiber hält nie Namen oder Passwörter von Schülern. Auf dem Server lie
 - Der private Teil liegt zweimal verschlüsselt beim Server: mit dem Passwort der Lehrkraft und mit ihrem Wiederherstellungscode.
 - Lehrkraft-Passwort vergessen: E-Mail-Reset wie bisher. Mit Wiederherstellungscode sind die Namen sofort wieder da, ohne Code kommen sie zurück, sobald sich die Schüler wieder anmelden (neues Schlüsselpaar).
 - Gleicher Name in einer Klasse: Hinweis „Name schon vergeben“.
+- Domain: QR-Codes und Links zeigen auf `https://www.tabulasql.de/...`, das Anmelde-Cookie gilt für diese Domain. Die Schlüssel hängen nicht an der Domain (Salz nur aus Klassencode und Name), ein Domainwechsel kostet also keine Daten.
 
 ## Schutz gegen Raten
 1. Passwort mindestens 8 Zeichen.
@@ -30,7 +31,7 @@ Restrisiko: Wer die Datenbank hat und Klassencode und Namen kennt, kann schwache
 ## Last: 4 Klassen à 30 Schüler gleichzeitig
 - Die teure Rechnung (Argon2) läuft im Browser jedes Schülers, nicht auf dem Server.
 - Der Server macht pro Anmeldung nur einen SHA-256-Vergleich und eine Datenbankabfrage, Bruchteile einer Millisekunde.
-- Abnahme: Lasttest mit 120 gleichzeitigen Anmeldungen plus Fortschritt laden gegen das echte Image auf dem Server (CAX11, 2 Kerne, 4 GB). Ziel: alle unter 1 Sekunde Serverzeit, kein Fehler.
+- Später (nicht jetzt): Lasttest mit 120 gleichzeitigen Anmeldungen plus Fortschritt laden gegen das echte Image auf dem Server (CAX11, 2 Kerne, 4 GB).
 
 ## Was wegfällt
 Schüler-Registrierung, Benutzername, E-Mail von Schülern, E-Mail-Reset für Schüler, Einmal-Passwort, `/beitreten` als eigener Schritt.
