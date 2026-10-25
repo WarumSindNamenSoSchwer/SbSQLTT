@@ -45,7 +45,6 @@ Es gibt keine Schülerkonten. Schüler treten per QR-Code einer Klasse bei und m
 - Rechtsgrundlage: bisher Art. 6 Abs. 1 lit. b DSGVO, siehe Fragen 1 und 2
 - Dauer: bis der Schüler austritt, die Lehrkraft ihn entfernt oder die Klasse löscht, sonst 12 Monate nach der letzten Anmeldung. Die letzte Abfrage wird bei jedem Versuch überschrieben.
 - Wer sieht es: die Lehrkraft der Klasse. Ich sehe nur Nummern und Fortschritt.
-- Restrisiko: Wer die Datenbank hat und Klassencode und Namen kennt, kann schwache Passwörter durchprobieren. Gegenmaßnahmen: mindestens 8 Zeichen, gebremste Anmeldeversuche, langsame Berechnung im Browser.
 
 ### 6. Live-Quiz
 - Daten: Teilnahme, Antwort je Frage, Antwortzeit, Punkte
