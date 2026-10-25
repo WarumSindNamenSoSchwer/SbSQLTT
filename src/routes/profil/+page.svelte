@@ -3,46 +3,49 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import TopNav from '$lib/tabula/TopNav.svelte';
-	import { session, sessionLogout } from '$lib/tabula/session.svelte.js';
-	import { apiPatchMe, apiDeleteMe, apiChangePassword, ApiError } from '$lib/tabula/api.js';
+	import {
+		session,
+		sessionLogout,
+		sessionStudentRekey,
+		sessionLeaveClass,
+		sessionChangeTeacherPassword,
+		sessionRecoverWithCode,
+		sessionStartFreshKeys,
+		sessionNewRecoveryCode,
+	} from '$lib/tabula/session.svelte.js';
+	import { apiPatchMe, apiDeleteMe } from '$lib/tabula/api.js';
 	import { ACCOUNTS_LIVE } from '$lib/tabula/flags.js';
 
 	let dark = $state(false);
 
-	// ---- Felder bearbeiten ---------------------------------------------------
-	type EditField = 'display_name' | 'username' | 'password' | null;
+	type EditField = 'name' | 'school' | 'password' | 'recovery' | null;
 	let editing = $state<EditField>(null);
+	let busy = $state(false);
+	let err = $state<string | null>(null);
 
-	// Anzeigename
-	let newDisplayName = $state('');
-	let displayNameErr = $state<string | null>(null);
-	let displayNameBusy = $state(false);
-
-	// Benutzername
-	let newUsername = $state('');
-	let usernamePassword = $state('');
-	let usernameErr = $state<string | null>(null);
-	let usernameBusy = $state(false);
-
-	// Passwort
-	let currentPw = $state('');
+	// Felder
+	let fName = $state('');
+	let fSchool = $state('');
+	let curPw = $state('');
 	let newPw = $state('');
-	let newPwRepeat = $state('');
-	let passwordErr = $state<string | null>(null);
-	let passwordBusy = $state(false);
-	/** Nach Passwort-Reset durch Lehrkraft: Änderung erzwingen */
-	let mustChange = $state(false);
+	let newPw2 = $state('');
 
-	// Konto löschen
-	let deleteOpen = $state(false);
-	let deleteConfirmUsername = $state('');
-	let deleteBusy = $state(false);
-	let deleteErr = $state<string | null>(null);
+	// Lehrkraft: Schlüssel nach Passwort-Reset wiederherstellen
+	let recCode = $state('');
+	let recPw = $state('');
+	let recBusy = $state(false);
+	let recErr = $state<string | null>(null);
+	/** Neu erzeugter Wiederherstellungscode (einmal anzeigen) */
+	let shownCode = $state<string | null>(null);
 
-	// Toast
+	// Gefährliche Aktion (Lehrkraft: Konto löschen, Schüler: austreten)
+	let dangerOpen = $state(false);
+	let dangerConfirm = $state('');
+	let dangerBusy = $state(false);
+	let dangerErr = $state<string | null>(null);
+
 	let toast = $state<string | null>(null);
 	let toastTimer: ReturnType<typeof setTimeout> | null = null;
-
 	function showToast(msg: string) {
 		toast = msg;
 		if (toastTimer) clearTimeout(toastTimer);
@@ -54,139 +57,133 @@
 		sync();
 		const mo = new MutationObserver(sync);
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
-		// Warten bis Session geladen, dann prüfen ob angemeldet
 		const checkAuth = () => {
 			if (!ACCOUNTS_LIVE) { goto('/'); return; }
-			if (session.loading) {
-				// Noch am Laden: kurz warten und erneut prüfen
-				setTimeout(checkAuth, 50);
-				return;
-			}
-			if (!session.user) {
-				goto('/login?redirect=/profil');
-				return;
-			}
-			if (session.user.must_change_password || new URLSearchParams(location.search).has('pw')) {
-				mustChange = !!session.user.must_change_password;
-				startEdit('password');
-			}
+			if (session.loading) { setTimeout(checkAuth, 50); return; }
+			if (!session.user) goto('/login?redirect=/profil');
 		};
 		checkAuth();
-
 		return () => mo.disconnect();
 	});
 
 	function startEdit(field: EditField) {
 		editing = field;
-		displayNameErr = null;
-		usernameErr = null;
-		passwordErr = null;
-		if (field === 'display_name') newDisplayName = session.user?.display_name ?? '';
-		if (field === 'username') { newUsername = session.user?.username ?? ''; usernamePassword = ''; }
-		if (field === 'password') { currentPw = ''; newPw = ''; newPwRepeat = ''; }
+		err = null;
+		curPw = ''; newPw = ''; newPw2 = '';
+		if (field === 'name') fName = session.displayName;
+		if (field === 'school') fSchool = session.teacher?.school ?? '';
 	}
 
-	function cancelEdit() {
-		editing = null;
-	}
-
-	// ---- Anzeigename speichern -----------------------------------------------
-	async function saveDisplayName(e: Event) {
-		e.preventDefault();
-		if (!newDisplayName.trim()) {
-			displayNameErr = 'Bitte gib einen Anzeigenamen ein.';
-			return;
-		}
-		displayNameBusy = true;
-		displayNameErr = null;
+	async function run(fn: () => Promise<void>, ok: string) {
+		busy = true;
+		err = null;
 		try {
-			await apiPatchMe({ display_name: newDisplayName.trim() });
-			// Session-User aktualisieren
-			if (session.user) {
-				(session.user as { display_name: string }).display_name = newDisplayName.trim();
+			await fn();
+			editing = null;
+			showToast(ok);
+		} catch (e) {
+			err = e instanceof Error ? e.message : 'Fehler.';
+		} finally {
+			busy = false;
+		}
+	}
+
+	// ---- Schüler --------------------------------------------------------------
+	function saveStudentName(e: Event) {
+		e.preventDefault();
+		if (!fName.trim()) { err = 'Bitte gib deinen Namen ein.'; return; }
+		if (!curPw) { err = 'Zum Ändern brauchst du dein Passwort.'; return; }
+		void run(() => sessionStudentRekey(curPw, fName, curPw), 'Name geändert. Melde dich ab jetzt mit dem neuen Namen an.');
+	}
+	function saveStudentPassword(e: Event) {
+		e.preventDefault();
+		if (!curPw) { err = 'Bitte gib dein aktuelles Passwort ein.'; return; }
+		if (newPw.length < 8) { err = 'Das neue Passwort braucht mindestens 8 Zeichen.'; return; }
+		if (newPw !== newPw2) { err = 'Die Passwörter stimmen nicht überein.'; return; }
+		void run(() => sessionStudentRekey(curPw, session.displayName, newPw), 'Passwort geändert.');
+	}
+
+	// ---- Lehrkraft ------------------------------------------------------------
+	function saveTeacherName(e: Event) {
+		e.preventDefault();
+		if (!fName.trim()) { err = 'Bitte geben Sie Ihren Namen ein.'; return; }
+		void run(async () => {
+			await apiPatchMe({ display_name: fName.trim(), name: fName.trim() });
+			if (session.teacher) session.teacher.display_name = fName.trim();
+		}, 'Name gespeichert.');
+	}
+	function saveSchool(e: Event) {
+		e.preventDefault();
+		void run(async () => {
+			await apiPatchMe({ school: fSchool.trim() || null });
+			if (session.teacher) session.teacher.school = fSchool.trim() || null;
+		}, 'Schule gespeichert.');
+	}
+	function saveTeacherPassword(e: Event) {
+		e.preventDefault();
+		if (!curPw) { err = 'Bitte geben Sie Ihr aktuelles Passwort ein.'; return; }
+		if (newPw.length < 8) { err = 'Das neue Passwort braucht mindestens 8 Zeichen.'; return; }
+		if (newPw !== newPw2) { err = 'Die Passwörter stimmen nicht überein.'; return; }
+		void run(() => sessionChangeTeacherPassword(curPw, newPw), 'Passwort geändert. Andere Geräte wurden abgemeldet.');
+	}
+	function newRecovery(e: Event) {
+		e.preventDefault();
+		if (!curPw) { err = 'Bitte geben Sie Ihr Passwort ein.'; return; }
+		void run(async () => { shownCode = await sessionNewRecoveryCode(curPw); }, 'Neuer Code erzeugt. Der alte gilt nicht mehr.');
+	}
+
+	async function recoverWithCode(e: Event) {
+		e.preventDefault();
+		recErr = null;
+		if (!recCode.trim()) { recErr = 'Bitte geben Sie Ihren Wiederherstellungscode ein.'; return; }
+		if (!recPw) { recErr = 'Bitte geben Sie Ihr neues Passwort ein.'; return; }
+		recBusy = true;
+		try {
+			await sessionRecoverWithCode(recCode, recPw);
+			showToast('Schlüssel wiederhergestellt. Die Namen sind wieder lesbar.');
+		} catch (e2) {
+			recErr = e2 instanceof Error ? e2.message : 'Fehler.';
+		} finally {
+			recBusy = false;
+		}
+	}
+	async function startFresh() {
+		recErr = null;
+		if (!recPw) { recErr = 'Bitte geben Sie Ihr neues Passwort ein.'; return; }
+		recBusy = true;
+		try {
+			shownCode = await sessionStartFreshKeys(recPw);
+		} catch (e2) {
+			recErr = e2 instanceof Error ? e2.message : 'Fehler.';
+		} finally {
+			recBusy = false;
+		}
+	}
+
+	// ---- Löschen / Austreten --------------------------------------------------
+	const dangerWord = $derived(session.teacher ? 'LÖSCHEN' : 'AUSTRETEN');
+	async function confirmDanger() {
+		if (dangerConfirm.trim().toUpperCase() !== dangerWord) { dangerErr = `Bitte tippe ${dangerWord}.`; return; }
+		dangerBusy = true;
+		dangerErr = null;
+		try {
+			if (session.teacher) {
+				await apiDeleteMe();
+				await sessionLogout().catch(() => {});
+			} else {
+				await sessionLeaveClass();
 			}
-			editing = null;
-			showToast('Anzeigename gespeichert.');
-		} catch (err) {
-			displayNameErr = err instanceof Error ? err.message : 'Fehler beim Speichern.';
+			goto('/');
+		} catch (e) {
+			dangerErr = e instanceof Error ? e.message : 'Fehler.';
 		} finally {
-			displayNameBusy = false;
+			dangerBusy = false;
 		}
 	}
 
-	// ---- Benutzername speichern ----------------------------------------------
-	async function saveUsername(e: Event) {
-		e.preventDefault();
-		if (!newUsername.trim()) {
-			usernameErr = 'Bitte gib einen Benutzernamen ein.';
-			return;
-		}
-		if (!usernamePassword) {
-			usernameErr = 'Aktuelles Passwort erforderlich.';
-			return;
-		}
-		usernameBusy = true;
-		usernameErr = null;
-		try {
-			await apiPatchMe({ username: newUsername.trim(), current_password: usernamePassword });
-			if (session.user) {
-				(session.user as { username: string }).username = newUsername.trim();
-			}
-			editing = null;
-			showToast('Benutzername gespeichert.');
-		} catch (err) {
-			usernameErr = err instanceof Error ? err.message : 'Fehler beim Speichern.';
-		} finally {
-			usernameBusy = false;
-		}
-	}
-
-	// ---- Passwort ändern -----------------------------------------------------
-	async function savePassword(e: Event) {
-		e.preventDefault();
-		if (!currentPw) { passwordErr = 'Bitte gib dein aktuelles Passwort ein.'; return; }
-		if (newPw.length < 8) { passwordErr = 'Neues Passwort muss mindestens 8 Zeichen haben.'; return; }
-		if (newPw !== newPwRepeat) { passwordErr = 'Passwörter stimmen nicht überein.'; return; }
-		passwordBusy = true;
-		passwordErr = null;
-		try {
-			await apiChangePassword(currentPw, newPw);
-			if (session.user) (session.user as { must_change_password?: number }).must_change_password = 0;
-			mustChange = false;
-			editing = null;
-			showToast('Passwort geändert. Andere Geräte wurden abgemeldet.');
-		} catch (err) {
-			passwordErr = err instanceof Error ? err.message : 'Fehler.';
-		} finally {
-			passwordBusy = false;
-		}
-	}
-
-	// ---- Konto löschen -------------------------------------------------------
-	async function confirmDelete() {
-		if (deleteConfirmUsername !== session.user?.username) {
-			deleteErr = 'Benutzername stimmt nicht überein.';
-			return;
-		}
-		deleteBusy = true;
-		deleteErr = null;
-		try {
-			await apiDeleteMe();
-			await sessionLogout().catch(() => {});
-			goto('/login');
-		} catch (err) {
-			deleteErr = err instanceof Error ? err.message : 'Fehler beim Löschen.';
-		} finally {
-			deleteBusy = false;
-		}
-	}
-
-	// Avatar-Initialen
 	const initials = $derived(() => {
-		const u = session.user;
-		if (!u) return '';
-		const parts = u.display_name.trim().split(/\s+/);
+		const parts = session.displayName.trim().split(/\s+/).filter(Boolean);
+		if (parts.length === 0) return '';
 		if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 		return parts[0].slice(0, 2).toUpperCase();
 	});
@@ -197,183 +194,185 @@
 <div class="tb page">
 	<TopNav {dark} />
 
-	<!-- Toast -->
 	{#if toast}
-		<div class="toast" role="status">
-			<span class="toast-ok">✓</span>{toast}
-		</div>
+		<div class="toast" role="status"><span class="toast-ok">✓</span>{toast}</div>
 	{/if}
 
 	<main class="main">
 		<div class="content">
 			<h1>Profil</h1>
 
-			{#if mustChange}
-				<p class="must-change" role="alert">Deine Lehrkraft hat dein Passwort zurückgesetzt. Bitte wähle jetzt ein eigenes neues Passwort. Als aktuelles Passwort gibst du das Einmal-Passwort ein.</p>
+			{#if shownCode}
+				<div class="code-box" role="status">
+					<span class="code-title">Ihr neuer Wiederherstellungscode</span>
+					<span class="code-val mono">{shownCode}</span>
+					<span class="code-hint">Bitte notieren oder ausdrucken. Tabula kennt diesen Code nicht und kann ihn nicht wiederherstellen.</span>
+					<div class="edit-btns">
+						<button class="btn-cancel" onclick={() => window.print()}>Drucken</button>
+						<button class="btn-save" onclick={() => (shownCode = null)}>Notiert</button>
+					</div>
+				</div>
+			{/if}
+
+			{#if session.teacher && session.needsKeyRecovery}
+				<div class="recover-box" role="alert">
+					<span class="code-title">Namen Ihrer Schüler wiederherstellen</span>
+					<p class="code-hint">Ihr Passwort wurde zurückgesetzt. Die Namen Ihrer Schüler sind verschlüsselt und nur mit Ihrem Wiederherstellungscode wieder lesbar.</p>
+					<form class="profile-edit-form full" onsubmit={recoverWithCode}>
+						<input type="text" autocomplete="off" spellcheck="false" placeholder="Wiederherstellungscode (8 Wörter)" disabled={recBusy} bind:value={recCode} />
+						<input type="password" autocomplete="current-password" placeholder="Ihr neues Passwort" disabled={recBusy} bind:value={recPw} />
+						{#if recErr}<span class="field-err">{recErr}</span>{/if}
+						<div class="edit-btns">
+							<button type="submit" class="btn-save" disabled={recBusy}>{recBusy ? 'Wird geprüft …' : 'Wiederherstellen'}</button>
+							<button type="button" class="btn-cancel" disabled={recBusy} onclick={startFresh}>Ich habe keinen Code</button>
+						</div>
+						<span class="code-hint">Ohne Code: Sie bekommen einen neuen Schlüssel. Fortschritt und Klassen bleiben, die Namen erscheinen wieder, sobald sich Ihre Schüler das nächste Mal anmelden.</span>
+					</form>
+				</div>
 			{/if}
 
 			{#if session.user}
-				<!-- Profil-Tabelle -->
+				<div class="profile-head">
+					<span class="avatar">{initials()}</span>
+					<div class="head-text">
+						<span class="head-name">{session.displayName}</span>
+						<span class="head-sub">{session.teacher ? 'Lehrkraft' : `Schüler in ${session.student?.class?.name ?? ''}`}</span>
+					</div>
+				</div>
+
 				<div class="profile-table">
-					<!-- Anzeigename -->
+					<!-- Name -->
 					<div class="profile-row">
-						{#if editing === 'display_name'}
-							<span class="profile-key">Anzeigename</span>
-							<form class="profile-edit-form" onsubmit={saveDisplayName}>
-								<input
-									type="text"
-									autocomplete="name"
-									placeholder="Anzeigename"
-									disabled={displayNameBusy}
-									bind:value={newDisplayName}
-								/>
-								{#if displayNameErr}<span class="field-err">{displayNameErr}</span>{/if}
+						<span class="profile-key">Name</span>
+						{#if editing === 'name'}
+							<form class="profile-edit-form" onsubmit={session.teacher ? saveTeacherName : saveStudentName}>
+								<input type="text" autocomplete="off" disabled={busy} bind:value={fName} />
+								{#if session.student}
+									<input type="password" autocomplete="current-password" placeholder="Dein Passwort" disabled={busy} bind:value={curPw} />
+									<span class="code-hint">Du meldest dich danach mit dem neuen Namen an. Deine Lehrkraft sieht ihn sofort.</span>
+								{/if}
+								{#if err}<span class="field-err">{err}</span>{/if}
 								<div class="edit-btns">
-									<button type="submit" class="btn-save" disabled={displayNameBusy}>
-										{displayNameBusy ? 'Speichern …' : 'Speichern'}
-									</button>
-									<button type="button" class="btn-cancel" onclick={cancelEdit}>Abbrechen</button>
+									<button type="submit" class="btn-save" disabled={busy}>{busy ? 'Speichern …' : 'Speichern'}</button>
+									<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
 								</div>
 							</form>
 						{:else}
-							<span class="profile-key">Anzeigename</span>
-							<span class="profile-val">{session.user.display_name}</span>
-							<button class="profile-action" onclick={() => startEdit('display_name')}>Ändern</button>
+							<span class="profile-val">{session.displayName}</span>
+							<button class="profile-action" onclick={() => startEdit('name')}>Ändern</button>
 						{/if}
 					</div>
 
-					<!-- Benutzername -->
-					<div class="profile-row">
-						{#if editing === 'username'}
-							<span class="profile-key">Benutzername</span>
-							<form class="profile-edit-form" onsubmit={saveUsername}>
-								<input
-									type="text"
-									autocomplete="username"
-									placeholder="Benutzername"
-									disabled={usernameBusy}
-									bind:value={newUsername}
-								/>
-								<input
-									type="password"
-									autocomplete="current-password"
-									placeholder="Aktuelles Passwort erforderlich"
-									disabled={usernameBusy}
-									bind:value={usernamePassword}
-								/>
-								{#if usernameErr}<span class="field-err">{usernameErr}</span>{/if}
-								<div class="edit-btns">
-									<button type="submit" class="btn-save" disabled={usernameBusy}>
-										{usernameBusy ? 'Speichern …' : 'Speichern'}
-									</button>
-									<button type="button" class="btn-cancel" onclick={cancelEdit}>Abbrechen</button>
-								</div>
-							</form>
-						{:else}
-							<span class="profile-key">Benutzername</span>
-							<span class="profile-val mono">{session.user.username}</span>
-							<button class="profile-action" onclick={() => startEdit('username')}>Ändern</button>
-						{/if}
-					</div>
-
-					<!-- E-Mail -->
-					<div class="profile-row">
-						<span class="profile-key">E-Mail</span>
-						<span class="profile-val">{session.user.email ?? 'Nicht hinterlegt'}</span>
-						<span class="profile-action-placeholder"></span>
-					</div>
+					{#if session.teacher}
+						<div class="profile-row">
+							<span class="profile-key">E-Mail</span>
+							<span class="profile-val">{session.teacher.email}</span>
+							<span class="profile-action-placeholder"></span>
+						</div>
+						<div class="profile-row">
+							<span class="profile-key">Schule</span>
+							{#if editing === 'school'}
+								<form class="profile-edit-form" onsubmit={saveSchool}>
+									<input type="text" autocomplete="organization" disabled={busy} bind:value={fSchool} />
+									{#if err}<span class="field-err">{err}</span>{/if}
+									<div class="edit-btns">
+										<button type="submit" class="btn-save" disabled={busy}>Speichern</button>
+										<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
+									</div>
+								</form>
+							{:else}
+								<span class="profile-val">{session.teacher.school ?? 'Nicht angegeben'}</span>
+								<button class="profile-action" onclick={() => startEdit('school')}>Ändern</button>
+							{/if}
+						</div>
+					{:else if session.student?.class}
+						<div class="profile-row">
+							<span class="profile-key">Klasse</span>
+							<span class="profile-val">{session.student.class.name} · {session.student.class.teacher_name}</span>
+							<span class="profile-action-placeholder"></span>
+						</div>
+						<div class="profile-row">
+							<span class="profile-key">Klassencode</span>
+							<span class="profile-val mono">{session.student.class.code}</span>
+							<span class="profile-action-placeholder"></span>
+						</div>
+					{/if}
 
 					<!-- Passwort -->
-					<div class="profile-row no-border">
+					<div class="profile-row" class:no-border={!session.teacher}>
+						<span class="profile-key">Passwort</span>
 						{#if editing === 'password'}
-							<span class="profile-key">Passwort</span>
-							<form class="profile-edit-form" onsubmit={savePassword}>
-								<input
-									type="password"
-									autocomplete="current-password"
-									placeholder="Aktuelles Passwort"
-									disabled={passwordBusy}
-									bind:value={currentPw}
-								/>
-								<input
-									type="password"
-									autocomplete="new-password"
-									placeholder="Neues Passwort (mind. 8 Zeichen)"
-									disabled={passwordBusy}
-									bind:value={newPw}
-								/>
-								<input
-									type="password"
-									autocomplete="new-password"
-									placeholder="Neues Passwort wiederholen"
-									disabled={passwordBusy}
-									bind:value={newPwRepeat}
-								/>
-								{#if passwordErr}<span class="field-err">{passwordErr}</span>{/if}
+							<form class="profile-edit-form" onsubmit={session.teacher ? saveTeacherPassword : saveStudentPassword}>
+								<input type="password" autocomplete="current-password" placeholder="Aktuelles Passwort" disabled={busy} bind:value={curPw} />
+								<input type="password" autocomplete="new-password" placeholder="Neues Passwort (mind. 8 Zeichen)" disabled={busy} bind:value={newPw} />
+								<input type="password" autocomplete="new-password" placeholder="Neues Passwort wiederholen" disabled={busy} bind:value={newPw2} />
+								{#if err}<span class="field-err">{err}</span>{/if}
 								<div class="edit-btns">
-									<button type="submit" class="btn-save" disabled={passwordBusy}>
-										{passwordBusy ? 'Speichern …' : 'Speichern'}
-									</button>
-									<button type="button" class="btn-cancel" onclick={cancelEdit}>Abbrechen</button>
+									<button type="submit" class="btn-save" disabled={busy}>{busy ? 'Speichern …' : 'Speichern'}</button>
+									<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
 								</div>
 							</form>
 						{:else}
-							<span class="profile-key">Passwort</span>
 							<span class="profile-val">••••••••</span>
 							<button class="profile-action" onclick={() => startEdit('password')}>Ändern</button>
 						{/if}
 					</div>
+
+					{#if session.teacher}
+						<div class="profile-row no-border">
+							<span class="profile-key">Wiederherstellungscode</span>
+							{#if editing === 'recovery'}
+								<form class="profile-edit-form" onsubmit={newRecovery}>
+									<input type="password" autocomplete="current-password" placeholder="Ihr Passwort" disabled={busy} bind:value={curPw} />
+									<span class="code-hint">Erzeugt einen neuen Code. Der alte gilt danach nicht mehr.</span>
+									{#if err}<span class="field-err">{err}</span>{/if}
+									<div class="edit-btns">
+										<button type="submit" class="btn-save" disabled={busy}>Neuen Code erzeugen</button>
+										<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
+									</div>
+								</form>
+							{:else}
+								<span class="profile-val">Nur bei Ihnen</span>
+								<button class="profile-action" onclick={() => startEdit('recovery')}>Neu erzeugen</button>
+							{/if}
+						</div>
+					{/if}
 				</div>
 
-				<!-- Klasse beitreten Link -->
+				<p class="privacy">
+					{#if session.teacher}
+						Die Namen Ihrer Schüler entschlüsselt nur Ihr Browser. Tabula selbst kennt sie nicht.
+					{:else}
+						Dein Name und dein Passwort sind nur auf diesem Gerät. Tabula speichert eine Nummer und deinen Fortschritt, deinen Namen kann nur deine Lehrkraft lesen.
+					{/if}
+				</p>
+
 				<div class="section-gap">
-					<a href="/beitreten" class="link-accent">+ Klasse beitreten</a>
+					<button class="btn-logout" onclick={async () => { await sessionLogout(); goto('/login'); }}>Abmelden</button>
 				</div>
 
-				<!-- Abmelden -->
-				<div class="section-gap">
-					<button class="btn-logout" onclick={async () => { await sessionLogout(); goto('/login'); }}>
-						Abmelden
-					</button>
-				</div>
-
-				<!-- Konto löschen -->
 				<div class="danger-box">
 					<div class="danger-text">
-						<span class="danger-title">Konto löschen</span>
-						<span class="danger-sub">Konto, Fortschritt und Klassenzugehörigkeit werden endgültig gelöscht.</span>
+						<span class="danger-title">{session.teacher ? 'Konto löschen' : 'Aus der Klasse austreten'}</span>
+						<span class="danger-sub">{session.teacher ? 'Konto, alle Klassen und alle Daten Ihrer Schüler werden sofort gelöscht.' : 'Dein Fortschritt in der Klasse wird sofort gelöscht.'}</span>
 					</div>
-					<button class="btn-danger" onclick={() => (deleteOpen = true)}>Konto löschen</button>
+					<button class="btn-danger" onclick={() => (dangerOpen = true)}>{session.teacher ? 'Konto löschen' : 'Austreten'}</button>
 				</div>
 			{/if}
 		</div>
 	</main>
 
-	<!-- Dialog: Konto löschen -->
-	{#if deleteOpen}
+	{#if dangerOpen}
 		<div class="overlay" role="presentation">
-			<div role="dialog" aria-modal="true" aria-label="Konto löschen" class="dialog">
-				<h2>Konto wirklich löschen?</h2>
-				<p class="dialog-body">Das lässt sich nicht rückgängig machen. Gib zur Bestätigung deinen Benutzernamen ein.</p>
-				<input
-					type="text"
-					class="dialog-input"
-					autocomplete="off"
-					placeholder={session.user?.username ?? ''}
-					disabled={deleteBusy}
-					bind:value={deleteConfirmUsername}
-				/>
-				{#if deleteErr}<span class="field-err">{deleteErr}</span>{/if}
+			<div role="dialog" aria-modal="true" aria-label={session.teacher ? 'Konto löschen' : 'Austreten'} class="dialog">
+				<h2>{session.teacher ? 'Konto wirklich löschen?' : 'Wirklich austreten?'}</h2>
+				<p class="dialog-body">Das lässt sich nicht rückgängig machen. Tippe zur Bestätigung <strong>{dangerWord}</strong>.</p>
+				<input type="text" class="dialog-input" autocomplete="off" placeholder={dangerWord} disabled={dangerBusy} bind:value={dangerConfirm} />
+				{#if dangerErr}<span class="field-err">{dangerErr}</span>{/if}
 				<div class="dialog-btns">
-					<button class="btn-dialog-cancel" onclick={() => { deleteOpen = false; deleteConfirmUsername = ''; deleteErr = null; }} disabled={deleteBusy}>
-						Abbrechen
-					</button>
-					<button
-						class="btn-dialog-delete"
-						onclick={confirmDelete}
-						disabled={deleteBusy || deleteConfirmUsername !== session.user?.username}
-					>
-						{deleteBusy ? 'Wird gelöscht …' : 'Endgültig löschen'}
+					<button class="btn-dialog-cancel" onclick={() => { dangerOpen = false; dangerConfirm = ''; dangerErr = null; }} disabled={dangerBusy}>Abbrechen</button>
+					<button class="btn-dialog-delete" onclick={confirmDanger} disabled={dangerBusy || dangerConfirm.trim().toUpperCase() !== dangerWord}>
+						{dangerBusy ? 'Bitte warten …' : session.teacher ? 'Endgültig löschen' : 'Austreten'}
 					</button>
 				</div>
 			</div>
@@ -444,6 +443,26 @@
 	.btn-dialog-delete { height: 40px; padding: 0 16px; border-radius: 6px; background: var(--danger); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; }
 	.btn-dialog-delete:hover:not(:disabled) { opacity: 0.85; }
 	.btn-dialog-delete:disabled { opacity: 0.5; cursor: not-allowed; }
+
+
+	/* Kopf, Codes, Wiederherstellung */
+	.profile-head { display: flex; align-items: center; gap: 14px; }
+	.avatar { width: 48px; height: 48px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-weight: 600; }
+	.head-text { display: flex; flex-direction: column; }
+	.head-name { font-size: 18px; font-weight: 600; }
+	.head-sub { font-size: 14px; color: var(--ink-2); }
+	.code-box, .recover-box { display: flex; flex-direction: column; gap: 8px; padding: 16px 20px; border-radius: 10px; border: 1px solid var(--accent-line); background: var(--accent-soft); }
+	.recover-box { border-color: var(--warn-line, #fcd34d); background: var(--warn-bg, #fef3c7); }
+	.code-title { font-size: 15px; font-weight: 600; }
+	.code-val { font-size: 17px; padding: 10px 12px; border-radius: 6px; background: var(--surface); user-select: all; word-break: break-word; }
+	.code-hint { font-size: 13px; line-height: 18px; color: var(--ink-2); margin: 0; }
+	.profile-edit-form.full { grid-column: auto; padding: 0; }
+	.privacy { font-size: 13px; line-height: 18px; color: var(--ink-3); margin: 0; }
+	@media print {
+		:global(body *) { visibility: hidden; }
+		.code-val, .code-val * { visibility: visible; }
+		.code-val { position: absolute; top: 40px; left: 40px; right: 40px; }
+	}
 
 	@media (max-width: 767px) {
 		.main { padding: 24px 16px 48px; }

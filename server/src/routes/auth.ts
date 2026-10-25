@@ -289,6 +289,8 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
         created_day: user.created_day,
         last_login_at: user.last_login_at,
         email_verified_at: user.email_verified_at,
+        /** Passwort wurde per E-Mail zurückgesetzt: privater Schlüssel muss wiederhergestellt werden */
+        needs_key_recovery: user.must_change_password === 1,
         keys: {
           public_key: user.public_key,
           wrapped_by_password: user.wrapped_key_pw,

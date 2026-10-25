@@ -92,6 +92,7 @@ export interface TeacherUser {
   created_day: string;
   last_login_at: number | null;
   email_verified_at: number | null;
+  needs_key_recovery: boolean;
   keys: { public_key: string | null; wrapped_by_password: string | null; wrapped_by_recovery: string | null };
 }
 

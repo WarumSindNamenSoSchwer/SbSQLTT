@@ -111,10 +111,23 @@ async function _refreshUser(): Promise<void> {
 	const { user } = await apiMe();
 	_user = user;
 	if (user.role === 'teacher') {
-		_needsKeyRecovery = !(await loadTeacherKey());
+		if (user.needs_key_recovery) await clearTeacherKey();
+		_needsKeyRecovery = user.needs_key_recovery || !(await loadTeacherKey());
 	} else {
 		_studentName = studentName();
 		await setTeacherPublicKey(user.class?.public_key);
+	}
+}
+
+/** Nutzer neu vom Server laden (z. B. nachdem der Server per Passwort-Reset angemeldet hat). */
+export async function reloadSession(): Promise<void> {
+	if (!ACCOUNTS_LIVE) return;
+	try {
+		await _refreshUser();
+	} catch {
+		_user = null;
+	} finally {
+		_loading = false;
 	}
 }
 
@@ -129,7 +142,7 @@ export async function sessionLogin(email: string, password: string): Promise<voi
 	_user = user;
 	if (user.role !== 'teacher') return;
 	try {
-		if (!user.keys.wrapped_by_password) throw new Error('kein Schlüssel');
+		if (user.needs_key_recovery || !user.keys.wrapped_by_password) throw new Error('kein Schlüssel');
 		await storeTeacherKey(await unlockTeacherKey(password, user.keys.wrapped_by_password));
 		_needsKeyRecovery = false;
 	} catch {

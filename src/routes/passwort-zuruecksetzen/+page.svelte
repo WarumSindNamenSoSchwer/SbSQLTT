@@ -5,7 +5,8 @@
 	import { goto } from '$app/navigation';
 	import TopNav from '$lib/tabula/TopNav.svelte';
 	import Edgar from '$lib/edgar/Edgar.svelte';
-	import { apiPasswordReset, ApiError } from '$lib/tabula/api.js';
+	import { apiPasswordReset } from '$lib/tabula/api.js';
+	import { reloadSession } from '$lib/tabula/session.svelte.js';
 
 	let dark = $state(false);
 	let token = $state('');
@@ -37,14 +38,17 @@
 		serverError = null;
 		if (newPw.length < 8 || newPw !== newPwRepeat) return;
 		if (!token) {
-			serverError = 'Ungültiger oder fehlender Token. Bitte fordere einen neuen Link an.';
+			serverError = 'Der Link ist unvollständig. Bitte fordern Sie einen neuen an.';
 			return;
 		}
 
 		busy = true;
 		try {
 			await apiPasswordReset(token, newPw);
+			// Server hat angemeldet. Weiter zum Profil, dort Schlüssel mit Wiederherstellungscode zurückholen.
 			done = true;
+			await reloadSession();
+			goto('/profil?schluessel=1');
 		} catch (err) {
 			if (err instanceof Error) {
 				serverError = err.message;
@@ -66,18 +70,18 @@
 				<Edgar pose="success" {dark} class="owl" />
 				<div class="title-block">
 					<h1>Passwort gesetzt</h1>
-					<p class="sub">Du kannst dich jetzt mit deinem neuen Passwort anmelden.</p>
+					<p class="sub">Im nächsten Schritt holen Sie mit Ihrem Wiederherstellungscode die Namen Ihrer Schüler zurück.</p>
 				</div>
 				<div class="ok-banner" role="status">
 					<span class="ok-ico">✓</span>
 					Passwort erfolgreich geändert.
 				</div>
-				<a href="/login" class="btn-primary">Jetzt anmelden</a>
+				<a href="/profil?schluessel=1" class="btn-primary">Weiter</a>
 			{:else}
 				<Edgar pose="thinking" {dark} class="owl" />
 				<div class="title-block">
 					<h1>Neues Passwort</h1>
-					<p class="sub">Gib dein neues Passwort ein.</p>
+					<p class="sub">Geben Sie Ihr neues Passwort ein.</p>
 				</div>
 
 				{#if serverError}
