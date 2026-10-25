@@ -664,21 +664,27 @@ describe('Quiz WebSocket: 3 Schüler, 2 Fragen, Rangliste', () => {
     sendMsg(teacherWs, { type: 'reveal' })
     await teacherWait('reveal')
 
-    // Lehrkraft bekommt leaderboard mit enc_name
+    // Lehrkraft bekommt leaderboard mit enc_name und entschlüsselt die echten Namen
     const lbAfterQ1 = await teacherWait('leaderboard')
-    const rankings1 = lbAfterQ1['rankings'] as { enc_name?: string; points: number }[]
-    expect(rankings1.length).toBeGreaterThan(0)
-    if (rankings1[0]?.enc_name) {
-      expect(String(rankings1[0].enc_name)).toMatch(/^h1\./)
-      // Lehrkraft kann enc_name entschluesseln
-      const name = await C.openForTeacher(teacher.privateKey, rankings1[0].enc_name)
-      expect(name).toBeTruthy()
-    }
+    const rankings1 = lbAfterQ1['rankings'] as { enc_name: string | null; points: number; rank: number }[]
+    expect(rankings1).toHaveLength(3)
+    for (const r of rankings1) expect(String(r.enc_name)).toMatch(/^h1\./)
+    const names1 = await Promise.all(rankings1.map((r) => C.openForTeacher(teacher.privateKey, r.enc_name!)))
+    expect(names1.sort()).toEqual(['Anna Quiz', 'Ben Quiz', 'Cara Quiz'])
+    // Platz 1 hat die meisten Punkte, Cara (falsch) ist Letzte mit 0
+    expect(rankings1[0].points).toBeGreaterThanOrEqual(rankings1[1].points)
+    expect(await C.openForTeacher(teacher.privateKey, rankings1[2].enc_name!)).toBe('Cara Quiz')
+    expect(rankings1[2].points).toBe(0)
 
-    // Schueler bekommen my_rank, kein leaderboard
+    // Schüler bekommen nur den eigenen Platz, keine Namen
     const r1 = await s1Wait('my_rank')
-    expect(r1['rank']).toBeDefined()
+    expect(r1['of']).toBe(3)
+    expect([1, 2]).toContain(r1['rank'])
     expect(r1['enc_name']).toBeUndefined()
+    expect(r1['rankings']).toBeUndefined()
+    const r3 = await s3Wait('my_rank')
+    expect(r3['rank']).toBe(3)
+    expect(r3['points']).toBe(0)
 
     // --- Frage 2 ---
     sendMsg(teacherWs, { type: 'next_question' })

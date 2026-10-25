@@ -892,10 +892,28 @@ describe('K10: Keine IP in Klassen-Tabellen', () => {
 // ---------------------------------------------------------------------------
 
 describe('Kein Abfragetext in Logs', () => {
-  it('Log-Serializer enthaelt keine query-Felder im Request-Log', () => {
-    // Der Pino-Logger in app.ts hat einen serializers.req der nur method + url loggt.
-    // Abfragetexte werden nicht geloggt (req-Serializer loggt nur method+url).
-    expect(true).toBe(true)
+  it('Fortschritt mit letzter Abfrage und Lehrer-Abruf schreiben weder Abfrage noch Fehlermeldung ins Log', async () => {
+    const lines: string[] = []
+    const db = testDb()
+    const app = await buildApp({ db, mail: new InMemoryMailSender(), skipCsrf: true, logStream: { write: (m) => { lines.push(m) } } })
+    await app.ready()
+    const teacher = await registerTeacher(app, 'log@schule.de')
+    const cls = await createClass(app, teacher.cookie, 'LogKlasse')
+    const j = await joinStudent(app, cls.code, 'Lina Log', 'passwort123')
+    const sealed = await C.sealForTeacher(await C.importPublicKey(j.info.public_key), JSON.stringify({ q: 'SELECT geheim FROM tabelle', e: 'no such column: geheim' }))
+    const put = await app.inject({
+      method: 'PUT', url: '/api/progress', headers: { 'content-type': 'application/json', cookie: j.cookie },
+      payload: { progress: [{ lesson_id: 'select-basics', step: 1, done: false, attempts: 3, updated_at: 1 }], last_attempts: [{ lesson_id: 'select-basics', step: 1, sealed, has_error: true }] },
+    })
+    expect(put.statusCode).toBe(200)
+    const sid = (db.prepare("SELECT id FROM users WHERE role = 'student'").get() as { id: number }).id
+    const la = await app.inject({ method: 'GET', url: `/api/teacher/classes/${cls.id}/students/${sid}/last-attempt`, headers: { cookie: teacher.cookie } })
+    expect(la.statusCode).toBe(200)
+    expect(lines.length).toBeGreaterThan(0)
+    const log = lines.join('\n')
+    for (const s of ['SELECT geheim', 'no such column', 'Lina', sealed.slice(3, 40)]) expect(log, s).not.toContain(s)
+    await app.close()
+    db.close()
   })
 })
 
