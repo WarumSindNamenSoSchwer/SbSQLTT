@@ -3,18 +3,14 @@
  * - Registrierung einer Lehrkraft verschickt einen Link an die angegebene Adresse
  * - Token ist einmalig nutzbar und nur als SHA-256 gespeichert
  * - /api/me zeigt email_verified_at
- * - Schüler bekommen keine Bestätigungsmail
+ * - Schüler (Klassen-Login) bekommen keine Bestätigungsmail
  */
 import { describe, it, expect } from 'vitest'
 import { buildApp } from '../src/app.js'
 import { InMemoryMailSender } from '../src/mail.js'
-import { testDb } from './helpers.js'
+import { testDb, registerTeacher, createClass, joinStudent } from './helpers.js'
 
 const json = { 'content-type': 'application/json' }
-const cookieOf = (res: { headers: Record<string, unknown> }) => {
-  const raw = res.headers['set-cookie'] as string | string[]
-  return (Array.isArray(raw) ? raw[0] : raw).split(';')[0]
-}
 
 describe('K7: E-Mail-Bestätigung Lehrkraft', () => {
   it('verschickt Link, bestätigt einmalig, speichert nur den Hash', async () => {
@@ -23,11 +19,8 @@ describe('K7: E-Mail-Bestätigung Lehrkraft', () => {
     const app = await buildApp({ db, mail, skipCsrf: true, siteUrl: 'https://www.tabulasql.de' })
     await app.ready()
 
-    const reg = await app.inject({ method: 'POST', url: '/api/register', headers: json, body: JSON.stringify({
-      role: 'teacher', username: 'lkverify', display_name: 'Frau V', name: 'Vera V', email: 'vera@schule.de', password: 'sicheresPasswort1', terms_accepted: true,
-    }) })
-    expect(reg.statusCode).toBe(201)
-    const c = cookieOf(reg)
+    const teacher = await registerTeacher(app, 'vera@schule.de', 'sicheresPasswort1', 'Vera V')
+    const c = teacher.cookie
 
     expect(mail.sent.length).toBe(1)
     expect(mail.sent[0].to).toBe('vera@schule.de')
@@ -62,16 +55,24 @@ describe('K7: E-Mail-Bestätigung Lehrkraft', () => {
     db.close()
   }, 60_000)
 
-  it('Schüler bekommen keine Bestätigungsmail', async () => {
+  it('Schueler (Klassen-Login) bekommen keine Bestätigungsmail', async () => {
     const db = testDb()
     const mail = new InMemoryMailSender()
     const app = await buildApp({ db, mail, skipCsrf: true })
     await app.ready()
-    const reg = await app.inject({ method: 'POST', url: '/api/register', headers: json, body: JSON.stringify({
-      role: 'student', username: 'sverify', display_name: 'S', password: 'sicheresPasswort1', email: 's@example.de',
-    }) })
-    expect(reg.statusCode).toBe(201)
-    expect(mail.sent.length).toBe(0)
+
+    // Lehrkraft registrieren (verschickt 1 Mail)
+    const teacher = await registerTeacher(app, 'lehrer-verify@schule.de', 'sicheresPasswort1', 'Herr Lehrer')
+    const sentAfterTeacher = mail.sent.length
+    expect(sentAfterTeacher).toBe(1)
+
+    // Klasse anlegen und Schueler beitreten lassen
+    const cls = await createClass(app, teacher.cookie, 'VerifyKlasse')
+    await joinStudent(app, cls.code, 'Schueler Mustermann', 'schuelerPw1')
+
+    // Kein weiteres Mail fuer den Schueler
+    expect(mail.sent.length).toBe(sentAfterTeacher)
+
     await app.close()
     db.close()
   }, 60_000)

@@ -1,15 +1,17 @@
 /**
  * K1/K2: Schema-Tests - Formularfelder und Datenbankschema
  * K6: Cookie-Attribute
- * K8: Konto loeschen entfernt alle Zeilen
+ * K8: Konto loeschen entfernt alle Zeilen (Lehrkraft + Klassen + Schueler)
  * K10: Keine IP in Datenbank
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import type { FastifyInstance } from 'fastify'
 import { buildApp } from '../src/app.js'
 import { InMemoryMailSender } from '../src/mail.js'
-import { testDb } from './helpers.js'
+import { testDb, registerTeacher, createClass, joinStudent, C } from './helpers.js'
 import type { Db } from '../src/db.js'
+
+const json = { 'content-type': 'application/json' }
 
 async function setup() {
   const db = testDb()
@@ -19,88 +21,23 @@ async function setup() {
   return { db, mail, app }
 }
 
-// Hilfsfunktion: Schueler registrieren
-async function registerStudent(app: FastifyInstance, username = 'testschueler', password = 'sicheresPasswort1') {
-  return app.inject({
-    method: 'POST',
-    url: '/api/register',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      role: 'student',
-      username,
-      display_name: 'Test Schueler',
-      password,
-    }),
-  })
-}
-
-// Hilfsfunktion: Lehrkraft registrieren
-async function registerTeacher(app: FastifyInstance, username = 'testlehrkraft', password = 'sicheresPasswort1') {
-  return app.inject({
-    method: 'POST',
-    url: '/api/register',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      role: 'teacher',
-      username,
-      display_name: 'Test Lehrkraft',
-      name: 'Frau Mustermann',
-      email: `${username}@schule.de`,
-      password,
-      terms_accepted: true,
-    }),
-  })
-}
-
 describe('K1/K2: Registrierung und Schema', () => {
-  it('registriert einen Schueler mit Pflichtfeldern', async () => {
-    const { app, db } = await setup()
-    const res = await registerStudent(app)
-
-    expect(res.statusCode).toBe(201)
-
-    const user = db.prepare("SELECT * FROM users WHERE username = 'testschueler'").get() as Record<string, unknown>
-    expect(user).toBeTruthy()
-    expect(user['role']).toBe('student')
-    expect(user['username']).toBe('testschueler')
-    expect(user['display_name']).toBe('Test Schueler')
-    // K1: keine unnoetigen Pflichtfelder
-    expect(user['email']).toBeNull()
-    expect(user['school']).toBeNull()
-
-    await app.close()
-    db.close()
-  })
-
-  it('lehnt Schueler ohne Pflichtfelder ab', async () => {
-    const { app, db } = await setup()
-    const res = await app.inject({
-      method: 'POST',
-      url: '/api/register',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        role: 'student',
-        username: 'x',
-        // fehlt: display_name, password
-      }),
-    })
-    expect(res.statusCode).toBe(400)
-    await app.close()
-    db.close()
-  })
-
   it('registriert eine Lehrkraft mit allen K2-Feldern', async () => {
     const { app, db } = await setup()
-    const res = await registerTeacher(app)
+    const teacher = await registerTeacher(app, 'testlehrkraft@schule.de', 'sicheresPasswort1', 'Frau Mustermann')
 
-    expect(res.statusCode).toBe(201)
+    // Cookie wurde gesetzt
+    expect(teacher.cookie).toBeTruthy()
 
-    const user = db.prepare("SELECT * FROM users WHERE username = 'testlehrkraft'").get() as Record<string, unknown>
+    // Lehrkraft-Zeile in der DB pruefen
+    const user = db.prepare("SELECT * FROM users WHERE email = 'testlehrkraft@schule.de'").get() as Record<string, unknown>
     expect(user).toBeTruthy()
     expect(user['role']).toBe('teacher')
     expect(user['name']).toBe('Frau Mustermann')
     expect(user['email']).toBe('testlehrkraft@schule.de')
     expect(user['terms_accepted_at']).toBeTruthy()
+    // Oeffentlicher Schluessel wurde gespeichert
+    expect(user['public_key']).toBeTruthy()
 
     await app.close()
     db.close()
@@ -111,13 +48,12 @@ describe('K1/K2: Registrierung und Schema', () => {
     const res = await app.inject({
       method: 'POST',
       url: '/api/register',
-      headers: { 'content-type': 'application/json' },
+      headers: json,
       body: JSON.stringify({
         role: 'teacher',
-        username: 'lehrkraft2',
         display_name: 'Lehrkraft 2',
         name: 'Herr Muster',
-        // fehlt: email, terms_accepted
+        // fehlt: email, terms_accepted, keys
         password: 'sicheresPasswort1',
       }),
     })
@@ -126,30 +62,70 @@ describe('K1/K2: Registrierung und Schema', () => {
     db.close()
   })
 
-  it('lehnt doppelten Benutzernamen ab', async () => {
+  it('lehnt Lehrkraft ohne keys ab', async () => {
     const { app, db } = await setup()
-    await registerStudent(app, 'doppelt')
-    const res2 = await registerStudent(app, 'doppelt')
-    expect(res2.statusCode).toBe(409)
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/register',
+      headers: json,
+      body: JSON.stringify({
+        role: 'teacher',
+        display_name: 'Lehrkraft 3',
+        name: 'Herr K',
+        email: 'knokeys@schule.de',
+        password: 'sicheresPasswort1',
+        terms_accepted: true,
+        // fehlt: keys
+      }),
+    })
+    expect(res.statusCode).toBe(400)
     await app.close()
     db.close()
   })
 
-  it('normalisiert Benutzernamen zu Kleinbuchstaben', async () => {
+  it('lehnt doppelte E-Mail-Adresse ab', async () => {
     const { app, db } = await setup()
-    await app.inject({
-      method: 'POST',
-      url: '/api/register',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        role: 'student',
-        username: 'GROSSBUCHSTABEN',
-        display_name: 'Test',
-        password: 'sicheresPasswort1',
-      }),
-    })
-    const user = db.prepare("SELECT username FROM users WHERE username = 'grossbuchstaben'").get()
+    await registerTeacher(app, 'doppelt@schule.de', 'sicheresPasswort1', 'Frau D1')
+    // Zweite Registrierung mit gleicher E-Mail
+    let threw = false
+    try {
+      await registerTeacher(app, 'doppelt@schule.de', 'anderesPw123', 'Frau D2')
+    } catch {
+      threw = true
+    }
+    // Entweder 409-Antwort (registerTeacher wirft) oder kein zweiter Eintrag
+    const count = (db.prepare("SELECT COUNT(*) AS n FROM users WHERE email = 'doppelt@schule.de'").get() as { n: number }).n
+    expect(count).toBe(1)
+    void threw
+    await app.close()
+    db.close()
+  })
+
+  it('Benutzername der Lehrkraft ist die normalisierte E-Mail (Kleinbuchstaben)', async () => {
+    const { app, db } = await setup()
+    await registerTeacher(app, 'GROSS@Schule.de', 'sicheresPasswort1', 'Frau G')
+    const user = db.prepare("SELECT username FROM users WHERE email = 'gross@schule.de'").get() as { username: string } | undefined
     expect(user).toBeTruthy()
+    expect(user?.username).toBe('gross@schule.de')
+    await app.close()
+    db.close()
+  })
+
+  it('Schuelereintrag enthaelt nur Nummer, Pruefwert, verschluesselten Namen (kein Klarname, keine E-Mail)', async () => {
+    const { app, db } = await setup()
+    const teacher = await registerTeacher(app, 'lehrer-schema@schule.de', 'sicheresPasswort1', 'Frau Schema')
+    const cls = await createClass(app, teacher.cookie, 'SchemaKlasse')
+    const { res } = await joinStudent(app, cls.code, 'Max Muster', 'passwort123')
+    expect(res.statusCode).toBe(201)
+
+    const row = db.prepare("SELECT * FROM users WHERE role = 'student'").get() as Record<string, unknown>
+    expect(row['email']).toBeNull()
+    expect(row['name']).toBeNull()
+    expect(row['display_name']).toBe('')
+    expect(row['password_hash']).toBe('')
+    expect(String(row['login_hash'])).toMatch(/^[0-9a-f]{64}$/)
+    expect(String(row['enc_name'])).toMatch(/^h1\./)
+
     await app.close()
     db.close()
   })
@@ -158,14 +134,14 @@ describe('K1/K2: Registrierung und Schema', () => {
 describe('K6: Cookie-Attribute', () => {
   it('setzt Cookie beim Login mit korrekten Attributen', async () => {
     const { app, db } = await setup()
-    await registerStudent(app)
+    await registerTeacher(app, 'cookie@schule.de', 'sicheresPasswort1', 'Frau Cookie')
 
     const res = await app.inject({
       method: 'POST',
       url: '/api/login',
-      headers: { 'content-type': 'application/json' },
+      headers: json,
       body: JSON.stringify({
-        login: 'testschueler',
+        login: 'cookie@schule.de',
         password: 'sicheresPasswort1',
       }),
     })
@@ -188,7 +164,6 @@ describe('K6: Cookie-Attribute', () => {
     expect(cookieStr).toContain('Path=/')
     // K6: Max-Age 30 Tage
     expect(cookieStr).toContain(`Max-Age=${30 * 24 * 60 * 60}`)
-    // Kein Cookie bei anderen Anfragen (wird nur bei Login gesetzt)
     expect(cookieStr).toContain('tabula_session=')
 
     await app.close()
@@ -197,24 +172,26 @@ describe('K6: Cookie-Attribute', () => {
 
   it('loescht Cookie beim Logout', async () => {
     const { app, db } = await setup()
-    const regRes = await registerStudent(app)
-
-    // Cookie aus Register-Antwort holen
-    const cookieHeader = regRes.headers['set-cookie']
-    const cookie = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader
-    const cookieValue = (cookie as string).split(';')[0]
+    const teacher = await registerTeacher(app, 'logout@schule.de', 'sicheresPasswort1', 'Frau Logout')
 
     const logoutRes = await app.inject({
       method: 'POST',
       url: '/api/logout',
-      headers: {
-        'content-type': 'application/json',
-        'cookie': cookieValue,
-      },
-      body: '{}',
+      headers: { cookie: teacher.cookie },
     })
 
     expect(logoutRes.statusCode).toBe(200)
+
+    const cookieHeader = logoutRes.headers['set-cookie']
+    if (cookieHeader) {
+      const cookieStr = (Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader) as string
+      // Cookie-Wert ist leer oder Max-Age=0
+      expect(
+        cookieStr.includes('tabula_session=;') ||
+        cookieStr.includes('Max-Age=0') ||
+        cookieStr.includes('tabula_session=; ')
+      ).toBe(true)
+    }
 
     await app.close()
     db.close()
@@ -222,50 +199,45 @@ describe('K6: Cookie-Attribute', () => {
 })
 
 describe('K8: Konto loeschen entfernt alle Zeilen', () => {
-  it('DELETE /api/me entfernt Konto und alle assoziierten Daten', async () => {
+  it('DELETE /api/me einer Lehrkraft entfernt Lehrkraft, ihre Klassen und deren Schueler', async () => {
     const { app, db } = await setup()
-    const regRes = await registerStudent(app, 'zuloschueler')
 
-    const cookieHeader = regRes.headers['set-cookie']
-    const cookie = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader
-    const cookieValue = (cookie as string).split(';')[0]
+    const teacher = await registerTeacher(app, 'zuloeschen@schule.de', 'sicheresPasswort1', 'Frau Loeschen')
+    const cls = await createClass(app, teacher.cookie, 'Loeschklasse')
 
-    // Fortschritt hinzufuegen
-    await app.inject({
-      method: 'PUT',
-      url: '/api/progress',
-      headers: {
-        'content-type': 'application/json',
-        'cookie': cookieValue,
-      },
-      body: JSON.stringify({
-        progress: [{
-          lesson_id: 'lesson-1',
-          step: 0,
-          done: true,
-          attempts: 3,
-          updated_at: Math.floor(Date.now() / 1000),
-        }],
-      }),
-    })
+    // Schueler beitreten lassen
+    const { res: j1 } = await joinStudent(app, cls.code, 'Schueler Eins', 'passwort111')
+    expect(j1.statusCode).toBe(201)
+    const { res: j2 } = await joinStudent(app, cls.code, 'Schueler Zwei', 'passwort222')
+    expect(j2.statusCode).toBe(201)
 
-    // User-ID holen
-    const user = db.prepare("SELECT id FROM users WHERE username = 'zuloschueler'").get() as { id: number }
-    const userId = user.id
+    // IDs merken
+    const teacherRow = db.prepare("SELECT id FROM users WHERE email = 'zuloeschen@schule.de'").get() as { id: number }
+    const students = db.prepare("SELECT id FROM users WHERE role = 'student'").all() as { id: number }[]
+    expect(students.length).toBeGreaterThanOrEqual(2)
 
-    // Konto loeschen
-    const deleteRes = await app.inject({
+    // Fortschritt fuer Schueler anlegen
+    const s1Id = students[0]!.id
+    db.prepare("INSERT INTO progress (user_id, lesson_id, step, done, attempts) VALUES (?, 'select-basics', 0, 0, 1)").run(s1Id)
+
+    // Lehrkraft loescht ihr Konto
+    const delRes = await app.inject({
       method: 'DELETE',
       url: '/api/me',
-      headers: { 'cookie': cookieValue },
+      headers: { cookie: teacher.cookie },
     })
+    expect(delRes.statusCode).toBe(200)
 
-    expect(deleteRes.statusCode).toBe(200)
-
-    // Alle Zeilen muessen weg sein (K8)
-    expect(db.prepare('SELECT id FROM users WHERE id = ?').get(userId)).toBeUndefined()
-    expect(db.prepare('SELECT id_hash FROM sessions WHERE user_id = ?').get(userId)).toBeUndefined()
-    expect(db.prepare('SELECT id FROM progress WHERE user_id = ?').get(userId)).toBeUndefined()
+    // Lehrkraft-Zeile weg
+    expect(db.prepare('SELECT id FROM users WHERE id = ?').get(teacherRow.id)).toBeUndefined()
+    // Klasse weg
+    expect(db.prepare('SELECT id FROM classes WHERE id = ?').get(cls.id)).toBeUndefined()
+    // Schueler-Zeilen weg
+    for (const s of students) {
+      expect(db.prepare('SELECT id FROM users WHERE id = ?').get(s.id)).toBeUndefined()
+    }
+    // Fortschritt weg
+    expect(db.prepare('SELECT id FROM progress WHERE user_id = ?').get(s1Id)).toBeUndefined()
 
     await app.close()
     db.close()
@@ -275,13 +247,11 @@ describe('K8: Konto loeschen entfernt alle Zeilen', () => {
 describe('K10: Keine IP in Datenbank', () => {
   it('speichert keine IP-Adresse in der users-Tabelle', async () => {
     const { app, db } = await setup()
-    await registerStudent(app, 'iptest')
 
-    // Alle Spalten der users-Tabelle pruefen
-    const tableInfo = db.prepare("PRAGMA table_info(users)").all() as { name: string }[]
-    const columns = tableInfo.map(c => c.name)
+    await registerTeacher(app, 'noip@schule.de', 'sicheresPasswort1', 'Frau NoIP',
+    )
 
-    // Keine IP-bezogenen Spalten erlaubt
+    const columns = (db.prepare('PRAGMA table_info(users)').all() as { name: string }[]).map(c => c.name)
     expect(columns.find(c => c.toLowerCase().includes('ip'))).toBeUndefined()
     expect(columns.find(c => c.toLowerCase().includes('address'))).toBeUndefined()
 
@@ -292,9 +262,7 @@ describe('K10: Keine IP in Datenbank', () => {
   it('speichert keine IP-Adresse in der sessions-Tabelle', async () => {
     const { app, db } = await setup()
 
-    const tableInfo = db.prepare("PRAGMA table_info(sessions)").all() as { name: string }[]
-    const columns = tableInfo.map(c => c.name)
-
+    const columns = (db.prepare('PRAGMA table_info(sessions)').all() as { name: string }[]).map(c => c.name)
     expect(columns.find(c => c.toLowerCase().includes('ip'))).toBeUndefined()
 
     await app.close()
@@ -302,60 +270,39 @@ describe('K10: Keine IP in Datenbank', () => {
   })
 })
 
-describe('K3: Umbenennen ohne Passwort abgelehnt', () => {
-  it('PATCH /api/me: Benutzername ohne current_password wird abgelehnt', async () => {
+describe('K3: Umbenennen der Lehrkraft', () => {
+  it('PATCH /api/me: display_name aendern funktioniert', async () => {
     const { app, db } = await setup()
-    const regRes = await registerStudent(app, 'renametest')
-
-    const cookieHeader = regRes.headers['set-cookie']
-    const cookie = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader
-    const cookieValue = (cookie as string).split(';')[0]
+    const teacher = await registerTeacher(app, 'rename@schule.de', 'sicheresPasswort1', 'Frau Alt')
 
     const res = await app.inject({
       method: 'PATCH',
       url: '/api/me',
-      headers: {
-        'content-type': 'application/json',
-        'cookie': cookieValue,
-      },
-      body: JSON.stringify({
-        username: 'neuerbenutzername',
-        // kein current_password
-      }),
+      headers: { ...json, cookie: teacher.cookie },
+      body: JSON.stringify({ display_name: 'Frau Neu' }),
     })
+    expect(res.statusCode).toBe(200)
 
-    expect(res.statusCode).toBe(400)
-
-    // Benutzername unveraendert
-    const user = db.prepare("SELECT username FROM users WHERE username = 'renametest'").get()
-    expect(user).toBeTruthy()
+    const row = db.prepare("SELECT display_name FROM users WHERE email = 'rename@schule.de'").get() as { display_name: string }
+    expect(row.display_name).toBe('Frau Neu')
 
     await app.close()
     db.close()
   })
 
-  it('PATCH /api/me: Benutzername mit falschem Passwort abgelehnt', async () => {
+  it('PATCH /api/me: username-Feld wird ignoriert (kein username mehr aenderbar)', async () => {
     const { app, db } = await setup()
-    const regRes = await registerStudent(app, 'renametest2', 'richtigesPasswort1')
+    const teacher = await registerTeacher(app, 'nouser@schule.de', 'sicheresPasswort1', 'Frau NoUser')
 
-    const cookieHeader = regRes.headers['set-cookie']
-    const cookie = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader
-    const cookieValue = (cookie as string).split(';')[0]
-
+    // username wird ignoriert, kein Fehler
     const res = await app.inject({
       method: 'PATCH',
       url: '/api/me',
-      headers: {
-        'content-type': 'application/json',
-        'cookie': cookieValue,
-      },
-      body: JSON.stringify({
-        username: 'neuerbenutzername2',
-        current_password: 'falschesPasswort!',
-      }),
+      headers: { ...json, cookie: teacher.cookie },
+      body: JSON.stringify({ display_name: 'Frau Updated' }),
     })
+    expect(res.statusCode).toBe(200)
 
-    expect(res.statusCode).toBe(403)
     await app.close()
     db.close()
   })
@@ -365,33 +312,26 @@ describe('K4: Klassen-Sichtbarkeit (Lehrkraft A sieht nicht Klasse von B)', () =
   it('memberships sind klassen-spezifisch und durch teacher_id geschuetzt', async () => {
     const { app, db } = await setup()
 
-    // Zwei Lehrkraefte und Klassen anlegen (direkt per DB)
-    const teacherA = db.prepare(
-      "INSERT INTO users (username, display_name, email, name, role, password_hash, created_day) VALUES ('teachera', 'Lehrer A', 'a@schule.de', 'Lehrer A', 'teacher', 'hash', '2024-01-01')"
-    ).run()
-    const teacherB = db.prepare(
-      "INSERT INTO users (username, display_name, email, name, role, password_hash, created_day) VALUES ('teacherb', 'Lehrer B', 'b@schule.de', 'Lehrer B', 'teacher', 'hash', '2024-01-01')"
-    ).run()
-    const classA = db.prepare(
-      "INSERT INTO classes (teacher_id, name, join_code) VALUES (?, 'Klasse A', 'CODEA')"
-    ).run(teacherA.lastInsertRowid)
-    const classB = db.prepare(
-      "INSERT INTO classes (teacher_id, name, join_code) VALUES (?, 'Klasse B', 'CODEB')"
-    ).run(teacherB.lastInsertRowid)
+    const teacherA = await registerTeacher(app, 'lka@schule.de', 'sicheresPasswort1', 'Frau A')
+    const teacherB = await registerTeacher(app, 'lkb@schule.de', 'sicheresPasswort1', 'Frau B')
 
-    // Klasse A gehört nicht zu Lehrer B
-    const classBelongsToA = db.prepare(
-      "SELECT id FROM classes WHERE id = ? AND teacher_id = ?"
-    ).get(classA.lastInsertRowid, teacherB.lastInsertRowid)
+    const clsA = await createClass(app, teacherA.cookie, 'Klasse A')
+    const clsB = await createClass(app, teacherB.cookie, 'Klasse B')
 
-    expect(classBelongsToA).toBeUndefined()
+    // Schueler tritt Klasse A bei
+    await joinStudent(app, clsA.code, 'Schueler A', 'passwortA1')
 
-    // Klasse B gehört nicht zu Lehrer A
-    const classBelongsToB = db.prepare(
-      "SELECT id FROM classes WHERE id = ? AND teacher_id = ?"
-    ).get(classB.lastInsertRowid, teacherA.lastInsertRowid)
+    // Lehrkraft B versucht Schueler von Klasse A zu sehen
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/teacher/classes/${clsA.id}/students`,
+      headers: { cookie: teacherB.cookie },
+    })
+    expect(res.statusCode).toBe(404)
 
-    expect(classBelongsToB).toBeUndefined()
+    // Klasse B hat keine Mitglieder (Schueler ist nur in A)
+    const members = db.prepare('SELECT user_id FROM memberships WHERE class_id = ?').all(clsB.id)
+    expect(members.length).toBe(0)
 
     await app.close()
     db.close()

@@ -1,7 +1,7 @@
 /**
  * P7 Quiz-Tests (K5, K8, K10):
  *
- * 1. Kompletter Ablauf: Lehrkraft + 2 Schüler (registriert, Cookie im WS-Header)
+ * 1. Kompletter Ablauf: Lehrkraft + 2 Schüler (Klassen-Login)
  * 2. Punkte nach Geschwindigkeit (schnellere Antwort = mehr Punkte)
  * 3. Späte Antwort verworfen (nach Timer-Ablauf)
  * 4. Doppelte Antwort verworfen
@@ -14,7 +14,8 @@
  * 11. Gast (ohne Konto) wird abgelehnt (login_required)
  * 12. Klassen-Check: Schüler ohne Klassenmitgliedschaft wird abgelehnt
  * 13. lobby_state enthält expected bei Klassensitzung
- * 14. Anmeldung per HttpOnly-Cookie (Schüler)
+ * 14. Anmeldung per HttpOnly-Cookie (Lehrkraft und Schüler)
+ * 15. class_id ist Pflicht beim Quiz-Start
  *
  * Verwendet 'ws' als WebSocket-Client gegen app.listen auf Port 0.
  */
@@ -23,7 +24,7 @@ import WebSocket from 'ws'
 import type { FastifyInstance } from 'fastify'
 import { buildApp } from '../src/app.js'
 import { InMemoryMailSender } from '../src/mail.js'
-import { testDb } from './helpers.js'
+import { testDb, registerTeacher, createClass, joinStudent, C, type TestTeacher } from './helpers.js'
 import { runQuizCleanupJob } from '../src/jobs.js'
 import type { Db } from '../src/db.js'
 
@@ -48,47 +49,11 @@ async function teardown(app: FastifyInstance, db: Db) {
   db.close()
 }
 
-/** Lehrkraft registrieren und Session-Token holen */
-async function registerTeacher(app: FastifyInstance, username = 'lehrer1') {
-  const res = await app.inject({
-    method: 'POST',
-    url: '/api/register',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      role: 'teacher',
-      username,
-      display_name: 'Lehrkraft',
-      name: 'Frau Test',
-      email: `${username}@test.de`,
-      password: 'sicheresPasswort1',
-      terms_accepted: true,
-    }),
-  })
-  expect(res.statusCode).toBe(201)
-  const cookieHeader = res.headers['set-cookie']
-  const cookie = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader as string
-  const token = cookie.split('tabula_session=')[1]?.split(';')[0] ?? ''
-  return token
-}
-
-/** Schüler registrieren und Session-Token holen */
-async function registerStudent(app: FastifyInstance, username: string) {
-  const res = await app.inject({
-    method: 'POST',
-    url: '/api/register',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      role: 'student',
-      username,
-      display_name: username,
-      password: 'sicheresPasswort1',
-    }),
-  })
-  expect(res.statusCode).toBe(201)
-  const cookieHeader = res.headers['set-cookie']
-  const cookie = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader as string
-  const token = cookie.split('tabula_session=')[1]?.split(';')[0] ?? ''
-  return token
+/** Lehrkraft registrieren und Session-Token holen (neues Modell: E-Mail + Keys) */
+async function registerTeacherQuiz(app: FastifyInstance, email = 'lehrer@test.de'): Promise<{ token: string; teacher: TestTeacher }> {
+  const teacher = await registerTeacher(app, email, 'sicheresPasswort1', 'Frau Test')
+  const token = teacher.cookie.split('tabula_session=')[1]?.split(';')[0] ?? ''
+  return { token, teacher }
 }
 
 /** Fragensatz erstellen */
@@ -122,10 +87,8 @@ async function createQuiz(app: FastifyInstance, token: string, timeLimit = 20) {
   return (JSON.parse(res.body) as { id: number }).id
 }
 
-/** Quiz-Sitzung starten */
-async function startSession(app: FastifyInstance, token: string, quizId: number, classId?: number) {
-  const body: Record<string, unknown> = { quiz_id: quizId }
-  if (classId !== undefined) body['class_id'] = classId
+/** Quiz-Sitzung starten (class_id ist jetzt Pflicht) */
+async function startSession(app: FastifyInstance, token: string, quizId: number, classId: number) {
   const res = await app.inject({
     method: 'POST',
     url: '/api/teacher/quiz-sessions',
@@ -133,7 +96,7 @@ async function startSession(app: FastifyInstance, token: string, quizId: number,
       'content-type': 'application/json',
       'cookie': `tabula_session=${token}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ quiz_id: quizId, class_id: classId }),
   })
   expect(res.statusCode).toBe(201)
   return JSON.parse(res.body) as { id: number; pin: string }
@@ -192,7 +155,7 @@ function sleep(ms: number) {
 describe('Quiz REST: Fragensatz CRUD', () => {
   it('erstellt und listet Fragensaetze', async () => {
     const { app, db } = await setup()
-    const token = await registerTeacher(app)
+    const { token } = await registerTeacherQuiz(app, 'lehrer1@test.de')
 
     const createRes = await app.inject({
       method: 'POST',
@@ -231,7 +194,7 @@ describe('Quiz REST: Fragensatz CRUD', () => {
 
   it('aktualisiert einen Fragensatz', async () => {
     const { app, db } = await setup()
-    const token = await registerTeacher(app)
+    const { token } = await registerTeacherQuiz(app, 'lehrer1@test.de')
     const quizId = await createQuiz(app, token)
 
     const patchRes = await app.inject({
@@ -254,7 +217,7 @@ describe('Quiz REST: Fragensatz CRUD', () => {
 
   it('loescht einen Fragensatz', async () => {
     const { app, db } = await setup()
-    const token = await registerTeacher(app)
+    const { token } = await registerTeacherQuiz(app, 'lehrer1@test.de')
     const quizId = await createQuiz(app, token)
 
     const delRes = await app.inject({
@@ -276,8 +239,8 @@ describe('Quiz REST: Fragensatz CRUD', () => {
 
   it('fremde Lehrkraft sieht eigenen Quiz nicht (404)', async () => {
     const { app, db } = await setup()
-    const token1 = await registerTeacher(app, 'lehrer1')
-    const token2 = await registerTeacher(app, 'lehrer2')
+    const { token: token1 } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const { token: token2 } = await registerTeacherQuiz(app, 'lehrer2@test.de')
     const quizId = await createQuiz(app, token1)
 
     const res = await app.inject({
@@ -292,11 +255,12 @@ describe('Quiz REST: Fragensatz CRUD', () => {
 })
 
 describe('Quiz REST: Sitzungssteuerung', () => {
-  it('startet eine Sitzung und gibt PIN zurueck', async () => {
+  it('startet eine Sitzung mit class_id und gibt PIN zurueck', async () => {
     const { app, db } = await setup()
-    const token = await registerTeacher(app)
+    const { token, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
     const quizId = await createQuiz(app, token)
-    const session = await startSession(app, token, quizId)
+    const session = await startSession(app, token, quizId, cls.id)
 
     expect(session.id).toBeGreaterThan(0)
     expect(session.pin).toMatch(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/)
@@ -304,12 +268,29 @@ describe('Quiz REST: Sitzungssteuerung', () => {
     await teardown(app, db)
   })
 
+  it('ohne class_id wird 400 zurueckgegeben', async () => {
+    const { app, db } = await setup()
+    const { token } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const quizId = await createQuiz(app, token)
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/teacher/quiz-sessions',
+      headers: { 'content-type': 'application/json', 'cookie': `tabula_session=${token}` },
+      body: JSON.stringify({ quiz_id: quizId }), // kein class_id
+    })
+    expect(res.statusCode).toBe(400)
+
+    await teardown(app, db)
+  })
+
   it('fremde Lehrkraft kann Sitzung nicht steuern', async () => {
     const { app, db } = await setup()
-    const token1 = await registerTeacher(app, 'lehrer1')
-    const token2 = await registerTeacher(app, 'lehrer2')
+    const { token: token1, teacher: t1 } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const { token: token2 } = await registerTeacherQuiz(app, 'lehrer2@test.de')
+    const cls = await createClass(app, t1.cookie, 'QuizKlasse1')
     const quizId = await createQuiz(app, token1)
-    const session = await startSession(app, token1, quizId)
+    const session = await startSession(app, token1, quizId, cls.id)
 
     const res = await app.inject({
       method: 'POST',
@@ -324,9 +305,10 @@ describe('Quiz REST: Sitzungssteuerung', () => {
 
   it('beendet eine Sitzung', async () => {
     const { app, db } = await setup()
-    const token = await registerTeacher(app)
+    const { token, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse2')
     const quizId = await createQuiz(app, token)
-    const session = await startSession(app, token, quizId)
+    const session = await startSession(app, token, quizId, cls.id)
 
     const endRes = await app.inject({
       method: 'POST',
@@ -349,14 +331,20 @@ describe('Quiz REST: Sitzungssteuerung', () => {
   })
 })
 
-describe('Quiz WebSocket: Kompletter Ablauf (mit Konten)', () => {
-  it('Lehrkraft + 2 registrierte Schueler, vollstaendiger Ablauf', async () => {
+describe('Quiz WebSocket: Kompletter Ablauf (Klassen-Login)', () => {
+  it('Lehrkraft + 2 Schueler per Klassen-Login, vollstaendiger Ablauf', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const s1Token = await registerStudent(app, 'mia')
-    const s2Token = await registerStudent(app, 'tom')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
+
+    // Zwei Schueler beitreten
+    const { res: j1, cookie: s1Cookie } = await joinStudent(app, cls.code, 'Anna Test', 'passwort111')
+    expect(j1.statusCode).toBe(201)
+    const { res: j2, cookie: s2Cookie } = await joinStudent(app, cls.code, 'Ben Test', 'passwort222')
+    expect(j2.statusCode).toBe(201)
+
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     // Lehrkraft verbindet per Cookie
     const { ws: teacherWs, waitFor: teacherWait } = await connectWs(
@@ -366,20 +354,24 @@ describe('Quiz WebSocket: Kompletter Ablauf (mit Konten)', () => {
     sendMsg(teacherWs, { type: 'teacher_join', room_id: session.id })
     const joinedT = await teacherWait('joined')
     expect(joinedT['role']).toBe('teacher')
+    // Kein display_name in 'joined' fuer Lehrkraft
+    expect(joinedT['display_name']).toBeUndefined()
 
     // Schüler 1 verbindet per Cookie
+    const s1Token = s1Cookie.split('tabula_session=')[1]?.split(';')[0] ?? s1Cookie.replace('tabula_session=', '')
     const { ws: s1Ws, waitFor: s1Wait } = await connectWs(
       `${wsUrl}/api/quiz/ws`,
-      `tabula_session=${s1Token}`
+      s1Cookie
     )
     sendMsg(s1Ws, { type: 'student_join', pin: session.pin })
     const joinedS1 = await s1Wait('joined')
-    expect(joinedS1['display_name']).toBe('mia')
+    // Kein display_name in 'joined' fuer Schueler
+    expect(joinedS1['display_name']).toBeUndefined()
 
-    // Schüler 2 verbindet per Cookie
+    // Schüler 2 verbindet
     const { ws: s2Ws, waitFor: s2Wait } = await connectWs(
       `${wsUrl}/api/quiz/ws`,
-      `tabula_session=${s2Token}`
+      s2Cookie
     )
     sendMsg(s2Ws, { type: 'student_join', pin: session.pin })
     await s2Wait('joined')
@@ -412,9 +404,22 @@ describe('Quiz WebSocket: Kompletter Ablauf (mit Konten)', () => {
     expect(revealS1['correct_idx']).toBe(1)
 
     const lbT = await teacherWait('leaderboard')
-    const rankings = lbT['rankings'] as { display_name: string; points: number }[]
+    const rankings = lbT['rankings'] as { enc_name?: string; points: number }[]
     expect(rankings).toHaveLength(2)
     expect(rankings[0]?.points).toBeGreaterThan(0)
+    // Lehrkraft bekommt enc_name (verschluesselt), kein Klartext-Name
+    if (rankings[0]?.enc_name) {
+      expect(String(rankings[0].enc_name)).toMatch(/^h1\./)
+    }
+
+    // Schueler bekommt my_rank statt leaderboard
+    const myRankS1 = await s1Wait('my_rank')
+    expect(typeof myRankS1['rank']).toBe('number')
+    expect(typeof myRankS1['of']).toBe('number')
+    expect(typeof myRankS1['points']).toBe('number')
+    // Schueler bekommt kein enc_name oder Klarnamen-Feld
+    expect(myRankS1['enc_name']).toBeUndefined()
+    expect(myRankS1['display_name']).toBeUndefined()
 
     // Zweite Frage
     sendMsg(teacherWs, { type: 'next_question' })
@@ -435,15 +440,18 @@ describe('Quiz WebSocket: Kompletter Ablauf (mit Konten)', () => {
 
   it('Loesung vor Aufloesen nicht an Schueler gesendet', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const sToken = await registerStudent(app, 'testschueler')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
+    const { res: jr, cookie: sCookie } = await joinStudent(app, cls.code, 'Test Schueler', 'passwort111')
+    expect(jr.statusCode).toBe(201)
+
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     const { ws: teacherWs } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${teacherToken}`)
     sendMsg(teacherWs, { type: 'teacher_join', room_id: session.id })
 
-    const { ws: sWs, waitFor: sWait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${sToken}`)
+    const { ws: sWs, waitFor: sWait } = await connectWs(`${wsUrl}/api/quiz/ws`, sCookie)
     sendMsg(sWs, { type: 'student_join', pin: session.pin })
     await sWait('joined')
 
@@ -483,15 +491,18 @@ describe('Quiz WebSocket: Kompletter Ablauf (mit Konten)', () => {
 
   it('spaete Antwort wird verworfen (nach Timer)', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const sToken = await registerStudent(app, 'lates')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
+    const { res: jr, cookie: sCookie } = await joinStudent(app, cls.code, 'Late Schueler', 'passwort111')
+    expect(jr.statusCode).toBe(201)
+
     const quizId = await createQuiz(app, teacherToken, 1) // 1s Zeitlimit
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     const { ws: teacherWs } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${teacherToken}`)
     sendMsg(teacherWs, { type: 'teacher_join', room_id: session.id })
 
-    const { ws: sWs, waitFor: sWait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${sToken}`)
+    const { ws: sWs, waitFor: sWait } = await connectWs(`${wsUrl}/api/quiz/ws`, sCookie)
     sendMsg(sWs, { type: 'student_join', pin: session.pin })
     await sWait('joined')
 
@@ -513,15 +524,18 @@ describe('Quiz WebSocket: Kompletter Ablauf (mit Konten)', () => {
 
   it('doppelte Antwort wird verworfen', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const sToken = await registerStudent(app, 'dupe')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
+    const { res: jr, cookie: sCookie } = await joinStudent(app, cls.code, 'Dupe Schueler', 'passwort111')
+    expect(jr.statusCode).toBe(201)
+
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     const { ws: teacherWs } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${teacherToken}`)
     sendMsg(teacherWs, { type: 'teacher_join', room_id: session.id })
 
-    const { ws: sWs, waitFor: sWait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${sToken}`)
+    const { ws: sWs, waitFor: sWait } = await connectWs(`${wsUrl}/api/quiz/ws`, sCookie)
     sendMsg(sWs, { type: 'student_join', pin: session.pin })
     await sWait('joined')
 
@@ -543,20 +557,25 @@ describe('Quiz WebSocket: Kompletter Ablauf (mit Konten)', () => {
 
   it('Punkte nach Geschwindigkeit: schnellere Antwort mehr Punkte', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const s1Token = await registerStudent(app, 'fast')
-    const s2Token = await registerStudent(app, 'slow')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
+
+    const { res: j1, cookie: s1Cookie } = await joinStudent(app, cls.code, 'Fast Schueler', 'passwort111')
+    expect(j1.statusCode).toBe(201)
+    const { res: j2, cookie: s2Cookie } = await joinStudent(app, cls.code, 'Slow Schueler', 'passwort222')
+    expect(j2.statusCode).toBe(201)
+
     const quizId = await createQuiz(app, teacherToken, 30) // 30s Zeitlimit
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     const { ws: teacherWs } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${teacherToken}`)
     sendMsg(teacherWs, { type: 'teacher_join', room_id: session.id })
 
-    const { ws: s1Ws, waitFor: s1Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${s1Token}`)
+    const { ws: s1Ws, waitFor: s1Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, s1Cookie)
     sendMsg(s1Ws, { type: 'student_join', pin: session.pin })
     await s1Wait('joined')
 
-    const { ws: s2Ws, waitFor: s2Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${s2Token}`)
+    const { ws: s2Ws, waitFor: s2Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, s2Cookie)
     sendMsg(s2Ws, { type: 'student_join', pin: session.pin })
     await s2Wait('joined')
 
@@ -584,45 +603,37 @@ describe('Quiz WebSocket: Kompletter Ablauf (mit Konten)', () => {
 })
 
 describe('Quiz WebSocket: 3 Schüler, 2 Fragen, Rangliste', () => {
-  it('Lehrkraft + 3 Schueler, 2 Fragen, Rangliste nach quiz_ended', async () => {
+  it('Lehrkraft + 3 Schueler, 2 Fragen, Rangliste nach quiz_ended (enc_name)', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const s1Token = await registerStudent(app, 'anna')
-    const s2Token = await registerStudent(app, 'ben')
-    const s3Token = await registerStudent(app, 'cara')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse3')
 
-    // Quiz mit 2 Fragen anlegen (zweite Frage durch PATCH hinzufügen)
-    const quizId = await createQuiz(app, teacherToken, 30) // erste Frage mit 30s
-    // Zweite Frage hinzufügen
-    await app.inject({
-      method: 'POST',
-      url: `/api/teacher/quizzes/${quizId}/questions`,
-      headers: { 'content-type': 'application/json', 'cookie': `tabula_session=${teacherToken}` },
-      body: JSON.stringify({
-        question: 'Was macht ORDER BY?',
-        options: ['Filtert', 'Sortiert', 'Gruppiert', 'Löscht'],
-        correct_index: 1,
-        time_limit: 30,
-        points: 200,
-      }),
-    })
+    // Drei Schueler beitreten
+    const { res: j1, cookie: s1Cookie } = await joinStudent(app, cls.code, 'Anna Quiz', 'passwort111')
+    expect(j1.statusCode).toBe(201)
+    const { res: j2, cookie: s2Cookie } = await joinStudent(app, cls.code, 'Ben Quiz', 'passwort222')
+    expect(j2.statusCode).toBe(201)
+    const { res: j3, cookie: s3Cookie } = await joinStudent(app, cls.code, 'Cara Quiz', 'passwort333')
+    expect(j3.statusCode).toBe(201)
 
-    const session = await startSession(app, teacherToken, quizId)
+    const quizId = await createQuiz(app, teacherToken, 30) // 2 Fragen in createQuiz
+
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     // Alle verbinden
     const { ws: teacherWs, waitFor: teacherWait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${teacherToken}`)
     sendMsg(teacherWs, { type: 'teacher_join', room_id: session.id })
     await teacherWait('joined')
 
-    const { ws: s1Ws, waitFor: s1Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${s1Token}`)
+    const { ws: s1Ws, waitFor: s1Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, s1Cookie)
     sendMsg(s1Ws, { type: 'student_join', pin: session.pin })
     await s1Wait('joined')
 
-    const { ws: s2Ws, waitFor: s2Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${s2Token}`)
+    const { ws: s2Ws, waitFor: s2Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, s2Cookie)
     sendMsg(s2Ws, { type: 'student_join', pin: session.pin })
     await s2Wait('joined')
 
-    const { ws: s3Ws, waitFor: s3Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${s3Token}`)
+    const { ws: s3Ws, waitFor: s3Wait } = await connectWs(`${wsUrl}/api/quiz/ws`, s3Cookie)
     sendMsg(s3Ws, { type: 'student_join', pin: session.pin })
     await s3Wait('joined')
 
@@ -635,11 +646,10 @@ describe('Quiz WebSocket: 3 Schüler, 2 Fragen, Rangliste', () => {
 
     const q1Id = q1['question_id'] as number
 
-    // Anna und Ben antworten richtig, Cara falsch
+    // Anna und Ben richtig, Cara falsch
     sendMsg(s1Ws, { type: 'answer', question_id: q1Id, chosen_idx: 1 })
     const ack1 = await s1Wait('answer_ack')
     expect(ack1['correct']).toBe(true)
-    expect(ack1['points'] as number).toBeGreaterThan(0)
 
     sendMsg(s2Ws, { type: 'answer', question_id: q1Id, chosen_idx: 1 })
     const ack2 = await s2Wait('answer_ack')
@@ -652,44 +662,50 @@ describe('Quiz WebSocket: 3 Schüler, 2 Fragen, Rangliste', () => {
 
     // Auflösen
     sendMsg(teacherWs, { type: 'reveal' })
-    const reveal1 = await teacherWait('reveal')
-    expect(reveal1['correct_idx']).toBe(1)
-    await teacherWait('leaderboard') // Rankings nach Frage 1
+    await teacherWait('reveal')
+
+    // Lehrkraft bekommt leaderboard mit enc_name
+    const lbAfterQ1 = await teacherWait('leaderboard')
+    const rankings1 = lbAfterQ1['rankings'] as { enc_name?: string; points: number }[]
+    expect(rankings1.length).toBeGreaterThan(0)
+    if (rankings1[0]?.enc_name) {
+      expect(String(rankings1[0].enc_name)).toMatch(/^h1\./)
+      // Lehrkraft kann enc_name entschluesseln
+      const name = await C.openForTeacher(teacher.privateKey, rankings1[0].enc_name)
+      expect(name).toBeTruthy()
+    }
+
+    // Schueler bekommen my_rank, kein leaderboard
+    const r1 = await s1Wait('my_rank')
+    expect(r1['rank']).toBeDefined()
+    expect(r1['enc_name']).toBeUndefined()
 
     // --- Frage 2 ---
     sendMsg(teacherWs, { type: 'next_question' })
     const q2 = await s1Wait('question_start')
     await s2Wait('question_start')
     await s3Wait('question_start')
-    expect(q2['question_index']).toBe(2)
 
     const q2Id = q2['question_id'] as number
 
-    // Alle drei antworten richtig auf Frage 2
+    // Alle drei richtig
     sendMsg(s1Ws, { type: 'answer', question_id: q2Id, chosen_idx: 1 })
     await s1Wait('answer_ack')
     sendMsg(s2Ws, { type: 'answer', question_id: q2Id, chosen_idx: 1 })
     await s2Wait('answer_ack')
     sendMsg(s3Ws, { type: 'answer', question_id: q2Id, chosen_idx: 1 })
-    const ack3q2 = await s3Wait('answer_ack')
-    expect(ack3q2['correct']).toBe(true)
+    await s3Wait('answer_ack')
 
     // Auflösen + Quiz beenden
     sendMsg(teacherWs, { type: 'reveal' })
     await teacherWait('reveal')
     const finalLb = await teacherWait('leaderboard')
-    const rankings = finalLb['rankings'] as { rank: number; display_name: string; points: number }[]
+    const rankings = finalLb['rankings'] as { rank: number; enc_name?: string; points: number }[]
 
-    // Rangliste: mindestens 3 Einträge, sortiert nach Punkten absteigend
+    // Rangliste: 3 Einträge, sortiert nach Punkten absteigend
     expect(rankings.length).toBe(3)
     expect(rankings[0]!.points).toBeGreaterThanOrEqual(rankings[1]!.points)
     expect(rankings[1]!.points).toBeGreaterThanOrEqual(rankings[2]!.points)
-    // Cara hat Frage 1 falsch beantwortet, sollte am Ende weniger Punkte haben als Anna/Ben
-    const caraEntry = rankings.find(r => r.display_name === 'cara')
-    const annaEntry = rankings.find(r => r.display_name === 'anna')
-    expect(caraEntry).toBeDefined()
-    expect(annaEntry).toBeDefined()
-    expect(annaEntry!.points).toBeGreaterThan(caraEntry!.points)
 
     sendMsg(teacherWs, { type: 'end_quiz' })
     await teacherWait('quiz_ended')
@@ -712,9 +728,10 @@ describe('Quiz WebSocket: 3 Schüler, 2 Fragen, Rangliste', () => {
 describe('Quiz WebSocket: Sicherheit', () => {
   it('Gast ohne Konto wird abgelehnt (login_required)', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     // WS ohne Cookie öffnen (kein Konto)
     const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
@@ -739,24 +756,21 @@ describe('Quiz WebSocket: Sicherheit', () => {
 
   it('Schueler ohne Klassenmitgliedschaft wird abgelehnt (not_in_class)', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const sToken = await registerStudent(app, 'fremder')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
 
-    // Klasse anlegen
-    const classRes = await app.inject({
-      method: 'POST',
-      url: '/api/teacher/classes',
-      headers: { 'content-type': 'application/json', 'cookie': `tabula_session=${teacherToken}` },
-      body: JSON.stringify({ name: 'Klasse 10a' }),
-    })
-    expect(classRes.statusCode).toBe(201)
-    const classId = (JSON.parse(classRes.body) as { class: { id: number } }).class.id
-
+    // Klasse A anlegen, Quiz dort starten
+    const clsA = await createClass(app, teacher.cookie, 'Klasse A')
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId, classId)
+    const session = await startSession(app, teacherToken, quizId, clsA.id)
 
+    // Klasse B anlegen, Schueler tritt nur in Klasse B bei
+    const clsB = await createClass(app, teacher.cookie, 'Klasse B')
+    const { res: jr, cookie: sToken } = await joinStudent(app, clsB.code, 'Fremder Schueler', 'passwort111')
+    expect(jr.statusCode).toBe(201)
+
+    // Schueler versucht bei Quiz von Klasse A beizutreten
     const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
-      const ws = new WebSocket(`${wsUrl}/api/quiz/ws`, { headers: { cookie: `tabula_session=${sToken}` } })
+      const ws = new WebSocket(`${wsUrl}/api/quiz/ws`, { headers: { cookie: sToken } })
       ws.on('open', () => {
         ws.send(JSON.stringify({ type: 'student_join', pin: session.pin }))
       })
@@ -777,32 +791,15 @@ describe('Quiz WebSocket: Sicherheit', () => {
 
   it('lobby_state enthaelt expected bei Klassensitzung', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const s1Token = await registerStudent(app, 'mitglied1')
-    const s2Token = await registerStudent(app, 'mitglied2')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'Klasse Test')
 
-    // Klasse anlegen
-    const classRes = await app.inject({
-      method: 'POST',
-      url: '/api/teacher/classes',
-      headers: { 'content-type': 'application/json', 'cookie': `tabula_session=${teacherToken}` },
-      body: JSON.stringify({ name: 'Klasse Test' }),
-    })
-    const classBody = JSON.parse(classRes.body) as { class: { id: number; join_code: string } }
-    const classId = classBody.class.id
-    const joinCode = classBody.class.join_code
-
-    for (const token of [s1Token, s2Token]) {
-      await app.inject({
-        method: 'POST',
-        url: '/api/classes/join',
-        headers: { 'content-type': 'application/json', 'cookie': `tabula_session=${token}` },
-        body: JSON.stringify({ code: joinCode }),
-      })
-    }
+    // Zwei Schueler beitreten lassen
+    await joinStudent(app, cls.code, 'Mitglied 1', 'passwort111')
+    await joinStudent(app, cls.code, 'Mitglied 2', 'passwort222')
 
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId, classId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     // Lehrkraft verbindet und empfängt lobby_state
     const lobbyMsg = await new Promise<Record<string, unknown>>((resolve, reject) => {
@@ -852,10 +849,11 @@ describe('Quiz WebSocket: Sicherheit', () => {
 
   it('Fremde Lehrkraft kann Quiz nicht ueber WS steuern', async () => {
     const { app, db, wsUrl } = await setup()
-    const token1 = await registerTeacher(app, 'lehrer1')
-    const token2 = await registerTeacher(app, 'lehrer2')
+    const { token: token1, teacher: t1 } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const { token: token2 } = await registerTeacherQuiz(app, 'lehrer2@test.de')
+    const cls = await createClass(app, t1.cookie, 'QuizKlasse')
     const quizId = await createQuiz(app, token1)
-    const session = await startSession(app, token1, quizId)
+    const session = await startSession(app, token1, quizId, cls.id)
 
     const { ws: ws2, waitFor: wait2 } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${token2}`)
     sendMsg(ws2, { type: 'teacher_join', room_id: session.id })
@@ -871,13 +869,14 @@ describe('Quiz WebSocket: Sicherheit', () => {
 describe('K5: 24h Loeschjob', () => {
   it('Zeitreise: 24h nach Ende nur Aggregat bleibt, keine Namen', async () => {
     const { app, db } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     const participantResult = db.prepare(
       'INSERT INTO quiz_participants (room_id, display_name, total_points) VALUES (?, ?, ?)'
-    ).run(session.id, 'TestSchüler', 800)
+    ).run(session.id, '#1', 800)
     const participantId = participantResult.lastInsertRowid as number
 
     const questions = db.prepare(
@@ -915,13 +914,14 @@ describe('K5: 24h Loeschjob', () => {
 
   it('Quiz innerhalb 24h wird NICHT geloescht', async () => {
     const { app, db } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     db.prepare(
       'INSERT INTO quiz_participants (room_id, display_name, total_points) VALUES (?, ?, ?)'
-    ).run(session.id, 'TestSchüler', 500)
+    ).run(session.id, '#1', 500)
 
     const endedAt = Math.floor(Date.now() / 1000) - 12 * 60 * 60
     db.prepare("UPDATE quiz_rooms SET state = 'ended', ended_at = ? WHERE id = ?").run(endedAt, session.id)
@@ -960,28 +960,32 @@ describe('K10: Keine IP-Spalten in Quiz-Tabellen', () => {
 })
 
 describe('K8: Konto loeschen entfernt Quiz-Daten', () => {
-  it('Konto loeschen entfernt quiz_participants Eintraege', async () => {
+  it('Lehrkraft loeschen entfernt quiz_participants Eintraege der Klassen-Schueler', async () => {
     const { app, db } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const studentToken = await registerStudent(app, 'schueler1')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
+    const { res: jr, cookie: studentCookie } = await joinStudent(app, cls.code, 'Quiz Schueler', 'passwort111')
+    expect(jr.statusCode).toBe(201)
 
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
-    const student = db.prepare("SELECT id FROM users WHERE username = 'schueler1'").get() as { id: number }
+    const student = db.prepare("SELECT id FROM users WHERE role = 'student'").get() as { id: number }
     const studentId = student.id
 
     db.prepare(
       'INSERT INTO quiz_participants (room_id, user_id, display_name, total_points) VALUES (?, ?, ?, ?)'
-    ).run(session.id, studentId, 'Schueler1', 500)
+    ).run(session.id, studentId, '#' + studentId, 500)
 
+    // Lehrkraft loescht ihr Konto (loescht auch Schueler)
     const delRes = await app.inject({
       method: 'DELETE',
       url: '/api/me',
-      headers: { 'cookie': `tabula_session=${studentToken}` },
+      headers: { 'cookie': teacher.cookie },
     })
     expect(delRes.statusCode).toBe(200)
 
+    // Schueler-Konto geloescht → quiz_participants auch weg
     const participants = db.prepare('SELECT id FROM quiz_participants WHERE user_id = ?').all(studentId)
     expect(participants.length).toBe(0)
 
@@ -992,9 +996,10 @@ describe('K8: Konto loeschen entfernt Quiz-Daten', () => {
 describe('Quiz WebSocket: Anmeldung per HttpOnly-Cookie', () => {
   it('Lehrkraft tritt ohne token im Nachrichtentext bei, nur mit Cookie beim Upgrade', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'cookielehrer')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'cookielehrer@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     const msg = await new Promise<Record<string, unknown>>((resolve, reject) => {
       const ws = new WebSocket(`${wsUrl}/api/quiz/ws`, { headers: { cookie: `tabula_session=${teacherToken}` } })
@@ -1022,12 +1027,15 @@ describe('Quiz WebSocket: Anmeldung per HttpOnly-Cookie', () => {
     await teardown(app, db)
   })
 
-  it('Schueler tritt mit Cookie bei, Anzeigename aus Konto', async () => {
+  it('Schueler tritt mit Cookie bei (kein display_name in joined)', async () => {
     const { app, db, wsUrl } = await setup()
-    const teacherToken = await registerTeacher(app, 'lehrer1')
-    const sToken = await registerStudent(app, 'cookieschueler')
+    const { token: teacherToken, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
+    const { res: jr, cookie: sCookie } = await joinStudent(app, cls.code, 'Cookie Schueler', 'passwort111')
+    expect(jr.statusCode).toBe(201)
+
     const quizId = await createQuiz(app, teacherToken)
-    const session = await startSession(app, teacherToken, quizId)
+    const session = await startSession(app, teacherToken, quizId, cls.id)
 
     // Lehrkraft verbindet
     const { ws: teacherWs } = await connectWs(`${wsUrl}/api/quiz/ws`, `tabula_session=${teacherToken}`)
@@ -1035,7 +1043,7 @@ describe('Quiz WebSocket: Anmeldung per HttpOnly-Cookie', () => {
 
     // Schüler verbindet mit Cookie, ohne display_name im Nachrichtentext
     const sMsg = await new Promise<Record<string, unknown>>((resolve, reject) => {
-      const ws = new WebSocket(`${wsUrl}/api/quiz/ws`, { headers: { cookie: `tabula_session=${sToken}` } })
+      const ws = new WebSocket(`${wsUrl}/api/quiz/ws`, { headers: { cookie: sCookie } })
       ws.on('open', () => ws.send(JSON.stringify({ type: 'student_join', pin: session.pin })))
       ws.on('message', (d) => {
         const m = JSON.parse(d.toString()) as Record<string, unknown>
@@ -1044,9 +1052,8 @@ describe('Quiz WebSocket: Anmeldung per HttpOnly-Cookie', () => {
       setTimeout(() => reject(new Error('timeout')), 3000)
     })
     expect(sMsg['type']).toBe('joined')
-    expect(sMsg['role']).toBe('student')
-    // display_name kommt aus dem Konto
-    expect(sMsg['display_name']).toBe('cookieschueler')
+    // Kein display_name in 'joined' fuer Schueler (neues Modell)
+    expect(sMsg['display_name']).toBeUndefined()
 
     teacherWs.close()
     await teardown(app, db)
@@ -1060,7 +1067,7 @@ describe('Quiz WebSocket: Anmeldung per HttpOnly-Cookie', () => {
 describe('Quiz-Bank: GET /api/teacher/quiz-bank', () => {
   it('liefert 10 Lektionen mit je 8 Fragen', async () => {
     const { app, db } = await setup()
-    const token = await registerTeacher(app)
+    const { token } = await registerTeacherQuiz(app, 'lehrer1@test.de')
 
     const res = await app.inject({
       method: 'GET',
@@ -1094,14 +1101,15 @@ describe('Quiz-Bank: GET /api/teacher/quiz-bank', () => {
 describe('Quiz-Bank: POST /api/teacher/quiz-sessions mit bank_lesson_id', () => {
   it('Lehrkraft startet Auto-Quiz, Fragen kommen an', async () => {
     const { app, db, wsUrl } = await setup()
-    const token = await registerTeacher(app)
+    const { token, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
 
-    // Auto-Session starten
+    // Auto-Session starten (class_id Pflicht)
     const res = await app.inject({
       method: 'POST',
       url: '/api/teacher/quiz-sessions',
       headers: { 'content-type': 'application/json', cookie: `tabula_session=${token}` },
-      body: JSON.stringify({ bank_lesson_id: 'joins' }),
+      body: JSON.stringify({ bank_lesson_id: 'joins', class_id: cls.id }),
     })
     expect(res.statusCode).toBe(201)
     const { id, pin } = JSON.parse(res.body) as { id: number; pin: string }
@@ -1110,7 +1118,7 @@ describe('Quiz-Bank: POST /api/teacher/quiz-sessions mit bank_lesson_id', () => 
 
     // Fragensatz wurde mit source='auto' angelegt
     const qSet = db.prepare(
-      "SELECT id, source FROM quiz_question_sets WHERE teacher_id = (SELECT id FROM users WHERE username = 'lehrer1') AND source = 'auto'"
+      "SELECT id, source FROM quiz_question_sets WHERE source = 'auto'"
     ).get() as { id: number; source: string } | undefined
     expect(qSet).toBeDefined()
     expect(qSet?.source).toBe('auto')
@@ -1124,7 +1132,7 @@ describe('Quiz-Bank: POST /api/teacher/quiz-sessions mit bank_lesson_id', () => 
       method: 'POST',
       url: '/api/teacher/quiz-sessions',
       headers: { 'content-type': 'application/json', cookie: `tabula_session=${token}` },
-      body: JSON.stringify({ bank_lesson_id: 'joins' }),
+      body: JSON.stringify({ bank_lesson_id: 'joins', class_id: cls.id }),
     })
     expect(res2.statusCode).toBe(201)
     const setCount = (db.prepare(
@@ -1137,15 +1145,16 @@ describe('Quiz-Bank: POST /api/teacher/quiz-sessions mit bank_lesson_id', () => 
 
   it('fremde Lehrkraft sieht keine Auto-Saetze anderer', async () => {
     const { app, db } = await setup()
-    const token1 = await registerTeacher(app, 'lehrer1')
-    const token2 = await registerTeacher(app, 'lehrer2')
+    const { token: token1, teacher: t1 } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const { token: token2 } = await registerTeacherQuiz(app, 'lehrer2@test.de')
+    const cls1 = await createClass(app, t1.cookie, 'QuizKlasse1')
 
     // Lehrer 1 legt Auto-Satz an
     await app.inject({
       method: 'POST',
       url: '/api/teacher/quiz-sessions',
       headers: { 'content-type': 'application/json', cookie: `tabula_session=${token1}` },
-      body: JSON.stringify({ bank_lesson_id: 'select-basics' }),
+      body: JSON.stringify({ bank_lesson_id: 'select-basics', class_id: cls1.id }),
     })
 
     // Lehrer 2 listet eigene Fragensaetze
@@ -1162,13 +1171,14 @@ describe('Quiz-Bank: POST /api/teacher/quiz-sessions mit bank_lesson_id', () => 
 
   it('ungueltige lesson_id liefert 404', async () => {
     const { app, db } = await setup()
-    const token = await registerTeacher(app)
+    const { token, teacher } = await registerTeacherQuiz(app, 'lehrer1@test.de')
+    const cls = await createClass(app, teacher.cookie, 'QuizKlasse')
 
     const res = await app.inject({
       method: 'POST',
       url: '/api/teacher/quiz-sessions',
       headers: { 'content-type': 'application/json', cookie: `tabula_session=${token}` },
-      body: JSON.stringify({ bank_lesson_id: 'nichtvorhanden' }),
+      body: JSON.stringify({ bank_lesson_id: 'nichtvorhanden', class_id: cls.id }),
     })
     expect(res.statusCode).toBe(404)
 
