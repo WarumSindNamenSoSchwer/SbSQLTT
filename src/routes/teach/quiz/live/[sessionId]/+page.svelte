@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { siteOrigin, siteHost } from '$lib/tabula/site.js';
 	import '$lib/tabula/theme.css';
 	import { onMount, onDestroy } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -57,7 +58,7 @@
 
 	let timer: ReturnType<typeof setInterval> | null = null;
 	const sessionId = $derived(Number(page.params.sessionId));
-	const joinUrl = $derived(`https://www.tabulasql.de/quiz/${pin || sessionId}`);
+	const joinUrl = $derived(`${siteOrigin()}/quiz/${pin || sessionId}`);
 
 	// QR-Code generieren sobald pin bekannt
 	$effect(() => {
@@ -239,7 +240,7 @@
 					<div class="qr-placeholder"></div>
 				{/if}
 				<span class="pin-mono">{pin || String(sessionId)}</span>
-				<span class="join-url mono">www.tabulasql.de/quiz/{pin || sessionId}</span>
+				<span class="join-url mono">{siteHost()}/quiz/{pin || sessionId}</span>
 			</div>
 			<!-- Teilnehmer -->
 			<div class="lobby-right">

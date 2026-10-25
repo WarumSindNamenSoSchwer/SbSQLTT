@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { siteOrigin, siteHost } from '$lib/tabula/site.js';
 	import '$lib/tabula/theme.css';
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -61,7 +62,7 @@
 			const res = await apiTeacherCreateClass(name.trim());
 			created = res.class;
 			// QR-Code erzeugen
-			const url = `https://www.tabulasql.de/beitreten/${res.class.join_code}`;
+			const url = `${siteOrigin()}/beitreten/${res.class.join_code}`;
 			qrDataUrl = await QRCode.toDataURL(url, { width: 200, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } });
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Fehler beim Erstellen.';
@@ -71,7 +72,7 @@
 	}
 
 	function getJoinUrl(code: string) {
-		return `https://www.tabulasql.de/beitreten/${code}`;
+		return `${siteOrigin()}/beitreten/${code}`;
 	}
 
 	async function copyLink() {
@@ -152,7 +153,7 @@
 					<img src={qrDataUrl} alt="QR-Code" class="beamer-qr" width="460" height="460" />
 				{/if}
 				<div class="beamer-code">{created.join_code}</div>
-				<div class="beamer-url mono">tabulasql.de/beitreten</div>
+				<div class="beamer-url mono">{siteHost()}/beitreten</div>
 			</div>
 		{/if}
 	{:else}

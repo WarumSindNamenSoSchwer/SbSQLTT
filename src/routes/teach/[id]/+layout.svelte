@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { siteOrigin, siteHost } from '$lib/tabula/site.js';
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -124,7 +125,7 @@
 	async function openQr() {
 		qrOpen = true;
 		if (!qrDataUrl && cls) {
-			const url = `https://www.tabulasql.de/beitreten/${cls.join_code}`;
+			const url = `${siteOrigin()}/beitreten/${cls.join_code}`;
 			qrDataUrl = await QRCode.toDataURL(url, { width: 240, margin: 2, color: { dark: '#0f172a', light: '#ffffff' } });
 		}
 	}
@@ -272,7 +273,7 @@
 						<img src={qrDataUrl} alt="QR-Code für Klasse {cls.name}" class="qr-dialog-img" />
 					{/if}
 					<div class="qr-dialog-code mono">{cls.join_code}</div>
-					<div class="qr-dialog-url mono">tabulasql.de/beitreten/{cls.join_code}</div>
+					<div class="qr-dialog-url mono">{siteHost()}/beitreten/{cls.join_code}</div>
 					<div class="qr-dialog-actions">
 						<button class="btn-secondary" onclick={() => { qrOpen = false; goto(`/teach/${classId}/einstellungen`); }}>Einstellungen</button>
 					</div>

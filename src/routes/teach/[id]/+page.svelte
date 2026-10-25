@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { siteOrigin, siteHost } from '$lib/tabula/site.js';
 	import { onMount, onDestroy, getContext } from 'svelte';
 	import { page } from '$app/state';
 	import {
@@ -33,7 +34,7 @@
 	$effect(() => {
 		const code = ctx?.cls?.join_code as string | undefined;
 		if (!code) return;
-		QRCode.toDataURL(`https://www.tabulasql.de/beitreten/${code}`, { width: 472, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } })
+		QRCode.toDataURL(`${siteOrigin()}/beitreten/${code}`, { width: 472, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } })
 			.then((u: string) => (emptyQr = u))
 			.catch(() => (emptyQr = null));
 	});
@@ -237,7 +238,7 @@
 		<div class="empty-text-side">
 			<Edgar pose="wave" {dark} class="empty-wave-owl" />
 			<h2 class="empty-title">Noch niemand beigetreten</h2>
-			<p class="empty-body">Zeigen Sie diesen Code oder QR-Code. Schüler öffnen tabulasql.de/beitreten und geben den Code ein.</p>
+			<p class="empty-body">Zeigen Sie diesen Code oder QR-Code. Schüler öffnen {siteHost()}/beitreten und geben den Code ein.</p>
 			<div class="empty-steps">
 				{#each [['1', 'QR-Code scannen oder Code eingeben'], ['2', 'Anmelden oder Konto erstellen'], ['3', 'Fertig. Der Schüler erscheint hier.']] as [n, t]}
 					<div class="empty-step">

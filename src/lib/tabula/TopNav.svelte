@@ -21,11 +21,11 @@
 		{ href: '/#lehrkraefte', label: 'Für Lehrkräfte' }
 	];
 
-	// Avatar-Initialen aus display_name
+	// Avatar-Initialen aus dem Anzeigenamen (Schüler: Name nur im Tab gespeichert)
 	const initials = $derived(() => {
-		const u = session.user;
-		if (!u) return '';
-		const parts = u.display_name.trim().split(/\s+/);
+		const n = session.displayName.trim();
+		if (!n) return '';
+		const parts = n.split(/\s+/);
 		if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 		return parts[0].slice(0, 2).toUpperCase();
 	});
@@ -84,16 +84,18 @@
 				onclick={() => (avatarOpen = !avatarOpen)}
 			>
 				<span class="avatar">{initials()}</span>
-				<span class="avatar-name">{session.user.display_name.split(' ')[0]} ▾</span>
+				<span class="avatar-name">{session.displayName.split(' ')[0]} ▾</span>
 			</button>
 			{#if avatarOpen}
 				<div class="amenu" role="menu">
 					<div class="amenu-head">
-						<span class="amenu-display">{session.user.display_name}</span>
-						<span class="amenu-username mono">{session.user.username}</span>
+						<span class="amenu-display">{session.displayName}</span>
+						<span class="amenu-username mono">{session.teacher ? session.teacher.email : (session.student?.class?.name ?? '')}</span>
 					</div>
 					<a role="menuitem" href="/profil" onclick={() => (avatarOpen = false)} class="amenu-item">Profil</a>
-					<a role="menuitem" href="/beitreten" onclick={() => (avatarOpen = false)} class="amenu-item">Klasse beitreten</a>
+					{#if session.teacher}
+						<a role="menuitem" href="/teach" onclick={() => (avatarOpen = false)} class="amenu-item">Meine Klassen</a>
+					{/if}
 					<button role="menuitem" class="amenu-item amenu-logout" onclick={handleLogout} disabled={logoutBusy}>
 						{logoutBusy ? 'Wird abgemeldet …' : 'Abmelden'}
 					</button>
