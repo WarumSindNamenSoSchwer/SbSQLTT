@@ -57,41 +57,52 @@ async function request<T>(
 // Typen
 // ---------------------------------------------------------------------------
 
-export interface RegisterStudentBody {
-  role: 'student';
-  username: string;
-  display_name: string;
-  password: string;
-  email?: string;
-  class_code?: string;
+export interface TeacherKeys {
+  public_key: string;
+  wrapped_by_password: string;
+  wrapped_by_recovery: string;
 }
 
 export interface RegisterTeacherBody {
-  role: 'teacher';
-  username: string;
   display_name: string;
   name: string;
   email: string;
   password: string;
   school?: string;
   terms_accepted: true;
+  keys: TeacherKeys;
 }
 
-export interface PublicUser {
+export interface StudentClassInfo {
   id: number;
-  username: string;
+  name: string;
+  code: string;
+  class_salt: string;
+  teacher_name: string;
+  public_key: string;
+}
+
+export interface TeacherUser {
+  id: number;
+  role: 'teacher';
   display_name: string;
-  email: string | null;
+  email: string;
   name: string | null;
   school: string | null;
-  role: 'student' | 'teacher';
   created_day: string;
   last_login_at: number | null;
-  /** 1 nach Passwort-Reset durch Lehrkraft: muss beim nächsten Login geändert werden */
-  must_change_password?: number;
-  /** Lehrkraft: Zeitpunkt der E-Mail-Bestätigung, null = offen */
-  email_verified_at?: number | null;
+  email_verified_at: number | null;
+  keys: { public_key: string | null; wrapped_by_password: string | null; wrapped_by_recovery: string | null };
 }
+
+export interface StudentUser {
+  id: number;
+  role: 'student';
+  last_login_at: number | null;
+  class: StudentClassInfo | null;
+}
+
+export type PublicUser = TeacherUser | StudentUser;
 
 export interface ProgressItem {
   lesson_id: string;
@@ -101,28 +112,36 @@ export interface ProgressItem {
   updated_at: number;
 }
 
+/** Letzte Abfrage: verschlüsselt für die Lehrkraft (sealed), dazu nur das Fehler-Kennzeichen */
 export interface AttemptItem {
   lesson_id: string;
   step: number;
-  query: string;
-  error_msg: string;
+  sealed: string;
+  has_error: boolean;
+}
+
+export interface ClassLookup {
+  class_name: string;
+  teacher_name: string;
+  class_salt: string;
+  public_key: string;
 }
 
 // ---------------------------------------------------------------------------
-// API-Funktionen
+// API-Funktionen: Lehrkraft-Konto
 // ---------------------------------------------------------------------------
 
-/** POST /api/register */
-export function apiRegister(body: RegisterStudentBody | RegisterTeacherBody): Promise<{ ok: true }> {
+/** POST /api/register (nur Lehrkräfte) */
+export function apiRegister(body: RegisterTeacherBody): Promise<{ ok: true }> {
   return request('POST', '/register', body);
 }
 
-/** POST /api/login */
-export function apiLogin(loginInput: string, password: string): Promise<{ ok: true }> {
-  return request('POST', '/login', { login: loginInput, password });
+/** POST /api/login (Lehrkraft, mit E-Mail-Adresse) */
+export function apiLogin(email: string, password: string): Promise<{ ok: true }> {
+  return request('POST', '/login', { login: email, password });
 }
 
-/** POST /api/logout */
+/** POST /api/logout (Lehrkraft und Schüler) */
 export function apiLogout(): Promise<{ ok: true }> {
   return request('POST', '/logout');
 }
@@ -132,23 +151,24 @@ export function apiMe(): Promise<{ user: PublicUser }> {
   return request('GET', '/me');
 }
 
-/** PATCH /api/me */
-export function apiPatchMe(body: {
-  display_name?: string;
-  username?: string;
-  current_password?: string;
-}): Promise<{ ok: true }> {
+/** PATCH /api/me (Lehrkraft) */
+export function apiPatchMe(body: { display_name?: string; name?: string; school?: string | null }): Promise<{ ok: true }> {
   return request('PATCH', '/me', body);
 }
 
-/** DELETE /api/me */
+/** DELETE /api/me (Lehrkraft, löscht auch Klassen und deren Schüler) */
 export function apiDeleteMe(): Promise<{ ok: true }> {
   return request('DELETE', '/me');
 }
 
-/** POST /api/me/password */
-export function apiChangePassword(current_password: string, new_password: string): Promise<{ ok: true }> {
-  return request('POST', '/me/password', { current_password, new_password });
+/** POST /api/me/password (Lehrkraft; privater Schlüssel neu verpackt) */
+export function apiChangePassword(current_password: string, new_password: string, wrapped_by_password: string): Promise<{ ok: true }> {
+  return request('POST', '/me/password', { current_password, new_password, wrapped_by_password });
+}
+
+/** POST /api/me/keys (Lehrkraft nach Passwort-Reset: Schlüssel neu verpackt oder neues Paar) */
+export function apiSetKeys(keys: TeacherKeys): Promise<{ ok: true; new_pair: boolean }> {
+  return request('POST', '/me/keys', { keys });
 }
 
 /** POST /api/email/verify (Lehrkraft bestätigt E-Mail-Adresse, K7) */
@@ -166,14 +186,43 @@ export function apiPasswordForgot(email: string): Promise<{ ok: true }> {
   return request('POST', '/password/forgot', { email });
 }
 
-/** POST /api/password/reset */
-export function apiPasswordReset(token: string, password: string): Promise<{ ok: true }> {
+/** POST /api/password/reset (meldet die Lehrkraft an; danach Schlüssel wiederherstellen) */
+export function apiPasswordReset(token: string, password: string): Promise<{ ok: true; needs_key_recovery: boolean }> {
   return request('POST', '/password/reset', { token, password });
 }
 
-/** POST /api/classes/join */
-export function apiJoinClass(code: string): Promise<{ ok: true; class_name: string }> {
-  return request('POST', '/classes/join', { code });
+// ---------------------------------------------------------------------------
+// API-Funktionen: Klassen-Login der Schüler (Name und Passwort verlassen den Browser nie)
+// ---------------------------------------------------------------------------
+
+/** GET /api/class-login/lookup */
+export function apiClassLookup(code: string): Promise<ClassLookup> {
+  return request('GET', `/class-login/lookup?code=${encodeURIComponent(code)}`);
+}
+
+/** POST /api/class-login/join */
+export function apiClassJoin(code: string, key: string, enc_name: string): Promise<{ ok: true; class_name: string }> {
+  return request('POST', '/class-login/join', { code, key, enc_name });
+}
+
+/** POST /api/class-login/login */
+export function apiClassLogin(code: string, key: string, enc_name?: string): Promise<{ ok: true; class_name: string }> {
+  return request('POST', '/class-login/login', { code, key, enc_name });
+}
+
+/** POST /api/class-login/reset (Einmal-Code der Lehrkraft) */
+export function apiClassReset(code: string, reset_code: string, key: string, enc_name: string): Promise<{ ok: true; class_name: string }> {
+  return request('POST', '/class-login/reset', { code, reset_code, key, enc_name });
+}
+
+/** POST /api/student/rekey (Name oder Passwort ändern) */
+export function apiStudentRekey(old_key: string, new_key: string, enc_name: string): Promise<{ ok: true }> {
+  return request('POST', '/student/rekey', { old_key, new_key, enc_name });
+}
+
+/** POST /api/student/leave (aus der Klasse austreten, löscht alle Daten) */
+export function apiStudentLeave(): Promise<{ ok: true }> {
+  return request('POST', '/student/leave');
 }
 
 /** GET /api/classes/mine */
@@ -191,7 +240,7 @@ export function apiGetClasses(): Promise<{
 /** GET /api/progress */
 export function apiGetProgress(): Promise<{
   progress: ProgressItem[];
-  last_attempts: (AttemptItem & { updated_at: number })[];
+  last_attempts: { lesson_id: string; step: number; has_error: number; updated_at: number }[];
 }> {
   return request('GET', '/progress');
 }
@@ -219,16 +268,17 @@ export interface TeacherClass {
   stuck_count?: number;
 }
 
+/** Schüler aus Sicht der Lehrkraft: Name nur verschlüsselt (enc_name), der Browser entschlüsselt */
 export interface TeacherStudent {
   id: number;
-  display_name: string;
-  username: string;
+  enc_name: string | null;
   joined_at: number;
+  last_login_at: number | null;
 }
 
 export interface DashboardStudent {
   user_id: number;
-  display_name: string;
+  enc_name: string | null;
   status: 'done' | 'in_progress' | 'stuck' | 'not_started';
   /** Anzahl erledigter Uebungsschritte */
   step: number | null;
@@ -241,7 +291,7 @@ export interface DashboardStudent {
 
 export interface MatrixRow {
   user_id: number;
-  display_name: string;
+  enc_name: string | null;
   cells: Array<{ status: 'done' | 'started' | 'stuck' | 'open' | 'locked' }>;
   progress: string;
 }
@@ -256,8 +306,9 @@ export interface LessonSetting {
 export interface LastAttempt {
   lesson_id: string;
   step: number;
-  query: string;
-  error_msg: string;
+  /** Abfrage und Fehlermeldung, verschlüsselt für die Lehrkraft */
+  sealed: string;
+  has_error: number;
   updated_at: number;
 }
 
@@ -304,7 +355,7 @@ export async function apiTeacherDashboard(id: number): Promise<{ students: Dashb
     fertig: 'done', dran: 'in_progress', haengt_fest: 'stuck', noch_nicht_begonnen: 'not_started', kein_fokus: 'not_started',
   };
   const res = await request<{ focus_lesson: string | null; students: Array<{
-    user_id: number; display_name: string; status: string;
+    user_id: number; enc_name: string | null; status: string;
     steps_done?: number; steps_total?: number; current_step?: number | null; attempts?: number; last_active?: number | null;
   }> }>('GET', `/teacher/classes/${id}/dashboard`);
   return {
@@ -312,7 +363,7 @@ export async function apiTeacherDashboard(id: number): Promise<{ students: Dashb
     updated_at: Math.floor(Date.now() / 1000),
     students: res.students.map((s) => ({
       user_id: s.user_id,
-      display_name: s.display_name,
+      enc_name: s.enc_name,
       status: STATUS[s.status] ?? 'not_started',
       // step = Anzahl erledigter Übungen, total_steps = Übungen der Fokus-Lektion
       step: s.steps_total != null ? (s.steps_done ?? 0) : null,
@@ -340,7 +391,7 @@ export async function apiTeacherMatrix(id: number): Promise<{ rows: MatrixRow[];
   const CELL: Record<string, MatrixRow['cells'][number]['status']> = {
     fertig: 'done', begonnen: 'started', haengt_fest: 'stuck', nicht_begonnen: 'open',
   };
-  const res = await request<{ students: Array<{ id: number; display_name: string }>; lesson_ids?: string[]; matrix: Record<string, Record<string, string>> }>(
+  const res = await request<{ students: Array<{ id: number; enc_name: string | null }>; lesson_ids?: string[]; matrix: Record<string, Record<string, string>> }>(
     'GET', `/teacher/classes/${id}/matrix`);
   const ids = res.lesson_ids ?? [];
   return {
@@ -348,7 +399,7 @@ export async function apiTeacherMatrix(id: number): Promise<{ rows: MatrixRow[];
     rows: res.students.map((s) => {
       const cells = ids.map((lid) => ({ status: CELL[res.matrix[lid]?.[s.id] ?? ''] ?? 'open' }));
       const done = cells.filter((c) => c.status === 'done').length;
-      return { user_id: s.id, display_name: s.display_name, cells, progress: `${done} / ${ids.length}` };
+      return { user_id: s.id, enc_name: s.enc_name, cells, progress: `${done} / ${ids.length}` };
     }),
   };
 }
@@ -356,15 +407,6 @@ export async function apiTeacherMatrix(id: number): Promise<{ rows: MatrixRow[];
 /** GET /api/teacher/classes/:id/students */
 export function apiTeacherGetStudents(id: number): Promise<{ students: TeacherStudent[] }> {
   return request('GET', `/teacher/classes/${id}/students`);
-}
-
-/** PATCH /api/teacher/classes/:id/students/:uid */
-export function apiTeacherRenameStudent(
-  classId: number,
-  userId: number,
-  display_name: string,
-): Promise<{ ok: true }> {
-  return request('PATCH', `/teacher/classes/${classId}/students/${userId}`, { display_name });
 }
 
 /** DELETE /api/teacher/classes/:id/students/:uid */
@@ -395,11 +437,7 @@ export function apiTeacherGetLessons(classId: number): Promise<{ lessons: Lesson
   return request('GET', `/teacher/classes/${classId}/lessons`);
 }
 
-/** POST /api/teacher/classes/:id/students/:uid/password-reset */
-export function apiTeacherPasswordReset(
-  classId: number,
-  userId: number,
-  new_password: string,
-): Promise<{ ok: true }> {
-  return request('POST', `/teacher/classes/${classId}/students/${userId}/password-reset`, { new_password });
+/** POST /api/teacher/classes/:id/students/:uid/reset-code (Einmal-Code, 15 Minuten) */
+export function apiTeacherResetCode(classId: number, userId: number): Promise<{ ok: true; code: string; expires_at: number }> {
+  return request('POST', `/teacher/classes/${classId}/students/${userId}/reset-code`);
 }

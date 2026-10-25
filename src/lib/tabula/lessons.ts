@@ -154,7 +154,7 @@ async function _flushSyncToServer() {
 		const { ACCOUNTS_LIVE } = await import('./flags.js');
 		if (!ACCOUNTS_LIVE) return;
 		const { session } = await import('./session.svelte.js');
-		if (!session.user) return;
+		if (!session.user || session.user.role !== 'student') return;
 		const { apiPutProgress } = await import('./api.js');
 
 		const items = [];
@@ -226,8 +226,9 @@ async function _flushStepSyncToServer() {
 		const { ACCOUNTS_LIVE } = await import('./flags.js');
 		if (!ACCOUNTS_LIVE) return;
 		const { session } = await import('./session.svelte.js');
-		if (!session.user) return;
+		if (!session.user || session.user.role !== 'student') return;
 		const { apiPutProgress } = await import('./api.js');
+		const { sealAttempt } = await import('./keystore.js');
 
 		const nowTs = Math.floor(Date.now() / 1000);
 		const progress = [];
@@ -241,12 +242,12 @@ async function _flushStepSyncToServer() {
 				attempts: e.attempts,
 				updated_at: nowTs,
 			});
-			// last_attempt immer senden (auch bei Erfolg mit leerem error_msg)
+			// Letzte Abfrage nur verschlüsselt für die Lehrkraft (K4). Der Server sieht nur, ob es einen Fehler gab.
 			last_attempts.push({
 				lesson_id: e.lesson_id,
 				step: e.step,
-				query: e.lastQuery,
-				error_msg: e.errorMsg,
+				sealed: await sealAttempt(e.lastQuery, e.errorMsg),
+				has_error: e.errorMsg !== '',
 			});
 		}
 

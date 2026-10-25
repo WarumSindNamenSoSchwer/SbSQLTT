@@ -33,6 +33,8 @@ function kdf<T extends { memorySize: number }>(p: T): T {
 }
 
 const subtle = globalThis.crypto.subtle;
+/** Bytes mit echtem ArrayBuffer (Web Crypto verlangt BufferSource) */
+type Bytes = Uint8Array<ArrayBuffer>;
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
@@ -46,7 +48,7 @@ export function toB64(bytes: Uint8Array): string {
 	return btoa(s);
 }
 
-export function fromB64(b64: string): Uint8Array {
+export function fromB64(b64: string): Bytes {
 	const s = atob(b64);
 	const out = new Uint8Array(s.length);
 	for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
@@ -57,7 +59,7 @@ function toHex(bytes: Uint8Array): string {
 	return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function randomBytes(n: number): Uint8Array {
+export function randomBytes(n: number): Bytes {
 	const b = new Uint8Array(n);
 	globalThis.crypto.getRandomValues(b);
 	return b;
@@ -150,11 +152,11 @@ export function normalizeRecoveryCode(code: string): string {
 
 async function kek(secret: string, salt: Uint8Array): Promise<CryptoKey> {
 	const raw = await argon2id({ password: secret.normalize('NFC'), salt, ...kdf(WRAP_KDF), outputType: 'binary' });
-	return subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+	return subtle.importKey('raw', new Uint8Array(raw), 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
 
 /** Verpackt Daten mit einem Geheimnis (Passwort oder Code): Format v1.salt.iv.ciphertext (Base64). */
-export async function wrapWithSecret(secret: string, data: Uint8Array): Promise<string> {
+export async function wrapWithSecret(secret: string, data: Bytes): Promise<string> {
 	const salt = randomBytes(16);
 	const iv = randomBytes(12);
 	const key = await kek(secret, salt);
@@ -163,7 +165,7 @@ export async function wrapWithSecret(secret: string, data: Uint8Array): Promise<
 }
 
 /** Entpackt mit dem Geheimnis. Wirft bei falschem Geheimnis. */
-export async function unwrapWithSecret(secret: string, wrapped: string): Promise<Uint8Array> {
+export async function unwrapWithSecret(secret: string, wrapped: string): Promise<Bytes> {
 	const [v, salt, iv, ct] = wrapped.split('.');
 	if (v !== 'v1' || !salt || !iv || !ct) throw new Error('Unbekanntes Format');
 	const key = await kek(secret, fromB64(salt));
@@ -189,7 +191,7 @@ export async function createTeacherKeys(password: string, recoveryCode: string):
 }
 
 /** Importiert den privaten Schlüssel als nicht exportierbaren CryptoKey und überschreibt die Rohdaten. */
-export async function importPrivateKey(pkcs8: Uint8Array): Promise<CryptoKey> {
+export async function importPrivateKey(pkcs8: Bytes): Promise<CryptoKey> {
 	try {
 		return await subtle.importKey('pkcs8', pkcs8, { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']);
 	} finally {

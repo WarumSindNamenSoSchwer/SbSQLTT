@@ -80,8 +80,10 @@ export type QuizResult = {
   session_id: number;
   quiz_title: string;
   ended_at: number;
+  /** Name nur verschlüsselt (enc_name); der Browser der Lehrkraft entschlüsselt */
   participants: {
-    display_name: string;
+    user_id: number | null;
+    enc_name: string | null;
     total_points: number;
     correct: number;
     total: number;
@@ -186,7 +188,7 @@ export function apiQuizDeleteQuestion(quizId: number, questionId: number): Promi
 /** Sitzung starten (eigener Fragensatz) */
 export async function apiQuizStart(
   quizId: number,
-  opts?: { class_id?: number },
+  opts: { class_id: number },
 ): Promise<QuizSession> {
   const r = await request<{ id: number; pin: string }>('POST', '/teacher/quiz-sessions', { quiz_id: quizId, ...opts });
   return { session_id: r.id, pin: r.pin };
@@ -210,7 +212,7 @@ export function apiQuizBankList(): Promise<QuizBankEntry[]> {
 /** Auto-Quiz aus Bank starten */
 export async function apiQuizStartFromBank(
   lessonId: string,
-  opts?: { class_id?: number },
+  opts: { class_id: number },
 ): Promise<QuizSession> {
   const r = await request<{ id: number; pin: string }>('POST', '/teacher/quiz-sessions', { bank_lesson_id: lessonId, ...opts });
   return { session_id: r.id, pin: r.pin };
@@ -225,7 +227,7 @@ export function apiQuizEnd(sessionId: number): Promise<{ ok: true }> {
 export async function apiQuizResults(sessionId: number): Promise<{ result: QuizResult }> {
   const r = await request<{
     id: number; title: string; ended_at: number | null; question_total: number;
-    participants: { display_name: string; total_points: number; correct: number }[];
+    participants: { user_id: number | null; enc_name: string | null; total_points: number; correct: number }[];
     question_stats: QuizQuestionStat[];
   }>('GET', `/teacher/quiz-sessions/${sessionId}/result`);
   return {
@@ -233,7 +235,7 @@ export async function apiQuizResults(sessionId: number): Promise<{ result: QuizR
       session_id: r.id,
       quiz_title: r.title,
       ended_at: r.ended_at ?? Math.floor(Date.now() / 1000),
-      participants: r.participants.map((p) => ({ display_name: p.display_name, total_points: p.total_points, correct: p.correct, total: r.question_total })),
+      participants: r.participants.map((p) => ({ user_id: p.user_id, enc_name: p.enc_name, total_points: p.total_points, correct: p.correct, total: r.question_total })),
       question_stats: r.question_stats,
     },
   };
@@ -260,12 +262,16 @@ export function quizWsUrl(): string {
 
 export type WsInMsg =
   | { type: 'error'; code: string; message: string }
-  | { type: 'joined'; role: 'teacher' | 'student'; room_id?: number; display_name?: string; participant_id?: number }
-  | { type: 'lobby_state'; participants: string[]; count: number; expected?: number }
+  | { type: 'joined'; role: 'teacher' | 'student'; room_id?: number; participant_id?: number }
+  /** participants nur an die Lehrkraft (Namen verschlüsselt) */
+  | { type: 'lobby_state'; count: number; expected?: number; participants?: { user_id: number | null; enc_name: string | null }[] }
   | { type: 'question_start'; question_index: number; question_total: number; question_id: number; question: string; code?: string; options: string[]; time_limit: number; started_at: number }
   | { type: 'answer_ack'; correct: boolean; points: number; total_points: number }
   | { type: 'reveal'; correct_idx: number; answer_counts: number[]; correct_ratio: number }
-  | { type: 'leaderboard'; rankings: { rank: number; display_name: string; points: number }[] }
+  /** Nur an die Lehrkraft */
+  | { type: 'leaderboard'; rankings: { rank: number; user_id: number | null; enc_name: string | null; points: number }[] }
+  /** Nur an den jeweiligen Schüler: eigener Platz statt Rangliste */
+  | { type: 'my_rank'; rank: number; of: number; points: number }
   | { type: 'quiz_ended' }
   | { type: string; [key: string]: unknown };
 
