@@ -12,6 +12,7 @@ import { z } from 'zod'
 import type { Db } from '../db.js'
 import { sha256hex } from '../db.js'
 import type { MailSender } from '../mail.js'
+import { buildSystemMail } from '../mail-templates.js'
 import { validateSession, SESSION_COOKIE_NAME } from '../session.js'
 import { RateLimiter } from '../plugins/ratelimit.js'
 
@@ -28,22 +29,22 @@ export async function sendVerificationMail(
   const raw = randomBytes(32).toString('hex')
   db.prepare('INSERT INTO email_verifications (token_hash, user_id, expires_at) VALUES (?, ?, ?)')
     .run(sha256hex(raw), user.id, Math.floor(Date.now() / 1000) + VERIFY_TTL_SECONDS)
-  await mail.send({
+  await mail.send(buildSystemMail({
     to: user.email,
     subject: 'E-Mail-Adresse bestätigen · Tabula',
-    text: [
-      `Hallo ${user.display_name},`,
-      '',
-      'bitte bestätigen Sie Ihre E-Mail-Adresse für Ihr Lehrkraft-Konto bei Tabula:',
-      '',
-      `${siteUrl}/email-bestaetigen?token=${raw}`,
-      '',
+    preheader: 'Ein Klick, dann ist Ihr Lehrkraft-Konto bestätigt.',
+    pose: 'wave',
+    greeting: `Hallo ${user.display_name},`,
+    intro: [
+      'schön, dass Sie bei Tabula sind! Bitte bestätigen Sie noch kurz Ihre E-Mail-Adresse für Ihr Lehrkraft-Konto.',
+    ],
+    button: { label: 'E-Mail-Adresse bestätigen', url: `${siteUrl}/email-bestaetigen?token=${raw}` },
+    notes: [
       'Der Link ist 24 Stunden gültig und kann nur einmal verwendet werden.',
       'Wenn Sie kein Konto angelegt haben, können Sie diese E-Mail ignorieren.',
-      '',
-      'Tabula SQL-Trainer · https://www.tabulasql.de',
-    ].join('\n'),
-  })
+    ],
+    siteUrl,
+  }))
 }
 
 const verifySchema = z.object({ token: z.string().min(10).max(128) })

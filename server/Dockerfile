@@ -32,6 +32,8 @@ RUN apk add --no-cache python3 make g++ && \
 # Kompilierten Code und Migrationen kopieren
 COPY --from=builder /build/dist ./dist
 COPY migrations/ ./migrations/
+# Edgar-GIFs für die Systemmails (dist/../assets/mail)
+COPY assets/ ./assets/
 
 # Volume fuer Datenbankdatei (Ordner gehoert tabula, damit ein neues Docker-Volume
 # diese Rechte uebernimmt und der Dienst ohne root schreiben kann)

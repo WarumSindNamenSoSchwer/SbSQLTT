@@ -12,6 +12,7 @@ import { randomBytes } from 'node:crypto'
 import { z } from 'zod'
 import type { Db } from '../db.js'
 import type { MailSender } from '../mail.js'
+import { buildSystemMail } from '../mail-templates.js'
 import type { RateLimiters } from '../plugins/ratelimit.js'
 import { sha256hex } from '../db.js'
 import { hashPassword } from '../password.js'
@@ -76,23 +77,22 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
     // E-Mail versenden. Ein Versandfehler darf nicht verraten, dass die Adresse existiert:
     // gleiche Antwort wie oben, Fehler nur ohne Adresse protokollieren.
     try {
-      await mail.send({
+      await mail.send(buildSystemMail({
         to: user.email,
         subject: 'Passwort zurücksetzen · Tabula',
-        text: [
-          `Hallo ${user.display_name},`,
-          '',
-          'für Ihr Lehrkraft-Konto bei Tabula wurde ein neues Passwort angefordert.',
-          'Mit diesem Link können Sie innerhalb einer Stunde ein neues Passwort festlegen:',
-          '',
-          `${siteUrl}/passwort-zuruecksetzen?token=${rawToken}`,
-          '',
-          'Halten Sie danach Ihren Wiederherstellungscode bereit, damit die Namen Ihrer Schüler sofort wieder lesbar sind.',
-          'Wenn Sie das nicht angefordert haben, können Sie diese E-Mail ignorieren.',
-          '',
-          'Tabula SQL-Trainer · https://www.tabulasql.de',
-        ].join('\n'),
-      })
+        preheader: 'Ihr Link für ein neues Passwort, eine Stunde gültig.',
+        pose: 'hint',
+        greeting: `Hallo ${user.display_name},`,
+        intro: [
+          'für Ihr Lehrkraft-Konto bei Tabula wurde ein neues Passwort angefordert. Mit dem Button legen Sie innerhalb einer Stunde ein neues fest.',
+        ],
+        button: { label: 'Neues Passwort festlegen', url: `${siteUrl}/passwort-zuruecksetzen?token=${rawToken}` },
+        callout: 'Halten Sie danach Ihren Wiederherstellungscode bereit, damit die Namen Ihrer Schüler sofort wieder lesbar sind.',
+        notes: [
+          'Der Link funktioniert nur einmal. Wenn Sie das nicht angefordert haben, können Sie diese E-Mail ignorieren, Ihr Passwort bleibt dann unverändert.',
+        ],
+        siteUrl,
+      }))
     } catch {
       fastify.log.warn({ event: 'reset_mail_failed' })
     }

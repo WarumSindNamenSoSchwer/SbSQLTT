@@ -15,11 +15,22 @@ import { readFileSync, existsSync } from 'node:fs'
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 
+export interface MailAttachment {
+  filename: string
+  content: Buffer
+  contentType: string
+  /** Content-ID für eingebettete Bilder (im HTML als cid:…) */
+  cid?: string
+}
+
 export interface MailMessage {
   to: string
   subject: string
-  /** Reiner Text (kein HTML) */
+  /** Reiner Text (immer dabei, auch als Fallback zur HTML-Fassung) */
   text: string
+  /** Optional gestaltete HTML-Fassung */
+  html?: string
+  attachments?: MailAttachment[]
 }
 
 export interface MailSender {
@@ -83,9 +94,12 @@ export class SmtpMailSender implements MailSender {
   async send(msg: MailMessage): Promise<void> {
     await this.transporter.sendMail({
       from: '"Tabula" <noreply@tabulasql.de>',
+      replyTo: 'kontakt@tabulasql.de',
       to: msg.to,
       subject: msg.subject,
       text: msg.text,
+      ...(msg.html ? { html: msg.html } : {}),
+      ...(msg.attachments ? { attachments: msg.attachments } : {}),
     })
   }
 }

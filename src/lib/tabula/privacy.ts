@@ -239,7 +239,7 @@ export const SECTIONS: Section[] = [
 		title: 'E-Mails von Tabula',
 		blocks: [
 			{
-				p: 'Wir senden nur E-Mails an Lehrkräfte, die für ihr Konto nötig sind: einen Link zum Zurücksetzen des Passworts (1 Stunde gültig, nur einmal nutzbar), die Bestätigung der E-Mail-Adresse und einen Hinweis vor der automatischen Löschung. Schüler bekommen keine E-Mails. Absender ist noreply@tabulasql.de, der Versand läuft über den Mailserver der Hetzner Online GmbH. Newsletter oder Werbung senden wir nicht.',
+				p: 'Wir senden nur E-Mails an Lehrkräfte, die für ihr Konto nötig sind: einen Link zum Zurücksetzen des Passworts (1 Stunde gültig, nur einmal nutzbar), die Bestätigung der E-Mail-Adresse und einen Hinweis vor der automatischen Löschung. Schüler bekommen keine E-Mails. Absender ist noreply@tabulasql.de, der Versand läuft über den Mailserver der Hetzner Online GmbH. Newsletter oder Werbung senden wir nicht. Bilder in den E-Mails (unser Maskottchen Edgar) hängen direkt in der Nachricht, es werden keine Inhalte von außen nachgeladen. Wir messen nicht, ob oder wann Sie eine E-Mail öffnen oder einen Link anklicken.',
 				src: ['K7', 'T16', 'A1']
 			},
 			{

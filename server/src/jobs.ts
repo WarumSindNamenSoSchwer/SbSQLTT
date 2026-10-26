@@ -7,6 +7,7 @@
  */
 import type { Db } from './db.js'
 import type { MailSender } from './mail.js'
+import { buildSystemMail } from './mail-templates.js'
 import { deleteExpiredSessions } from './session.js'
 
 /** 12 Monate in Sekunden */
@@ -69,20 +70,22 @@ export async function runInactivityReminderJob(ctx: JobContext, now?: number): P
       .toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
     try {
-      await ctx.mail.send({
+      await ctx.mail.send(buildSystemMail({
         to: user.email,
         subject: 'Ihr Tabula-Konto wird bald gelöscht',
-        text: [
-          `Hallo ${user.display_name},`,
-          '',
-          'Ihr Lehrkraft-Konto bei Tabula wurde seit mehr als 11 Monaten nicht genutzt.',
+        preheader: `Melden Sie sich bis zum ${deletionDate} an, dann bleibt alles erhalten.`,
+        pose: 'sad',
+        greeting: `Hallo ${user.display_name},`,
+        intro: [
+          'Ihr Lehrkraft-Konto bei Tabula wurde seit mehr als 11 Monaten nicht genutzt. Edgar vermisst Sie schon ein bisschen.',
           `Wenn Sie sich nicht wieder anmelden, wird es am ${deletionDate} automatisch gelöscht, zusammen mit Ihren Klassen und den Daten Ihrer Schüler.`,
-          '',
-          `Jetzt anmelden: ${ctx.siteUrl}/login`,
-          '',
-          'Tabula SQL-Trainer · https://www.tabulasql.de',
-        ].join('\n'),
-      })
+        ],
+        button: { label: 'Jetzt anmelden', url: `${ctx.siteUrl}/login?rolle=lehrkraft` },
+        notes: [
+          'Einmal anmelden genügt, dann bleibt alles erhalten. Wenn Sie Tabula nicht mehr brauchen, müssen Sie nichts tun.',
+        ],
+        siteUrl: ctx.siteUrl,
+      }))
       sent++
     } catch {
       // E-Mail-Fehler nicht weiterwerfen, Job laeuft weiter

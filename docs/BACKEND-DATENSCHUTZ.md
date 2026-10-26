@@ -59,6 +59,7 @@ Gilt für Lehrkräfte. Schüler siehe K1 (Ableitung im Browser, Server speichert
 - Nur Systemmails an Lehrkräfte: Passwort zurücksetzen (Link 1 Stunde gültig, einmalig nutzbar), Bestätigung der E-Mail-Adresse, Hinweis vor automatischer Löschung. Schüler bekommen keine Mails.
 - Versand über den Mailserver von Hetzner (Absender noreply@tabulasql.de, Port 587 mit STARTTLS). Keine Newsletter, keine Werbung.
 - Umgesetzt (21.10.2026): Bestätigungslink 24 Stunden gültig, einmalig, nur SHA-256 des Tokens gespeichert, abgelaufene Token löscht der Aufräumjob. Belegt durch `tests/email-verify.test.ts`.
+- Gestaltung (26.10.2026): HTML plus Textfassung (`server/src/mail-templates.ts`). Edgar als animiertes GIF hängt in der Mail (cid), keine externen Bilder, Schriften oder Skripte, kein Tracking-Pixel, keine umgeleiteten Links. Antwortadresse kontakt@. Belegt durch `tests/mail-templates.test.ts` (nur `cid:edgar` als Bildquelle, Nutzereingaben maskiert). GIFs erzeugt mit `tools/render-edgar-gif.mjs` aus denselben Animationen wie auf der Seite.
 
 ## K8 Löschung
 - Lehrkraft-Konto jederzeit selbst löschbar (Einstellungen), Löschung sofort mit allen Klassen und deren Daten.
