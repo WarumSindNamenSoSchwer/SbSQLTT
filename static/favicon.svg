@@ -1,14 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SbSQLTT logo">
-	<rect x="0" y="0" width="64" height="64" rx="13" fill="#1FA9AE" />
-	<g fill="#ffffff">
-		<rect x="11" y="14" width="12" height="6" rx="1.6" />
-		<rect x="26" y="14" width="12" height="6" rx="1.6" />
-		<rect x="41" y="14" width="12" height="6" rx="1.6" />
-		<rect x="11" y="29" width="12" height="6" rx="1.6" />
-		<rect x="26" y="29" width="12" height="6" rx="1.6" />
-		<rect x="41" y="29" width="12" height="6" rx="1.6" />
-		<rect x="11" y="44" width="12" height="6" rx="1.6" />
-		<rect x="26" y="44" width="12" height="6" rx="1.6" />
-		<rect x="41" y="44" width="12" height="6" rx="1.6" />
-	</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Tabula">
+  <rect width="512" height="512" rx="112" fill="#EFF6FF"/>
+  <svg x="76" y="88" width="360" height="314" viewBox="46 70 124 108">
+  <g fill="#0F172A"><path d="M57 114 Q52 98 53 82 Q70 82 86 90 Q92 104 82 118 Z"/><path d="M159 114 Q164 98 163 82 Q146 82 130 90 Q124 104 134 118 Z"/><path d="M58 112 Q56 94 70 87 Q88 80 108 80 Q128 80 146 87 Q160 94 158 112 C163 120 166 130 164 140 C162 155 152 166 140 174 L76 174 C64 166 54 155 52 140 C50 130 53 120 58 112 Z"/></g>
+  <g fill="#FFFFFF"><circle cx="88" cy="122" r="27.5"/><circle cx="128" cy="122" r="27.5"/><ellipse cx="108" cy="146" rx="22" ry="12"/></g>
+  <g fill="none" stroke="#0F172A" stroke-width="4.2"><circle cx="88" cy="122" r="18"/><circle cx="128" cy="122" r="18"/><path d="M105 120 Q108 116 111 120" stroke-linecap="round"/></g><circle cx="88" cy="123" r="7" fill="#0F172A"/><circle cx="128" cy="123" r="7" fill="#0F172A"/><path d="M108 132.5 Q110 132.5 111.5 134.5 L115 138.5 Q116.5 140.5 115.2 142.5 L110 148 Q108 150 106 148 L100.8 142.5 Q99.5 140.5 101 138.5 L104.5 134.5 Q106 132.5 108 132.5 Z" fill="#3B82F6"/></svg>
 </svg>
