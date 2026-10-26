@@ -9,7 +9,16 @@
 	import { explainQuery } from '$lib/tabula/explain';
 	import { tok } from '$lib/tabula/highlight';
 	import { LESSONS, saveProgress, loadProgress, syncExerciseStep, type Step } from '$lib/tabula/lessons';
+	import { session } from '$lib/tabula/session.svelte.js';
 	import { openDb, run, runChecked, readSchema, explainError, compare, sqlHint, exportDb, type Result, type Schema } from '$lib/tabula/sql';
+
+	// Initialen wie in der TopNav, ohne Anmeldung „G“ für Gast
+	function avatarInitials(): string {
+		const n = session.displayName.trim();
+		if (!n) return 'G';
+		const p = n.split(/\s+/);
+		return (p.length >= 2 ? p[0][0] + p[p.length - 1][0] : p[0].slice(0, 2)).toUpperCase();
+	}
 
 	const lesson = $derived(LESSONS[page.params.lesson ?? ''] ?? LESSONS['where-filters']);
 
@@ -348,7 +357,7 @@
 			{/if}
 		</div>
 		<button class="chip mono hide-sm" title="Datenbank herunterladen (.db), z. B. für Python" onclick={download} disabled={!db}>⬇ .db</button>
-		<span class="avatar hide-sm">G</span>
+		<span class="avatar hide-sm" title={session.displayName || 'Gast'}>{avatarInitials()}</span>
 		<button class="icon44 sm-only" aria-label="Menü" onclick={() => (menu = !menu)}>⋯</button>
 		{#if menu}
 			<div class="dd right sm-only" role="menu">
