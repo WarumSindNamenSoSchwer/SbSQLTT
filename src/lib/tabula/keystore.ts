@@ -46,7 +46,13 @@ async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBReq
 export async function storeTeacherKey(key: CryptoKey): Promise<void> {
 	cached = key;
 	if (typeof indexedDB === 'undefined') return;
-	await tx('readwrite', (s) => s.put(key, KEY_ID));
+	// Dauerhaft speichern ist ein Komfort. Klappt es nicht (z. B. privates Fenster oder
+	// gesperrter Schlüsselbund), bleibt der Schlüssel für diesen Tab im Speicher.
+	try {
+		await tx('readwrite', (s) => s.put(key, KEY_ID));
+	} catch {
+		/* nur im Speicher */
+	}
 }
 
 export async function loadTeacherKey(): Promise<CryptoKey | null> {
