@@ -226,7 +226,11 @@
 
 	.empty-state { padding: 40px; text-align: center; color: var(--ink-2); font-size: 15px; }
 
-	.students-table { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+	.students-table { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+	.table-header { border-radius: 10px 10px 0 0; }
+	.table-row:last-child { border-radius: 0 0 10px 10px; }
+	/* Menü der letzten Zeilen nach oben öffnen, damit es nicht über den Rand läuft */
+	.table-row:nth-last-child(-n+2):not(:nth-child(-n+3)) .student-menu { top: auto; bottom: calc(100% + 4px); }
 	.table-header { display: grid; grid-template-columns: minmax(0,1fr) 180px 160px 200px 48px; padding: 0 16px; background: var(--subtle); border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-3); }
 	@media (max-width: 900px) { .table-header { display: none; } }
 	.table-header span { padding: 9px 0; }

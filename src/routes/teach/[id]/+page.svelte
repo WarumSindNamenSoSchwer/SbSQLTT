@@ -471,7 +471,7 @@
 	.empty-qr-side { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 28px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
 	.qr-mock { width: 236px; height: 236px; border-radius: 6px; background: repeating-conic-gradient(var(--ink) 0 25%, transparent 0 50%) 0 0/20px 20px; opacity: 0.9; }
 	.qr-real { width: 236px; height: 236px; display: block; border-radius: 6px; }
-	.empty-code { font-family: var(--mono); font-size: 30px; font-weight: 500; letter-spacing: 5px; }
+	.empty-code { font-family: var(--mono); font-size: 24px; font-weight: 500; letter-spacing: 2px; overflow-wrap: anywhere; }
 	.empty-text-side { display: flex; flex-direction: column; gap: 18px; }
 	:global(.empty-wave-owl) { width: 96px; height: 86px; }
 	.empty-title { font-size: 28px; font-weight: 600; }

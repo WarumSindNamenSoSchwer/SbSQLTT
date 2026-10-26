@@ -259,7 +259,7 @@
 	.qr-img { width: 200px; height: 200px; border-radius: 6px; display: block; }
 	.qr-placeholder { width: 200px; height: 200px; border-radius: 6px; background: var(--subtle); }
 	.code-info { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
-	.join-code { font-family: var(--mono); font-size: 52px; line-height: 60px; font-weight: 500; letter-spacing: 6px; }
+	.join-code { font-family: var(--mono); font-size: clamp(22px, 4vw, 36px); line-height: 1.3; font-weight: 500; letter-spacing: 2px; overflow-wrap: anywhere; }
 	.join-url { font-size: 13px; color: var(--ink-3); word-break: break-all; }
 	.mono { font-family: var(--mono); }
 	.created-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
@@ -275,6 +275,6 @@
 	.beamer-close:hover { color: var(--ink); }
 	.beamer-classname { font-size: 40px; line-height: 48px; font-weight: 600; }
 	.beamer-qr { border-radius: 8px; }
-	.beamer-code { font-family: var(--mono); font-size: 88px; line-height: 96px; font-weight: 500; letter-spacing: 10px; }
+	.beamer-code { font-family: var(--mono); font-size: clamp(36px, 7vw, 88px); line-height: 1.15; font-weight: 500; letter-spacing: 4px; white-space: nowrap; }
 	.beamer-url { font-family: var(--mono); font-size: 28px; color: var(--ink-2); }
 </style>

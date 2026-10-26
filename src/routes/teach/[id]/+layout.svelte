@@ -467,7 +467,7 @@
 	.qr-close:hover { background: var(--subtle); color: var(--ink); }
 	.qr-dialog-title { font-size: 20px; font-weight: 600; }
 	.qr-dialog-img { width: 240px; height: 240px; border-radius: 6px; }
-	.qr-dialog-code { font-family: var(--mono); font-size: 38px; font-weight: 500; letter-spacing: 5px; }
+	.qr-dialog-code { font-family: var(--mono); font-size: 28px; font-weight: 500; letter-spacing: 2px; white-space: nowrap; }
 	.qr-dialog-url { font-family: var(--mono); font-size: 12px; color: var(--ink-3); word-break: break-all; }
 	.qr-dialog-actions { display: flex; gap: 10px; margin-top: 4px; }
 	.btn-secondary { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; font-weight: 500; cursor: pointer; }

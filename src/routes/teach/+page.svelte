@@ -12,7 +12,13 @@
 		type TeacherClass,
 		ApiError,
 	} from '$lib/tabula/api.js';
+	import { CATALOG } from '$lib/tabula/lessons.js';
 
+	function lessonLabel(id: string | null | undefined): string {
+		if (!id) return 'Kein Fokus gesetzt';
+		const e = CATALOG.find((c) => c.id === id);
+		return e ? `Lektion ${e.n} · ${e.title}` : id;
+	}
 	let dark = $state(false);
 
 	// E-Mail-Bestätigung (K7): Hinweis + Link erneut senden
@@ -179,7 +185,7 @@
 								</div>
 								<div class="class-focus-box">
 									<span class="lbl">FOKUS</span>
-									<span class="class-focus">{cls.focus_lesson ?? 'Kein Fokus gesetzt'}</span>
+									<span class="class-focus">{lessonLabel(cls.focus_lesson)}</span>
 								</div>
 								<div class="class-card-footer">
 									{#if (cls.stuck_count ?? 0) > 0}
