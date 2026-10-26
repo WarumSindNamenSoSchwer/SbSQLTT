@@ -758,10 +758,12 @@
 	.lb-pts { font-size: 52px; font-weight: 500; text-align: right; }
 
 	/* ---- Ende / Podium ---- */
-	.end-header {
+	.beamer .end-header {
 		width: 100%;
+		box-sizing: border-box;
 		display: flex;
 		align-items: center;
+		gap: 24px;
 		padding: 36px 64px;
 	}
 	.end-title {
