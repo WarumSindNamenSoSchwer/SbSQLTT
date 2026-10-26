@@ -473,11 +473,11 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       }
 
       const roomRow = db.prepare(
-        `SELECT r.id, r.state, qs.teacher_id
+        `SELECT r.id, r.state, r.pin, qs.teacher_id, qs.title
          FROM quiz_rooms r
          JOIN quiz_question_sets qs ON r.set_id = qs.id
          WHERE r.id = ?`
-      ).get(msg.room_id) as { id: number; state: string; teacher_id: number } | undefined
+      ).get(msg.room_id) as { id: number; state: string; pin: string | null; teacher_id: number; title: string } | undefined
 
       if (!roomRow || roomRow.teacher_id !== session.user_id) {
         sendJson(socket, { type: 'error', code: 'not_found', message: 'Sitzung nicht gefunden.' })
@@ -497,7 +497,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       room.teacherWs = socket
 
       sendLobbyState(db, roomId, room)
-      sendJson(socket, { type: 'joined', role: 'teacher', room_id: roomId })
+      sendJson(socket, { type: 'joined', role: 'teacher', room_id: roomId, pin: roomRow.pin, quiz_title: roomRow.title })
     }
 
     function handleStudentJoin(msg: StudentJoin): void {

@@ -117,7 +117,8 @@ function wsClient(cookie) {
   return { ws, wait, open, all, send: (m) => ws.send(JSON.stringify(m)) }
 }
 const tw = wsClient(T.cookie); await tw.open; tw.send({ type: 'teacher_join', room_id: room.id })
-ok('WS durch Caddy: Lehrkraft verbunden (Cookie-Auth)', (await tw.wait('joined')).role === 'teacher')
+const tj = await tw.wait('joined')
+ok('WS durch Caddy: Lehrkraft verbunden (Cookie-Auth), bekommt PIN für den Beamer', tj.role === 'teacher' && tj.pin === room.pin, JSON.stringify(tj))
 const s1w = wsClient(S1c.cookie); await s1w.open; s1w.send({ type: 'student_join', pin: room.pin })
 const j1 = await s1w.wait('joined')
 ok('WS: Schüler aus Klassen-Login tritt bei, ohne Namen', j1.role === 'student' && !('display_name' in j1), JSON.stringify(j1))

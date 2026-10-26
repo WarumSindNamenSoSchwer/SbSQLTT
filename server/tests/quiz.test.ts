@@ -354,6 +354,9 @@ describe('Quiz WebSocket: Kompletter Ablauf (Klassen-Login)', () => {
     sendMsg(teacherWs, { type: 'teacher_join', room_id: session.id })
     const joinedT = await teacherWait('joined')
     expect(joinedT['role']).toBe('teacher')
+    // Lehrkraft bekommt den PIN für Beamer und QR-Code (nicht die Raum-ID)
+    expect(joinedT['pin']).toBe(session.pin)
+    expect(typeof joinedT['quiz_title']).toBe('string')
     // Kein display_name in 'joined' fuer Lehrkraft
     expect(joinedT['display_name']).toBeUndefined()
 
