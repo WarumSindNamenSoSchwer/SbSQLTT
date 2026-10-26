@@ -356,7 +356,6 @@
 				<div class="lb-row">
 					<span class="lb-rank mono">{r.rank}</span>
 					<span class="lb-name">{r.display_name}</span>
-					<span class="spacer"></span>
 					<span class="lb-pts mono">{r.points.toLocaleString('de-DE')}</span>
 				</div>
 			{/each}
@@ -767,13 +766,14 @@
 	}
 	.end-title {
 		flex: 1;
-		font-size: 56px;
-		line-height: 64px;
+		font-size: clamp(32px, 4vw, 56px);
+		line-height: 1.15;
 		font-weight: 600;
 	}
 	.btn-auswertung {
 		display: inline-flex;
 		align-items: center;
+		flex: none;
 		height: 96px;
 		padding: 0 52px;
 		border-radius: 12px;
