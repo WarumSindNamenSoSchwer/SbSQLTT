@@ -217,7 +217,7 @@
 
 <svelte:head><title>Quiz · Tabula</title></svelte:head>
 
-<div class="phone-wrap">
+<div class="tb phone-wrap">
 	<!-- Kopfzeile wie im Design -->
 	<header class="phone-header">
 		<span class="header-left mono">{headerLeft()}</span>

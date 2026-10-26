@@ -210,7 +210,7 @@
 <svelte:head><title>Live-Quiz · Tabula</title></svelte:head>
 
 <!-- Beamer: Vollbild, kein TopNav, kein Scrolling -->
-<div class="beamer">
+<div class="tb beamer">
 
 	{#if !ACCOUNTS_LIVE}
 		<div class="center-msg">
