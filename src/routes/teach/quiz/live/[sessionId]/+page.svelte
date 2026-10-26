@@ -113,6 +113,8 @@
 
 	function handleMsg(msg: WsInMsg) {
 		if (msg.type === 'error') {
+			// Nach der letzten Frage direkt zum Ergebnis statt Fehlerseite
+			if ((msg as any).code === 'no_more_questions') { send({ type: 'end_quiz' }); return; }
 			phase = 'error';
 			errorMsg = (msg as any).message;
 			return;
@@ -171,8 +173,8 @@
 				rankings = raw.map((r, i) => ({ rank: r.rank, display_name: names[i], points: r.points }));
 				finalRankings = rankings;
 			});
-			// Nach reveal kommt leaderboard → zeige Zwischenstand
-			if (phase === 'reveal') phase = 'leaderboard';
+			// Rangliste kommt zusammen mit der Auflösung. Die Auflösung bleibt stehen,
+			// „Weiter“ zeigt danach den Zwischenstand.
 		}
 		if (msg.type === 'quiz_ended') {
 			phase = 'ended';
@@ -329,7 +331,7 @@
 			<div class="reveal-info">
 				<p class="rev-correct-label">✓ Richtig: {Q_SYMBOLS[revealCorrectIdx]}</p>
 				<p class="rev-correct-text mono">{qOptions[revealCorrectIdx]}</p>
-				<button class="btn-weiter" onclick={() => { send({ type: 'next_question' }); }}>
+				<button class="btn-weiter" onclick={() => { phase = 'leaderboard'; }}>
 					Weiter <span aria-hidden="true">→</span>
 				</button>
 			</div>
@@ -339,9 +341,15 @@
 		<!-- E4-B Zwischenstand -->
 		<div class="lb-header">
 			<h2 class="lb-title">Zwischenstand nach Frage {qIndex}</h2>
-			<button class="btn-naechste" onclick={() => send({ type: 'next_question' })}>
-				Nächste Frage <span aria-hidden="true">→</span>
-			</button>
+			{#if qTotal && qIndex >= qTotal}
+				<button class="btn-naechste" onclick={() => send({ type: 'end_quiz' })}>
+					Zum Ergebnis <span aria-hidden="true">→</span>
+				</button>
+			{:else}
+				<button class="btn-naechste" onclick={() => send({ type: 'next_question' })}>
+					Nächste Frage <span aria-hidden="true">→</span>
+				</button>
+			{/if}
 		</div>
 		<div class="lb-body">
 			{#each rankings.slice(0, 5) as r}
@@ -708,8 +716,8 @@
 	}
 	.lb-title {
 		flex: 1;
-		font-size: 56px;
-		line-height: 64px;
+		font-size: clamp(32px, 4vw, 56px);
+		line-height: 1.15;
 		font-weight: 600;
 	}
 	.btn-naechste {
@@ -733,7 +741,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 18px;
-		padding: 16px 280px 64px;
+		padding: 16px clamp(24px, 12vw, 280px) 64px;
 	}
 	.lb-row {
 		display: grid;

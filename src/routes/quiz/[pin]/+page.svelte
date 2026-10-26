@@ -197,7 +197,8 @@
 			myRank = m.rank;
 			totalParticipants = m.of;
 			totalPoints = m.points;
-			phase = 'leaderboard';
+			// Kommt zusammen mit der Auflösung: „Richtig/Leider falsch“ bleibt sichtbar
+			if (phase !== 'reveal_correct' && phase !== 'reveal_wrong') phase = 'leaderboard';
 		}
 		if (msg.type === 'quiz_ended') {
 			phase = 'ended';
@@ -331,6 +332,9 @@
 						<span class="pick-sym">{Q_SYMBOLS[correctIdx]}</span>
 						<span class="pick-text mono">{qOptions[correctIdx]}</span>
 					</div>
+				{/if}
+				{#if myRank !== null}
+					<p class="msg-body">Du bist auf Platz {myRank}.</p>
 				{/if}
 			</div>
 
