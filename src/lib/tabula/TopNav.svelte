@@ -79,12 +79,11 @@
 		<div class="avatar-wrap">
 			<button
 				class="avatar-btn"
-				aria-label="Kontomenü {session.displayName.split(' ')[0]}"
 				aria-expanded={avatarOpen}
 				onclick={() => (avatarOpen = !avatarOpen)}
 			>
 				<span class="avatar">{initials()}</span>
-				<span class="avatar-name">{session.displayName.split(' ')[0]} ▾</span>
+				<span class="avatar-name">{session.displayName.split(' ')[0]} <span aria-hidden="true">▾</span></span><span class="sr-only">Kontomenü</span>
 			</button>
 			{#if avatarOpen}
 				<div class="amenu" role="menu">
@@ -145,6 +144,7 @@
 	.avatar-wrap { position: relative; }
 	.avatar-btn { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 4px 6px; border-radius: 6px; }
 	.avatar-btn:hover { background: var(--subtle) !important; }
+	.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 	.avatar { width: 32px; height: 32px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-size: 12px; font-weight: 600; flex: none; }
 	.avatar-name { font-size: 14px; color: var(--ink); }
 	.amenu { position: absolute; top: calc(100% + 6px); right: 0; width: 260px; display: flex; flex-direction: column; padding: 6px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); box-shadow: 0 12px 32px -12px rgb(15 23 42 / .28); font-size: 14px; line-height: 20px; z-index: 20; }

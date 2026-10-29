@@ -198,12 +198,11 @@
 			<div class="av-wrap">
 				<button
 					class="av-btn"
-					aria-label="Kontomenü {navDisplayName()}"
 					aria-expanded={avatarMenuOpen}
 					onclick={() => (avatarMenuOpen = !avatarMenuOpen)}
 				>
 					<span class="av-circle">{navInitials()}</span>
-					<span class="av-name">{navDisplayName()} ▾</span>
+					<span class="av-name">{navDisplayName()} <span aria-hidden="true">▾</span></span><span class="sr-only">Kontomenü</span>
 				</button>
 				{#if avatarMenuOpen}
 					<div class="av-menu" role="menu">
@@ -395,6 +394,7 @@
 		font-weight: 600;
 		flex: none;
 	}
+	.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 	.av-name { font-weight: 500; }
 	/* Handy: nur der Kreis mit Initialen, Klassen-Umschalter kürzt lange Namen statt die Leiste zu sprengen */
 	@media (max-width: 767px) {
