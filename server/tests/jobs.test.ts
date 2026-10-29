@@ -65,6 +65,13 @@ describe('K8: Inaktivitaets-Loeschung', () => {
     // Betreff enthält "gelöscht" (echte Umlaute)
     expect(mail.sent[0]!.subject).toContain('gelöscht')
 
+    // Am nächsten Tag keine zweite Erinnerung (nur einmal je Inaktivitätsphase)
+    expect(await runInactivityReminderJob({ db, mail, siteUrl: 'https://test.de' }, now + 24 * 3600 * 1000)).toBe(0)
+    // Nach erneuter Anmeldung und wieder 11,5 Monaten Pause gibt es wieder genau eine Erinnerung
+    db.prepare("UPDATE users SET last_login_at = ? WHERE email = 'bald@schule.de'").run(nowTs + 2 * 24 * 3600)
+    const later = (nowTs + 2 * 24 * 3600 + Math.floor(11.5 * 30 * 24 * 3600)) * 1000
+    expect(await runInactivityReminderJob({ db, mail, siteUrl: 'https://test.de' }, later)).toBe(1)
+
     db.close()
   })
 

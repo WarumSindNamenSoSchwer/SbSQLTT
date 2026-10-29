@@ -57,6 +57,7 @@ export async function runInactivityReminderJob(ctx: JobContext, now?: number): P
       AND last_login_at IS NOT NULL
       AND last_login_at <= ?
       AND last_login_at > ?
+      AND (inactivity_reminded_at IS NULL OR inactivity_reminded_at < last_login_at)
   `).all(reminderThreshold, deleteThreshold) as {
     id: number
     display_name: string
@@ -86,6 +87,8 @@ export async function runInactivityReminderJob(ctx: JobContext, now?: number): P
         ],
         siteUrl: ctx.siteUrl,
       }))
+      // Erinnerung merken: bis zur nächsten Anmeldung keine weitere Mail (sonst täglich bis zur Löschung)
+      ctx.db.prepare('UPDATE users SET inactivity_reminded_at = ? WHERE id = ?').run(nowTs, user.id)
       sent++
     } catch {
       // E-Mail-Fehler nicht weiterwerfen, Job laeuft weiter
