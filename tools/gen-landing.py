@@ -99,7 +99,10 @@ open(R + 'src/lib/landing/v11.css', 'w', encoding='utf-8').write(css + '\n/* Ech
   # Kontrast (29.10.2026, gleiches Blau wie --accent in theme.css): Weiß auf #2563eb 5,17:1, Blau auf Weiß ebenso;
   # Hover #1d4ed8 6,70:1. Vorher #3B82F6 mit 3,67:1 (unter WCAG AA 4,5:1).
   '\n:root,[data-theme="dark"],[data-theme="light"]{--primary:#2563EB}\n[data-theme="light"]{--blue:#2563EB}\n'
-  '.button.primary{background:#2563EB;border-color:#2563EB}\n.button.primary:hover{background:#1D4ED8;border-color:#1D4ED8;box-shadow:0 5px 15px -5px #2563EB88}\n')
+  '.button.primary{background:#2563EB;border-color:#2563EB}\n.button.primary:hover{background:#1D4ED8;border-color:#1D4ED8;box-shadow:0 5px 15px -5px #2563EB88}\n'
+  # Ergebnis-Karte (.motion-output, absolut positioniert) ragt bis ~110px unter den Hero hinaus und wurde vom Studio
+  # verdeckt. Platz unter der Animation reservieren, damit das Studio darunter beginnt (24px Abstand).
+  '\n.motion-hero{padding-bottom:132px}\n@media(max-width:1100px){.motion-hero{padding-bottom:124px}}\n@media(max-width:760px){.motion-hero{padding-bottom:116px}}\n')
 open(R + 'src/lib/landing/v11-site.js', 'w', encoding='utf-8').write('// @ts-nocheck\n// Startseite v11, Verhalten 1:1 aus der Designer-Lieferung (website-v11.js).\n' + js)
 print(len(html), len(css), len(js))
 open(R + 'src/lib/landing/v11-site.js','a').write('\nexport {};\n')

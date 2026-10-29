@@ -171,3 +171,7 @@
 [data-theme="light"]{--blue:#2563EB}
 .button.primary{background:#2563EB;border-color:#2563EB}
 .button.primary:hover{background:#1D4ED8;border-color:#1D4ED8;box-shadow:0 5px 15px -5px #2563EB88}
+
+.motion-hero{padding-bottom:132px}
+@media(max-width:1100px){.motion-hero{padding-bottom:124px}}
+@media(max-width:760px){.motion-hero{padding-bottom:116px}}
