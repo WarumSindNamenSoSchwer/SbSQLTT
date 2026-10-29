@@ -247,7 +247,7 @@
 	.btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 20px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 500; cursor: pointer; }
 	.btn-primary:hover:not(:disabled) { background: var(--accent-strong); }
 	.btn-primary:disabled { opacity: 0.6; cursor: default; }
-	.btn-primary.full { width: 100%; margin-top: 8px; }
+	.btn-primary.full { width: 100%; margin-top: 8px; box-sizing: border-box; }
 
 	/* Created */
 	.created-wrap { width: 100%; max-width: 600px; display: flex; flex-direction: column; align-items: center; gap: 18px; text-align: center; }

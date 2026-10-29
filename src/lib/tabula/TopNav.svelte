@@ -79,7 +79,7 @@
 		<div class="avatar-wrap">
 			<button
 				class="avatar-btn"
-				aria-label="Kontomenue"
+				aria-label="Kontomenü {session.displayName.split(' ')[0]}"
 				aria-expanded={avatarOpen}
 				onclick={() => (avatarOpen = !avatarOpen)}
 			>

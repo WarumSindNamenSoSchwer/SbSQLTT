@@ -420,6 +420,18 @@
 	.btn-starten:hover:not(:disabled) { background: var(--subtle); }
 	.btn-starten:disabled { opacity: 0.5; cursor: not-allowed; }
 
+	/* Handy: Vorschlag untereinander, Tabellenzeilen umbrechen statt über den Rand zu laufen */
+	@media (max-width: 767px) {
+		.suggestion-box { flex-wrap: wrap; gap: 12px; padding: 16px; }
+		.suggestion-info { flex: 1 1 calc(100% - 100px); min-width: 0; }
+		.btn-start-primary { white-space: nowrap; }
+		.quiz-row { flex-wrap: wrap; gap: 6px 12px; padding: 12px 16px; }
+		.row-title { flex: 1 1 calc(100% - 40px); min-width: 0; }
+		.row-meta { width: auto; flex: 1 1 100%; padding-left: 36px; }
+		.quiz-row .btn-row-link, .quiz-row .btn-danger-link { margin-left: 36px; }
+		.quiz-row .btn-starten { margin-left: auto; }
+	}
+
 	/* Leer-Status */
 	.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 10px; padding: 56px 40px; min-height: 240px; }
 	.empty-title { font-size: 22px; font-weight: 600; }

@@ -198,7 +198,7 @@
 			<div class="av-wrap">
 				<button
 					class="av-btn"
-					aria-label="Kontomenue"
+					aria-label="Kontomenü {navDisplayName()}"
 					aria-expanded={avatarMenuOpen}
 					onclick={() => (avatarMenuOpen = !avatarMenuOpen)}
 				>
@@ -396,6 +396,13 @@
 		flex: none;
 	}
 	.av-name { font-weight: 500; }
+	/* Handy: nur der Kreis mit Initialen, Klassen-Umschalter kürzt lange Namen statt die Leiste zu sprengen */
+	@media (max-width: 767px) {
+		.av-name { display: none; }
+		.class-switcher { min-width: 0; flex: 0 1 auto; }
+		.class-switcher-btn { max-width: 100%; white-space: nowrap; }
+		.class-switcher-btn { overflow: hidden; text-overflow: ellipsis; display: block; line-height: 34px; }
+	}
 	.av-menu {
 		position: absolute;
 		top: calc(100% + 6px);
