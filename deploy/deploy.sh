@@ -14,7 +14,8 @@ trap 'git -C "$REPO" worktree remove --force "$WT"' EXIT
 cd "$WT"
 # Abhängigkeiten genau nach package-lock.json (nicht die lokalen node_modules des Rechners),
 # ohne Install-Skripte; npm prüft dabei die integrity-Hashes aus der Lockdatei.
-npm ci --ignore-scripts --no-audit --no-fund --loglevel=error
+# --legacy-peer-deps: adapter-static 4 meldet kit 3 als Peer, die Lockdatei steht bewusst auf kit 2.
+npm ci --legacy-peer-deps --ignore-scripts --no-audit --no-fund --loglevel=error
 npx svelte-kit sync >/dev/null
 VITE_ACCOUNTS_LIVE=1 npm run build
 rsync -az --delete --rsync-path="sudo rsync" build/ tabula:/opt/tabula/site/
