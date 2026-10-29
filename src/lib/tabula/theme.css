@@ -15,8 +15,9 @@
 	--ink: #0f172a;
 	--ink-2: #475569;
 	--ink-3: #64748b;
-	--accent: #3b82f6;
-	--accent-strong: #2563eb;
+	/* Weiße Schrift auf --accent: 5,17:1, auf --accent-strong (Hover): 6,70:1 (WCAG AA ab 4,5:1) */
+	--accent: #2563eb;
+	--accent-strong: #1d4ed8;
 	--accent-soft: #eff6ff;
 	--accent-line: #bfdbfe;
 	--accent-ink: #1d4ed8;

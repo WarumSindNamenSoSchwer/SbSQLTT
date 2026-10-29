@@ -93,7 +93,11 @@ sub('<div class="t-codeblock"><b>SELECT</b> b.title, p.name<br><b>FROM</b> books
 html = re.sub(r'href="[^"#/:]+\.dc\.html"', 'href="/learn"', html)
 assert '.dc.html' not in html, re.findall(r'.{40}\.dc\.html', html)[:3]
 open(R + 'src/lib/landing/v11.html', 'w', encoding='utf-8').write(html)
-open(R + 'src/lib/landing/v11.css', 'w', encoding='utf-8').write(css + '\n/* Echter QR-Code: immer dunkle Module auf hellem Grund, auch im Dark Mode (scannbar) */\n.t-qr.t-qr-real{background:#fff;opacity:1;padding:8px;box-sizing:border-box;display:block}.t-qr-svg{width:100%;height:100%;display:block}\n')
+open(R + 'src/lib/landing/v11.css', 'w', encoding='utf-8').write(css + '\n/* Echter QR-Code: immer dunkle Module auf hellem Grund, auch im Dark Mode (scannbar) */\n.t-qr.t-qr-real{background:#fff;opacity:1;padding:8px;box-sizing:border-box;display:block}.t-qr-svg{width:100%;height:100%;display:block}\n'
+  # Kontrast (29.10.2026, gleiches Blau wie --accent in theme.css): Weiß auf #2563eb 5,17:1, Blau auf Weiß ebenso;
+  # Hover #1d4ed8 6,70:1. Vorher #3B82F6 mit 3,67:1 (unter WCAG AA 4,5:1).
+  '\n:root,[data-theme="dark"],[data-theme="light"]{--primary:#2563EB}\n[data-theme="light"]{--blue:#2563EB}\n'
+  '.button.primary{background:#2563EB;border-color:#2563EB}\n.button.primary:hover{background:#1D4ED8;border-color:#1D4ED8;box-shadow:0 5px 15px -5px #2563EB88}\n')
 open(R + 'src/lib/landing/v11-site.js', 'w', encoding='utf-8').write('// @ts-nocheck\n// Startseite v11, Verhalten 1:1 aus der Designer-Lieferung (website-v11.js).\n' + js)
 print(len(html), len(css), len(js))
 open(R + 'src/lib/landing/v11-site.js','a').write('\nexport {};\n')
