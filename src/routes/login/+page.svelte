@@ -22,7 +22,9 @@
 		sync();
 		const mo = new MutationObserver(sync);
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-		_redirect = page.url.searchParams.get('redirect') ?? '';
+		// Nur eigene Pfade wie "/quiz/ABC123" (kein "//host", kein "https://..."), sonst Standardziel
+		const r = page.url.searchParams.get('redirect') ?? '';
+		_redirect = /^\/(?![\/\\])[^\s]*$/.test(r) ? r : '';
 		const c = page.url.searchParams.get('code');
 		if (c) loginCode = c;
 		if (page.url.searchParams.get('rolle') === 'lehrkraft') seg = 1;

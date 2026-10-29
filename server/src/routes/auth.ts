@@ -202,6 +202,9 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
     await sendVerificationMail(db, mail, siteUrl, { id: newUserId, email, display_name: data.display_name })
       .catch(() => fastify.log.warn({ event: 'verify_mail_failed' }))
 
+    // Registrierung zählt als erste Anmeldung: sonst bliebe last_login_at leer und die automatische
+    // Löschung nach 12 Monaten Inaktivität (jobs.ts) würde dieses Konto nie erfassen (K8).
+    db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(Math.floor(Date.now() / 1000), newUserId)
     const token = createSession(db, newUserId)
     reply
       .setCookie(SESSION_COOKIE_NAME, token, sessionCookieOptions())

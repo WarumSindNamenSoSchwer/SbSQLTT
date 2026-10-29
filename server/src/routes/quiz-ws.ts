@@ -609,6 +609,15 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       isTeacher = false
       const room = getOrCreateRoom(roomId)
       participantWsEntry = { ws: socket, participantId }
+      // Je Teilnehmer nur eine offene Verbindung: eine ältere (zweiter Tab, Neuverbindung) wird
+      // geschlossen, damit Zählungen für die Lehrkraft stimmen und keine Sockets liegen bleiben.
+      for (const [otherWs, conn] of room.students) {
+        if (otherWs !== socket && conn.participantId === participantId) {
+          room.students.delete(otherWs)
+          sendJson(otherWs, { type: 'error', code: 'replaced', message: 'In einem anderen Fenster geöffnet.' })
+          try { otherWs.close(4000, 'Replaced.') } catch { /* ignorieren */ }
+        }
+      }
       room.students.set(socket, participantWsEntry)
 
       sendJson(socket, { type: 'joined', role: 'student', participant_id: participantId })
