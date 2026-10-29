@@ -94,6 +94,10 @@ html = re.sub(r'href="[^"#/:]+\.dc\.html"', 'href="/learn"', html)
 assert '.dc.html' not in html, re.findall(r'.{40}\.dc\.html', html)[:3]
 # Inline-Farbe aus der Designer-Lieferung entfernen, damit das Kontrast-Blau aus dem CSS gilt
 html = html.replace('class="button primary" style="background-color: #3B82F6"', 'class="button primary"')
+# Häkchen-Zeile unter den Hero-Knöpfen entfernt (Wunsch 29.10.2026)
+_trust = '<div class="hero-trust"><span>Ausprobieren ohne Konto</span><span>Nichts installieren</span><span>Klasse 10 bis Abitur</span></div>'
+assert _trust in html
+html = html.replace(_trust, '')
 open(R + 'src/lib/landing/v11.html', 'w', encoding='utf-8').write(html)
 open(R + 'src/lib/landing/v11.css', 'w', encoding='utf-8').write(css + '\n/* Echter QR-Code: immer dunkle Module auf hellem Grund, auch im Dark Mode (scannbar) */\n.t-qr.t-qr-real{background:#fff;opacity:1;padding:8px;box-sizing:border-box;display:block}.t-qr-svg{width:100%;height:100%;display:block}\n'
   # Kontrast (29.10.2026, gleiches Blau wie --accent in theme.css): Weiß auf #2563eb 5,17:1, Blau auf Weiß ebenso;
