@@ -990,7 +990,8 @@ describe('K8: Konto loeschen entfernt Quiz-Daten', () => {
     const delRes = await app.inject({
       method: 'DELETE',
       url: '/api/me',
-      headers: { 'cookie': teacher.cookie },
+      headers: { 'cookie': teacher.cookie, 'content-type': 'application/json' },
+      payload: { password: teacher.password },
     })
     expect(delRes.statusCode).toBe(200)
 

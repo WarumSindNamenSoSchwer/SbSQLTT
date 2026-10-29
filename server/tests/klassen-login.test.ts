@@ -293,8 +293,12 @@ describe('Lehrkraft: Schlüssel und Passwort', () => {
     expect(await C.openForTeacher(key, enc)).toBe(NAME)
   })
 
+  /** Wie nach dem Link aus der Mail: Passwort zurückgesetzt, Schlüssel muss neu gesetzt werden */
+  const afterForgot = () => db.prepare("UPDATE users SET must_change_password = 1 WHERE role = 'teacher'").run()
+
   it('Passwort vergessen + Wiederherstellungscode: Namen sofort wieder lesbar', async () => {
     await joinStudent(app, cls.code, NAME, PW)
+    afterForgot()
     const me = JSON.parse((await app.inject({ method: 'GET', url: '/api/me', headers: { cookie: teacher.cookie } })).body).user
     // Browser: mit Code entpacken, mit neuem Passwort neu verpacken
     const pk = await C.unwrapWithSecret(C.normalizeRecoveryCode(teacher.recoveryCode.toUpperCase().replace(/-/g, ' ')), me.keys.wrapped_by_recovery)
@@ -308,6 +312,7 @@ describe('Lehrkraft: Schlüssel und Passwort', () => {
 
   it('Passwort vergessen ohne Code: neues Schlüsselpaar, Namen kommen mit der nächsten Schüler-Anmeldung zurück', async () => {
     const j = await joinStudent(app, cls.code, NAME, PW)
+    afterForgot()
     const fresh = await C.createTeacherKeys('resetPw12345', C.generateRecoveryCode())
     const res = await app.inject({ method: 'POST', url: '/api/me/keys', headers: { 'content-type': 'application/json', cookie: teacher.cookie }, payload: { keys: fresh.bundle } })
     expect(JSON.parse(res.body)).toEqual({ ok: true, new_pair: true })

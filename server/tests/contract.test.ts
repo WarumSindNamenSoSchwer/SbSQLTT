@@ -178,11 +178,13 @@ describe('Vertrag: Frontend-Clients gegen echten Server', () => {
     const studs2 = await as(teacher, () => api.apiTeacherGetStudents(cls.id))
     expect(await C.openForTeacher(priv2, studs2.students[0].enc_name!)).toBe('Sam Müller')
 
-    // Schlüssel setzen (wie nach Wiederherstellung mit Code): ungültige Daten 400, gültige ok, gleiches Paar
+    // Schlüssel setzen außerhalb der Wiederherstellung (z. B. neuer Wiederherstellungscode):
+    // ungültige Daten 400, ohne Passwort 403, mit Passwort ok, gleiches Paar
     if (me3.user.role !== 'teacher') throw new Error('Lehrkraft erwartet')
     const tk = me3.user.keys
     await expect(as(teacher, () => api.apiSetKeys({ public_key: tk.public_key!, wrapped_by_password: '', wrapped_by_recovery: '' }))).rejects.toMatchObject({ status: 400 })
-    const ok = await as(teacher, () => api.apiSetKeys({ public_key: tk.public_key!, wrapped_by_password: rewrapped, wrapped_by_recovery: tk.wrapped_by_recovery! }))
+    await expect(as(teacher, () => api.apiSetKeys({ public_key: tk.public_key!, wrapped_by_password: rewrapped, wrapped_by_recovery: tk.wrapped_by_recovery! }))).rejects.toMatchObject({ status: 403 })
+    const ok = await as(teacher, () => api.apiSetKeys({ public_key: tk.public_key!, wrapped_by_password: rewrapped, wrapped_by_recovery: tk.wrapped_by_recovery! }, 'neuesGeheimnis456'))
     expect(ok.new_pair).toBe(false)
     // Code öffnet den Schlüssel weiterhin
     expect((await C.unwrapWithSecret(C.normalizeRecoveryCode(recoveryCode), tk.wrapped_by_recovery!)).length).toBeGreaterThan(1000)
