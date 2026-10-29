@@ -335,7 +335,7 @@
 <div class="tb page">
 	<!-- ================= Kopfleiste ================= -->
 	<header class="top">
-		<a class="back-link" href="/learn"><span class="arr back"></span><span class="hide-sm hide-md">Lektionen</span></a>
+		<a class="back-link" href="/learn" aria-label="Zurück zu den Lektionen"><span class="arr back"></span><span class="hide-sm hide-md">Lektionen</span></a>
 		<span class="sep hide-sm hide-md"></span>
 		<span class="ltitle hide-sm"><span class="hide-md">Lektion {lesson.no}&nbsp;·{' '}</span>{lesson.title}</span>
 		<div class="progress">
@@ -453,6 +453,7 @@
 					</div>
 				{:else}
 					<!-- ================= Aufgabe ================= -->
+					<h1 class="sr-only">{lesson.title}: {step.task}</h1>
 					<div class="task">
 						<div class="task-txt">
 							<span class="lbl task-lbl">{taskLabel}</span>
@@ -676,6 +677,7 @@
 </div>
 
 <style>
+	.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 	/* ---------- Grundgeruest (Werte 1:1 aus Lektion B2) ---------- */
 	.page { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 	.grow { flex: 1; }
