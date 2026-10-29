@@ -164,7 +164,7 @@
 	// ---- Löschen / Austreten --------------------------------------------------
 	const dangerWord = $derived(session.teacher ? 'LÖSCHEN' : 'AUSTRETEN');
 	async function confirmDanger() {
-		if (dangerConfirm.trim().toUpperCase() !== dangerWord) { dangerErr = `Bitte tippe ${dangerWord}.`; return; }
+		if (dangerConfirm.trim().toUpperCase() !== dangerWord) { dangerErr = session.teacher ? `Bitte tippen Sie ${dangerWord}.` : `Bitte tippe ${dangerWord}.`; return; }
 		dangerBusy = true;
 		dangerErr = null;
 		try {
@@ -368,7 +368,7 @@
 		<div class="overlay" role="presentation">
 			<div role="dialog" aria-modal="true" aria-label={session.teacher ? 'Konto löschen' : 'Austreten'} class="dialog">
 				<h2>{session.teacher ? 'Konto wirklich löschen?' : 'Wirklich austreten?'}</h2>
-				<p class="dialog-body">Das lässt sich nicht rückgängig machen. Tippe zur Bestätigung <strong>{dangerWord}</strong>.</p>
+				<p class="dialog-body">Das lässt sich nicht rückgängig machen. {session.teacher ? 'Tippen Sie' : 'Tippe'} zur Bestätigung <strong>{dangerWord}</strong>{session.teacher ? ' und geben Sie Ihr Passwort ein' : ''}.</p>
 				<input type="text" class="dialog-input" autocomplete="off" placeholder={dangerWord} disabled={dangerBusy} bind:value={dangerConfirm} />
 				{#if session.teacher}
 					<label class="dialog-body" for="danger-pw">Ihr Passwort</label>

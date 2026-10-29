@@ -149,16 +149,19 @@ r = await T.req('GET', `/api/teacher/quiz-sessions/${room.id}/result`)
 ok('Auswertung: 2 Schüler, Frage-Statistik vorhanden', r.json?.participants?.length === 2 && r.json?.question_stats?.length === 1 && r.json.question_stats[0].answer_count === 2, JSON.stringify(r.json).slice(0, 200))
 for (const c of [tw, s1w, s2w, gw]) try { c.ws.close() } catch {}
 
-// Lehrkraft: Passwort vergessen per E-Mail ist hier nicht prüfbar (keine Mail im Probe-Stack);
-// Wiederherstellung mit Code über /api/me/keys:
+// Wiederherstellungscode prüfen über /api/me/keys. Außerhalb von "Passwort vergessen" braucht das
+// das aktuelle Passwort (Härtung P9): ohne 403, mit Passwort ok.
 const me = (await T.req('GET', '/api/me')).json.user
 const pk = await C.unwrapWithSecret(C.normalizeRecoveryCode(recovery), me.keys.wrapped_by_recovery)
-r = await T.req('POST', '/api/me/keys', { keys: { public_key: me.keys.public_key, wrapped_by_password: await C.wrapWithSecret(T_PW, pk), wrapped_by_recovery: me.keys.wrapped_by_recovery } })
+const rekeys = { public_key: me.keys.public_key, wrapped_by_password: await C.wrapWithSecret(T_PW, pk), wrapped_by_recovery: me.keys.wrapped_by_recovery }
+ok('Schlüssel ändern ohne Passwort abgelehnt (403)', (await T.req('POST', '/api/me/keys', { keys: rekeys })).status === 403)
+r = await T.req('POST', '/api/me/keys', { keys: rekeys, current_password: T_PW })
 ok('Wiederherstellungscode öffnet den Schlüssel, gleiches Paar', r.json?.new_pair === false)
 
 // K8 Austreten und Löschen
 ok('K8 Schüler tritt aus (200)', (await S2.req('POST', '/api/student/leave')).status === 200)
 ok('K8 danach Anmeldung unmöglich (401)', (await browser().req('POST', '/api/class-login/login', { code: cls.join_code, key: b.key })).status === 401)
+ok('K8 Konto löschen ohne Passwort abgelehnt (400)', (await T2.req('DELETE', '/api/me')).status === 400)
 ok('K8 Lehrkraft 2 löscht Konto (200)', (await T2.req('DELETE', '/api/me', { password: T_PW })).status === 200)
 ok('Abmelden löscht Cookie', (await T.req('POST', '/api/logout')).status === 200 && T.cookie === '')
 
