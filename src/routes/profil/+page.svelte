@@ -41,6 +41,7 @@
 	// Gefährliche Aktion (Lehrkraft: Konto löschen, Schüler: austreten)
 	let dangerOpen = $state(false);
 	let dangerConfirm = $state('');
+	let dangerPw = $state('');
 	let dangerBusy = $state(false);
 	let dangerErr = $state<string | null>(null);
 
@@ -168,7 +169,8 @@
 		dangerErr = null;
 		try {
 			if (session.teacher) {
-				await apiDeleteMe();
+				if (!dangerPw) { dangerErr = 'Bitte geben Sie Ihr Passwort ein.'; return; }
+				await apiDeleteMe(dangerPw);
 				await sessionLogout().catch(() => {});
 			} else {
 				await sessionLeaveClass();
@@ -368,10 +370,14 @@
 				<h2>{session.teacher ? 'Konto wirklich löschen?' : 'Wirklich austreten?'}</h2>
 				<p class="dialog-body">Das lässt sich nicht rückgängig machen. Tippe zur Bestätigung <strong>{dangerWord}</strong>.</p>
 				<input type="text" class="dialog-input" autocomplete="off" placeholder={dangerWord} disabled={dangerBusy} bind:value={dangerConfirm} />
+				{#if session.teacher}
+					<label class="dialog-body" for="danger-pw">Ihr Passwort</label>
+					<input id="danger-pw" type="password" class="dialog-input" autocomplete="current-password" disabled={dangerBusy} bind:value={dangerPw} />
+				{/if}
 				{#if dangerErr}<span class="field-err">{dangerErr}</span>{/if}
 				<div class="dialog-btns">
-					<button class="btn-dialog-cancel" onclick={() => { dangerOpen = false; dangerConfirm = ''; dangerErr = null; }} disabled={dangerBusy}>Abbrechen</button>
-					<button class="btn-dialog-delete" onclick={confirmDanger} disabled={dangerBusy || dangerConfirm.trim().toUpperCase() !== dangerWord}>
+					<button class="btn-dialog-cancel" onclick={() => { dangerOpen = false; dangerConfirm = ''; dangerPw = ''; dangerErr = null; }} disabled={dangerBusy}>Abbrechen</button>
+					<button class="btn-dialog-delete" onclick={confirmDanger} disabled={dangerBusy || dangerConfirm.trim().toUpperCase() !== dangerWord || (!!session.teacher && !dangerPw)}>
 						{dangerBusy ? 'Bitte warten …' : session.teacher ? 'Endgültig löschen' : 'Austreten'}
 					</button>
 				</div>

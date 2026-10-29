@@ -34,7 +34,15 @@ async function main() {
 
   const app = await buildApp({ db, mail, siteUrl: SITE_URL })
 
-  const stopJobs = startJobs({ db, mail, siteUrl: SITE_URL })
+  const stopJobs = startJobs({ db, mail, siteUrl: SITE_URL }, (job, err) =>
+    app.log.error({ event: 'job_failed', job, type: (err as Error)?.name ?? 'Error' }, 'Fehler'))
+
+  // Letzte Absicherung: ein unerwartetes abgelehntes Promise wird protokolliert (nur Fehlerart,
+  // keine Meldung, K10) statt den Dienst zu beenden. Echte Programmfehler (uncaughtException)
+  // beenden den Prozess weiterhin, Docker startet ihn neu (restart: unless-stopped).
+  process.on('unhandledRejection', (err) => {
+    app.log.error({ event: 'unhandled_rejection', type: (err as Error)?.name ?? 'Error' }, 'Fehler')
+  })
 
   // Graceful Shutdown
   const shutdown = async (signal: string) => {

@@ -159,7 +159,7 @@ ok('Wiederherstellungscode öffnet den Schlüssel, gleiches Paar', r.json?.new_p
 // K8 Austreten und Löschen
 ok('K8 Schüler tritt aus (200)', (await S2.req('POST', '/api/student/leave')).status === 200)
 ok('K8 danach Anmeldung unmöglich (401)', (await browser().req('POST', '/api/class-login/login', { code: cls.join_code, key: b.key })).status === 401)
-ok('K8 Lehrkraft 2 löscht Konto (200)', (await T2.req('DELETE', '/api/me')).status === 200)
+ok('K8 Lehrkraft 2 löscht Konto (200)', (await T2.req('DELETE', '/api/me', { password: T_PW })).status === 200)
 ok('Abmelden löscht Cookie', (await T.req('POST', '/api/logout')).status === 200 && T.cookie === '')
 
 console.log(`\nErgebnis: ${pass} bestanden, ${fail} fehlgeschlagen`)

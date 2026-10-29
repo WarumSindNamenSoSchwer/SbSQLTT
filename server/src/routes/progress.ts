@@ -6,24 +6,42 @@
  */
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
+import { createRequire } from 'node:module'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Db } from '../db.js'
 import {
   validateSession,
   SESSION_COOKIE_NAME,
 } from '../session.js'
 
+// Bekannte Lektionen und ihre Schrittzahl (generiert von tools/gen-lesson-steps.mjs)
+const LESSON_STEPS: Record<string, { exercise_steps: number; total_steps: number }> =
+  createRequire(import.meta.url)(join(dirname(fileURLToPath(import.meta.url)), '..', 'lesson-steps.json'))
+
+/** Höchstens so viele Versuche je Schritt werden gespeichert (mehr ändert am Status nichts) */
+const MAX_ATTEMPTS = 10_000
+
+const lessonIdSchema = z.string().min(1).max(64).regex(/^[a-z0-9-]+$/)
+
 const progressItemSchema = z.object({
-  lesson_id: z.string().min(1).max(64),
-  step: z.number().int().min(0),
+  lesson_id: lessonIdSchema,
+  step: z.number().int().min(0).max(255),
   done: z.boolean(),
   attempts: z.number().int().min(0),
-  updated_at: z.number().int(),
+  updated_at: z.number().int().min(0),
 })
+
+/** Gehört der Schritt zu einer echten Lektion? Unbekanntes wird still übersprungen (alte lokale Daten). */
+function knownStep(lessonId: string, step: number): boolean {
+  const l = LESSON_STEPS[lessonId]
+  return l !== undefined && step < l.total_steps
+}
 
 /** Letzte Abfrage: im Browser mit dem öffentlichen Schlüssel der Lehrkraft verschlüsselt (K4). */
 const attemptItemSchema = z.object({
-  lesson_id: z.string().min(1).max(64),
-  step: z.number().int().min(0),
+  lesson_id: lessonIdSchema,
+  step: z.number().int().min(0).max(255),
   /** Abfrage und Fehlermeldung verschlüsselt (Format h1.…), leer wenn keine Lehrkraft-Schlüssel vorliegen */
   sealed: z.string().regex(/^(h1\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+\.[A-Za-z0-9+/=]+)?$/).max(30_000),
   has_error: z.boolean(),
@@ -95,16 +113,19 @@ const progressRoutes: FastifyPluginAsync<ProgressPluginOptions> = async (fastify
 
     db.transaction(() => {
       for (const item of progress) {
+        if (!knownStep(item.lesson_id, item.step)) continue
         upsertProgress.run(
           session.user_id,
           item.lesson_id,
           item.step,
           item.done ? 1 : 0,
-          item.attempts,
-          item.updated_at
+          Math.min(item.attempts, MAX_ATTEMPTS),
+          // Zeitstempel aus dem Browser höchstens "jetzt" (falsche Uhren, Daten aus der Zukunft)
+          Math.min(item.updated_at, nowTs)
         )
       }
       for (const attempt of last_attempts ?? []) {
+        if (!knownStep(attempt.lesson_id, attempt.step)) continue
         upsertAttempt.run(
           session.user_id,
           attempt.lesson_id,

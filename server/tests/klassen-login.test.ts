@@ -106,11 +106,11 @@ describe('Beitritt und Anmeldung', () => {
     expect(old.statusCode).toBe(404)
   })
 
-  it('Fehlversuche je Klasse werden gebremst (429), ohne IP', async () => {
+  it('Fehlversuche je Gerät und Klasse werden gebremst (429), ohne IP-Speicherung', async () => {
     await joinStudent(app, cls.code, NAME, PW)
     const info = await lookup(app, cls.code)
     let last = 0
-    for (let i = 0; i < 61; i++) {
+    for (let i = 0; i < 41; i++) {
       const res = await app.inject({
         method: 'POST', url: '/api/class-login/login', headers: { 'content-type': 'application/json' },
         payload: { code: cls.code, key: i.toString(16).padStart(64, '0') },
@@ -118,7 +118,7 @@ describe('Beitritt und Anmeldung', () => {
       last = res.statusCode
     }
     expect(last).toBe(429)
-    // Auch der richtige Schlüssel wird jetzt gebremst
+    // Vom selben Gerät wird auch der richtige Schlüssel jetzt gebremst (andere Geräte nicht, siehe haertung.test.ts)
     const key = await C.deriveStudentKey(info.class_salt, NAME, PW)
     const res = await app.inject({ method: 'POST', url: '/api/class-login/login', headers: { 'content-type': 'application/json' }, payload: { code: cls.code, key } })
     expect(res.statusCode).toBe(429)

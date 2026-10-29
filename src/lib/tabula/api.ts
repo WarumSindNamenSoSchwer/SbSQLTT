@@ -159,9 +159,9 @@ export function apiPatchMe(body: { display_name?: string; name?: string; school?
   return request('PATCH', '/me', body);
 }
 
-/** DELETE /api/me (Lehrkraft, löscht auch Klassen und deren Schüler) */
-export function apiDeleteMe(): Promise<{ ok: true }> {
-  return request('DELETE', '/me');
+/** DELETE /api/me (Lehrkraft, löscht auch Klassen und deren Schüler). Braucht das aktuelle Passwort. */
+export function apiDeleteMe(password: string): Promise<{ ok: true }> {
+  return request('DELETE', '/me', { password });
 }
 
 /** POST /api/me/password (Lehrkraft; privater Schlüssel neu verpackt) */
@@ -169,9 +169,12 @@ export function apiChangePassword(current_password: string, new_password: string
   return request('POST', '/me/password', { current_password, new_password, wrapped_by_password });
 }
 
-/** POST /api/me/keys (Lehrkraft nach Passwort-Reset: Schlüssel neu verpackt oder neues Paar) */
-export function apiSetKeys(keys: TeacherKeys): Promise<{ ok: true; new_pair: boolean }> {
-  return request('POST', '/me/keys', { keys });
+/**
+ * POST /api/me/keys. Nach Passwort-Reset genügt die Sitzung (Schlüssel neu verpackt oder neues Paar).
+ * Sonst (z. B. neuer Wiederherstellungscode) braucht der Server das aktuelle Passwort.
+ */
+export function apiSetKeys(keys: TeacherKeys, current_password?: string): Promise<{ ok: true; new_pair: boolean }> {
+  return request('POST', '/me/keys', current_password ? { keys, current_password } : { keys });
 }
 
 /** POST /api/email/verify (Lehrkraft bestätigt E-Mail-Adresse, K7) */

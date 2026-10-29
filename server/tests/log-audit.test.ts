@@ -66,7 +66,7 @@ describe('Log-Audit: keine personenbezogenen Daten im Log', () => {
     await app.inject({ method: 'POST', url: '/api/password/forgot', headers: { ...json, ...ip }, body: JSON.stringify({ email: T_MAIL }) })
 
     // Lehrkraft loescht Konto
-    await app.inject({ method: 'DELETE', url: '/api/me', headers: { cookie: tc, ...ip } })
+    await app.inject({ method: 'DELETE', url: '/api/me', headers: { cookie: tc, ...json, ...ip }, body: JSON.stringify({ password: SECRET_PW }) })
 
     const log = lines.join('\n')
     expect(lines.length).toBeGreaterThan(5)

@@ -235,7 +235,7 @@ export async function sessionNewRecoveryCode(password: string): Promise<string> 
 	const recoveryCode = generateRecoveryCode();
 	const wrapped_by_recovery = await wrapWithSecret(normalizeRecoveryCode(recoveryCode), pkcs8);
 	pkcs8.fill(0);
-	await apiSetKeys({ public_key: t.keys.public_key, wrapped_by_password: t.keys.wrapped_by_password, wrapped_by_recovery });
+	await apiSetKeys({ public_key: t.keys.public_key, wrapped_by_password: t.keys.wrapped_by_password, wrapped_by_recovery }, password);
 	await _refreshUser();
 	return recoveryCode;
 }

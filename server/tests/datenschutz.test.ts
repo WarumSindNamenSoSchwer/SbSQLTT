@@ -224,7 +224,8 @@ describe('K8: Konto loeschen entfernt alle Zeilen', () => {
     const delRes = await app.inject({
       method: 'DELETE',
       url: '/api/me',
-      headers: { cookie: teacher.cookie },
+      headers: { cookie: teacher.cookie, 'content-type': 'application/json' },
+      payload: { password: 'sicheresPasswort1' },
     })
     expect(delRes.statusCode).toBe(200)
 

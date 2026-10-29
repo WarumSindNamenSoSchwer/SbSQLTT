@@ -9,7 +9,7 @@ import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
 import type { Db } from '../db.js'
 import type { MailSender } from '../mail.js'
-import type { RateLimiters } from '../plugins/ratelimit.js'
+import { clientKey, type RateLimiters } from '../plugins/ratelimit.js'
 import { sendVerificationMail } from './email-verify.js'
 import {
   hashPassword,
@@ -75,7 +75,16 @@ const changePasswordSchema = z.object({
 const recoverySchema = z.object({
   /** Neues Schlüsselpaar (Lehrkraft hat nach Passwort-Reset ohne Code neu begonnen) oder neu verpackter Schlüssel */
   keys: keyBundleSchema,
+  /** Pflicht außerhalb der Wiederherstellung nach Passwort-Reset (z. B. neuer Wiederherstellungscode) */
+  current_password: z.string().min(1).max(128).optional(),
 })
+
+const deleteMeSchema = z.object({
+  /** Bestätigung mit dem aktuellen Passwort */
+  password: z.string().min(1).max(128),
+})
+
+const TOO_MANY = { fehler: 'Zu viele Versuche. Bitte warten Sie einige Minuten und versuchen Sie es dann erneut.' }
 
 /** E-Mail-Adressen groß/klein-unabhängig vergleichen */
 export function normalizeEmail(email: string): string {
@@ -169,8 +178,9 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
     // Benutzername der Lehrkraft = E-Mail-Adresse (für die Passwort-Bindung K3)
     const username = normalizeUsername(email)
 
-    if (!limits.register.check(username)) {
-      return reply.code(429).send({ fehler: 'Zu viele Versuche. Bitte warte kurz.' })
+    // Je Adresse und je Gerät begrenzt: bremst Massenkonten und Bestätigungsmails an fremde Adressen
+    if (!limits.registerClient.check(clientKey(req)) || !limits.register.check(username)) {
+      return reply.code(429).send(TOO_MANY)
     }
     if (findUserByUsername(db, username) || findUserByEmail(db, email)) {
       return reply.code(409).send({ fehler: 'E-Mail-Adresse bereits registriert.' })
@@ -207,22 +217,32 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
     }
     const { login: loginInput, password } = parsed.data
     const key = normalizeEmail(loginInput)
+    const client = clientKey(req)
+    const perClient = `${client}:${key}`
 
-    if (!limits.login.check(key)) {
-      return reply.code(429).send({ fehler: 'Zu viele Versuche. Bitte warte kurz.' })
+    // Gezählt werden nur Fehlversuche, und zwar je Gerät und Adresse. Fremde Fehlversuche von
+    // einem anderen Gerät sperren die Lehrkraft deshalb nicht aus. Die hohe Grenze je Adresse
+    // bremst verteiltes Raten, die Grenze je Gerät das Durchprobieren vieler Adressen.
+    if (limits.loginClient.blocked(perClient) || limits.loginAccount.blocked(key) || limits.loginAny.blocked(client)) {
+      return reply.code(429).send(TOO_MANY)
+    }
+    const fail = () => {
+      limits.loginClient.hit(perClient)
+      limits.loginAccount.hit(key)
+      limits.loginAny.hit(client)
+      return reply.code(401).send({ fehler: 'E-Mail-Adresse oder Passwort falsch.' })
     }
 
     const user = findUserByEmail(db, key)
     if (!user) {
       // Gleiche Dauer wie bei existierendem Konto (verhindert Aufzählung)
       await verifyPassword('$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', password, 'dummy', '2000-01-01')
-      return reply.code(401).send({ fehler: 'E-Mail-Adresse oder Passwort falsch.' })
+      return fail()
     }
 
     const ok = await verifyPassword(user.password_hash, password, user.username, user.created_day)
-    if (!ok) {
-      return reply.code(401).send({ fehler: 'E-Mail-Adresse oder Passwort falsch.' })
-    }
+    if (!ok) return fail()
+    limits.loginClient.clear(perClient)
 
     db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(Math.floor(Date.now() / 1000), user.id)
 
@@ -361,8 +381,21 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
 
     const parsed = recoverySchema.safeParse(req.body)
     if (!parsed.success) return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
-    const { keys } = parsed.data
+    const { keys, current_password } = parsed.data
     const newPair = keys.public_key !== user.public_key
+
+    // Nur direkt nach "Passwort vergessen" (must_change_password = 1) genügt die Sitzung, denn
+    // dann ist der Schlüssel noch mit dem alten Passwort verpackt. Sonst braucht jede Änderung das
+    // aktuelle Passwort, und ein neues Schlüsselpaar ist nur in der Wiederherstellung erlaubt.
+    if (user.must_change_password !== 1) {
+      if (newPair) return reply.code(403).send({ fehler: 'Ein neues Schlüsselpaar ist nur nach dem Zurücksetzen des Passworts möglich.' })
+      if (!current_password) return reply.code(403).send({ fehler: 'Bitte bestätigen Sie mit Ihrem Passwort.' })
+      const row = db.prepare('SELECT username, password_hash, created_day FROM users WHERE id = ?')
+        .get(user.id) as { username: string; password_hash: string; created_day: string }
+      if (!(await verifyPassword(row.password_hash, current_password, row.username, row.created_day))) {
+        return reply.code(403).send({ fehler: 'Passwort falsch.' })
+      }
+    }
 
     db.transaction(() => {
       db.prepare('UPDATE users SET public_key = ?, wrapped_key_pw = ?, wrapped_key_recovery = ?, must_change_password = 0 WHERE id = ?')
@@ -389,6 +422,15 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
     const user = findUserById(db, session.user_id)
     if (!user) return reply.code(401).send({ fehler: 'Konto nicht gefunden.' })
     if (user.role !== 'teacher') return reply.code(403).send({ fehler: 'Schüler treten über das Profil aus der Klasse aus.' })
+
+    // Endgültiges Löschen von Konto, Klassen und Schülerdaten nur mit dem aktuellen Passwort
+    const parsed = deleteMeSchema.safeParse(req.body)
+    if (!parsed.success) return reply.code(400).send({ fehler: 'Bitte bestätigen Sie mit Ihrem Passwort.' })
+    const row = db.prepare('SELECT username, password_hash, created_day FROM users WHERE id = ?')
+      .get(user.id) as { username: string; password_hash: string; created_day: string }
+    if (!(await verifyPassword(row.password_hash, parsed.data.password, row.username, row.created_day))) {
+      return reply.code(403).send({ fehler: 'Passwort falsch.' })
+    }
 
     db.transaction(() => {
       // Schüler der eigenen Klassen löschen (ihre Daten hängen per CASCADE daran)

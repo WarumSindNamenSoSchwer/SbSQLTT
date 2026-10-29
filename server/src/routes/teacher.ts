@@ -678,8 +678,8 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
   // -------------------------------------------------------------------------
 
   const completeSchema = z.object({
-    lesson_id: z.string().min(1).max(64),
-    step: z.number().int().min(0),
+    lesson_id: z.string().min(1).max(64).regex(/^[a-z0-9-]+$/),
+    step: z.number().int().min(0).max(255),
   })
 
   fastify.post('/classes/:id/students/:uid/complete', async (req, reply) => {
@@ -706,6 +706,8 @@ const teacherRoutes: FastifyPluginAsync<TeacherPluginOptions> = async (fastify, 
     }
 
     const { lesson_id, step } = parsed.data
+    const steps = LESSON_STEPS[lesson_id]
+    if (!steps || step >= steps.total_steps) return reply.code(400).send({ fehler: 'Unbekannte Lektion oder unbekannter Schritt.' })
 
     // Schritt als erledigt markieren (upsert: existiert evtl. schon)
     db.prepare(`

@@ -14,16 +14,18 @@ import type { Db } from '../db.js'
 import type { MailSender } from '../mail.js'
 import { buildSystemMail } from '../mail-templates.js'
 import type { RateLimiters } from '../plugins/ratelimit.js'
+import { clientKey } from '../plugins/ratelimit.js'
 import { sha256hex } from '../db.js'
 import { hashPassword } from '../password.js'
 import { createSession, SESSION_COOKIE_NAME, sessionCookieOptions } from '../session.js'
 
 const forgotSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().max(254),
 })
 
 const resetSchema = z.object({
-  token: z.string().min(10),
+  /** 32 Byte als Hex (siehe unten) */
+  token: z.string().regex(/^[0-9a-f]{64}$/),
   password: z.string().min(8).max(128),
 })
 
@@ -50,14 +52,15 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
     }
     const { email } = parsed.data
 
-    // Rate-Limit pro E-Mail
-    if (!limits.forgot.check(email.trim().toLowerCase())) {
-      return reply.code(429).send({ fehler: 'Zu viele Versuche. Bitte warte kurz.' })
+    // Rate-Limit je E-Mail und je Gerät (gleiche Antwort, damit keine Adresse erkennbar wird)
+    const normalized = email.trim().toLowerCase()
+    if (!limits.forgotClient.check(clientKey(req)) || !limits.forgot.check(normalized)) {
+      return reply.code(429).send({ fehler: 'Zu viele Anfragen. Bitte warten Sie etwas und versuchen Sie es später erneut.' })
     }
 
     const user = db.prepare(
       "SELECT id, username, display_name, email, created_day FROM users WHERE email = ? AND role = 'teacher'"
-    ).get(email.trim().toLowerCase()) as { id: number; username: string; display_name: string; email: string; created_day: string } | undefined
+    ).get(normalized) as { id: number; username: string; display_name: string; email: string; created_day: string } | undefined
 
     // Immer gleiche Antwort (verhindert Benutzer-Enumeration, K7)
     if (!user) return reply.send({ ok: true })
@@ -104,7 +107,7 @@ const passwordRoutes: FastifyPluginAsync<PasswordPluginOptions> = async (fastify
   fastify.post('/reset', async (req, reply) => {
     const parsed = resetSchema.safeParse(req.body)
     if (!parsed.success) {
-      return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
+      return reply.code(400).send({ fehler: 'Link ungültig oder abgelaufen.' })
     }
     const { token: rawToken, password } = parsed.data
 

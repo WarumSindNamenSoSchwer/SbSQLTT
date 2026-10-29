@@ -12,14 +12,19 @@
  *   POST /api/student/rekey                 { old_key, new_key, enc_name } Passwort oder Name ändern
  *   POST /api/student/leave                 Aus der Klasse austreten (löscht alle Daten)
  *
- * Fehlversuche werden je Klasse begrenzt (nur im Arbeitsspeicher, keine IP).
+ * Anmeldeschutz (nur im Arbeitsspeicher, IP nur als flüchtiges HMAC-Kennzeichen, siehe ratelimit.ts):
+ * - Fehlversuche zählen je Gerät UND Klasse. Fremde Fehlversuche sperren also nicht die ganze Klasse.
+ * - Zusätzlich eine hohe Obergrenze je Klasse über alle Geräte (bremst verteiltes Raten).
+ * - Unbekannte Klassencodes zählen je Gerät. Ein Gerät, das Codes durchprobiert, wird gebremst,
+ *   alle anderen merken nichts.
+ * - Beitritte je Gerät begrenzt (eine Klasse mit 30 Schülern an einem Schul-NAT passt hinein).
  */
 import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { z } from 'zod'
 import { randomBytes } from 'node:crypto'
 import type { Db } from '../db.js'
 import { sha256hex } from '../db.js'
-import { RateLimiter } from '../plugins/ratelimit.js'
+import { RateLimiter, clientKey } from '../plugins/ratelimit.js'
 import {
   createSession,
   validateSession,
@@ -75,26 +80,45 @@ export interface ClassLoginOptions {
 
 const classLoginRoutes: FastifyPluginAsync<ClassLoginOptions> = async (fastify, opts) => {
   const { db } = opts
-  // Je Klasse: 60 Fehlversuche in 15 Minuten (30 Schüler mit Tippfehlern passen, Raten nicht)
-  const failLimit = new RateLimiter(60, 15 * 60 * 1000)
-  // Unbekannte Klassencodes: 300 Fehlgriffe je 15 Minuten insgesamt bremsen das Durchprobieren von
-  // Codes, ohne Schüler mit richtigem Code zu blockieren (bekannte Codes zählen nicht).
-  const unknownCodeLimit = new RateLimiter(300, 15 * 60 * 1000)
+  const MIN = 60 * 1000
+  // Je Gerät und Klasse: 40 Fehlversuche in 15 Minuten. Schulnetze teilen oft eine Adresse,
+  // 30 Schüler mit je einem Tippfehler passen deshalb noch hinein.
+  const failClient = new RateLimiter(40, 15 * MIN)
+  // Je Klasse über alle Geräte: 300 Fehlversuche in 15 Minuten (verteiltes Raten)
+  const failClass = new RateLimiter(300, 15 * MIN)
+  // Unbekannte Klassencodes je Gerät: 60 in 15 Minuten (eine Klasse mit Tippfehlern am selben
+  // Schul-Router passt hinein, systematisches Durchprobieren nicht)
+  const unknownCodeLimit = new RateLimiter(60, 15 * MIN)
+  // Beitritte je Gerät: 120 je Stunde (mehrere Klassen nacheinander am selben Schul-Router)
+  const joinLimit = new RateLimiter(120, 60 * MIN)
 
-  function tooManyFailures(classId: number): boolean {
-    return failLimit.peek(`class:${classId}`) >= 60
+  const TOO_MANY = { fehler: 'Zu viele Versuche von diesem Gerät. Bitte warte ein paar Minuten und versuche es dann noch einmal.' }
+
+  function tooManyFailures(classId: number, client: string): boolean {
+    return failClient.blocked(`${client}:${classId}`) || failClass.blocked(`class:${classId}`)
+  }
+  function countFailure(classId: number, client: string): void {
+    failClient.hit(`${client}:${classId}`)
+    failClass.hit(`class:${classId}`)
+  }
+  /** Sucht die Klasse und zählt unbekannte Codes je Gerät. */
+  function classOrCount(code: string, client: string) {
+    const cls = findClass(db, code)
+    if (!cls) unknownCodeLimit.hit(client)
+    return cls
   }
 
   // -------------------------------------------------------------------------
   // GET /api/class-login/lookup?code=...
   // -------------------------------------------------------------------------
   fastify.get('/class-login/lookup', async (req, reply) => {
-    const code = (req.query as { code?: string }).code ?? ''
-    if (!codeSchema.safeParse(code).success) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
-    if (unknownCodeLimit.peek('unknown') >= 300) return reply.code(429).send({ fehler: 'Zu viele Versuche. Bitte warte ein paar Minuten.' })
-    const cls = findClass(db, code)
+    const code = (req.query as { code?: unknown }).code
+    if (typeof code !== 'string' || !codeSchema.safeParse(code).success) return reply.code(404).send({ fehler: 'Klasse nicht gefunden.' })
+    const client = clientKey(req)
+    // Nur Geräte, die viele falsche Codes probiert haben, werden gebremst
+    if (unknownCodeLimit.blocked(client)) return reply.code(429).send(TOO_MANY)
+    const cls = classOrCount(code, client)
     if (!cls || !cls.public_key) {
-      unknownCodeLimit.check('unknown')
       return reply.code(404).send({ fehler: 'Klasse nicht gefunden. Bitte prüfe den Klassencode.' })
     }
     return reply.send({
@@ -113,14 +137,20 @@ const classLoginRoutes: FastifyPluginAsync<ClassLoginOptions> = async (fastify, 
   fastify.post('/class-login/join', async (req, reply) => {
     const parsed = joinSchema.safeParse(req.body)
     if (!parsed.success) return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
-    const cls = findClass(db, parsed.data.code)
+    const client = clientKey(req)
+    if (unknownCodeLimit.blocked(client) || joinLimit.blocked(client)) return reply.code(429).send(TOO_MANY)
+    const cls = classOrCount(parsed.data.code, client)
     if (!cls) return reply.code(404).send({ fehler: 'Klasse nicht gefunden. Bitte prüfe den Klassencode.' })
+    if (tooManyFailures(cls.id, client)) return reply.code(429).send(TOO_MANY)
 
     const loginHash = sha256hex(parsed.data.key)
     if (db.prepare('SELECT 1 FROM users WHERE login_hash = ?').get(loginHash)) {
-      // Gleicher Name und gleiches Passwort in derselben Klasse
+      // Gleicher Name und gleiches Passwort in derselben Klasse. Zählt wie ein Fehlversuch,
+      // damit diese Antwort nicht beliebig oft zum Ausprobieren dienen kann.
+      countFailure(cls.id, client)
       return reply.code(409).send({ fehler: 'Bitte wähle ein anderes Passwort.', code: 'taken' })
     }
+    joinLimit.hit(client)
 
     const userId = db.transaction(() => {
       const placeholder = `s_${randomBytes(12).toString('hex')}`
@@ -145,13 +175,15 @@ const classLoginRoutes: FastifyPluginAsync<ClassLoginOptions> = async (fastify, 
   fastify.post('/class-login/login', async (req, reply) => {
     const parsed = loginSchema.safeParse(req.body)
     if (!parsed.success) return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
-    const cls = findClass(db, parsed.data.code)
+    const client = clientKey(req)
+    if (unknownCodeLimit.blocked(client)) return reply.code(429).send(TOO_MANY)
+    const cls = classOrCount(parsed.data.code, client)
     if (!cls) return reply.code(401).send({ fehler: 'Klassencode, Name oder Passwort falsch.' })
-    if (tooManyFailures(cls.id)) return reply.code(429).send({ fehler: 'Zu viele Fehlversuche in dieser Klasse. Bitte warte ein paar Minuten.' })
+    if (tooManyFailures(cls.id, client)) return reply.code(429).send(TOO_MANY)
 
     const userId = studentIdFromHash(db, cls.id, sha256hex(parsed.data.key))
     if (!userId) {
-      failLimit.check(`class:${cls.id}`)
+      countFailure(cls.id, client)
       return reply.code(401).send({ fehler: 'Klassencode, Name oder Passwort falsch.' })
     }
     // Hat die Lehrkraft ein neues Schlüsselpaar (Passwort vergessen, kein Code), schreibt der
@@ -171,16 +203,18 @@ const classLoginRoutes: FastifyPluginAsync<ClassLoginOptions> = async (fastify, 
   fastify.post('/class-login/reset', async (req, reply) => {
     const parsed = resetSchema.safeParse(req.body)
     if (!parsed.success) return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
-    const cls = findClass(db, parsed.data.code)
+    const client = clientKey(req)
+    if (unknownCodeLimit.blocked(client)) return reply.code(429).send(TOO_MANY)
+    const cls = classOrCount(parsed.data.code, client)
     if (!cls) return reply.code(400).send({ fehler: 'Code ungültig oder abgelaufen.' })
-    if (tooManyFailures(cls.id)) return reply.code(429).send({ fehler: 'Zu viele Fehlversuche in dieser Klasse. Bitte warte ein paar Minuten.' })
+    if (tooManyFailures(cls.id, client)) return reply.code(429).send(TOO_MANY)
 
     const now = Math.floor(Date.now() / 1000)
     const row = db.prepare(
       'SELECT user_id FROM student_reset_codes WHERE code_hash = ? AND class_id = ? AND expires_at > ?'
     ).get(sha256hex(parsed.data.reset_code.trim().toUpperCase()), cls.id, now) as { user_id: number } | undefined
     if (!row) {
-      failLimit.check(`class:${cls.id}`)
+      countFailure(cls.id, client)
       return reply.code(400).send({ fehler: 'Code ungültig oder abgelaufen.' })
     }
 
@@ -228,8 +262,10 @@ const classLoginRoutes: FastifyPluginAsync<ClassLoginOptions> = async (fastify, 
     if (!me) return
     const parsed = rekeySchema.safeParse(req.body)
     if (!parsed.success) return reply.code(400).send({ fehler: 'Ungültige Eingabe.' })
+    const client = clientKey(req)
+    if (tooManyFailures(me.class_id, client)) return reply.code(429).send(TOO_MANY)
     if (sha256hex(parsed.data.old_key) !== me.login_hash) {
-      failLimit.check(`class:${me.class_id}`)
+      countFailure(me.class_id, client)
       return reply.code(403).send({ fehler: 'Aktuelles Passwort falsch.' })
     }
     const newHash = sha256hex(parsed.data.new_key)

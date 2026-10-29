@@ -56,6 +56,8 @@
  *   rate_limited     Zu viele Beitrittsversuche
  *   not_joined       Nachricht vor Join-Nachricht gesendet
  *   invalid_json     Ungueltige JSON-Nachricht
+ *   invalid_message  Nachricht hat keine bekannte Form
+ *   internal         Unerwarteter Fehler, Verbindung wird geschlossen
  *
  * PUNKTE
  * Max. 1000 Punkte pro Frage. Schnellere Antworten geben mehr Punkte:
@@ -67,9 +69,14 @@
  * - Rate-Limit fuer student_join (max. 10 Versuche je Rate-Key in 1 Min.)
  * - Keine Antworten/Spielernamen in Logs (K5)
  * - Server ist Quelle der Wahrheit fuer Zeit und Punkte
+ * - Jede Nachricht wird mit einem Schema geprueft (unbekannte Formen -> invalid_message),
+ *   Nachrichten groesser als 4 KiB werden verworfen, Fehler in einem Handler beenden nur
+ *   diese Verbindung, nie den Dienst.
+ * - Anmeldung nur ueber das Cookie (kein Token in der Nachricht)
  */
 import type { FastifyPluginAsync } from 'fastify'
 import fastifyWebsocket from '@fastify/websocket'
+import { z } from 'zod'
 import type { WebSocket as WsSocket } from 'ws'
 import type { Db } from '../db.js'
 import { validateSession, SESSION_COOKIE_NAME } from '../session.js'
@@ -79,18 +86,27 @@ import { RateLimiter } from '../plugins/ratelimit.js'
 // Typen fuer eingehende Nachrichten
 // ---------------------------------------------------------------------------
 
+// Eingehende Nachrichten: genau diese Formen, alles andere wird abgelehnt
+const incomingSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('teacher_join'), room_id: z.number().int().positive() }),
+  z.object({ type: z.literal('student_join'), pin: z.string().min(1).max(16) }),
+  z.object({ type: z.literal('next_question') }),
+  z.object({ type: z.literal('reveal') }),
+  z.object({ type: z.literal('end_quiz') }),
+  z.object({ type: z.literal('answer'), question_id: z.number().int().positive(), chosen_idx: z.number().int().min(0).max(15) }),
+])
+
+/** Groesste erlaubte Nachricht (die groesste echte Nachricht hat unter 100 Byte) */
+export const WS_MAX_PAYLOAD = 4096
+
 interface TeacherJoin {
   type: 'teacher_join'
   room_id: number
-  /** Nur Fallback fuer Tests/Nicht-Browser-Clients; Browser sendet Cookie automatisch */
-  token?: string
 }
 
 interface StudentJoin {
   type: 'student_join'
   pin: string
-  /** Nur Fallback fuer Tests; Browser sendet Cookie automatisch */
-  token?: string
 }
 
 interface NextQuestion {
@@ -375,7 +391,7 @@ const joinRateLimiter = new RateLimiter(10, 60 * 1000)
 const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) => {
   const { db, allowedOrigin, skipOriginCheck } = opts
 
-  await fastify.register(fastifyWebsocket)
+  await fastify.register(fastifyWebsocket, { options: { maxPayload: WS_MAX_PAYLOAD } })
 
   fastify.get('/ws', { websocket: true }, (socket, req) => {
     // Origin-Check (wie CSRF, K5)
@@ -398,13 +414,30 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
     const cookieToken = (req.cookies?.[SESSION_COOKIE_NAME] as string | undefined) ?? ''
 
     socket.on('message', (rawData) => {
-      let msg: IncomingMsg
+      // Ein Fehler in einem Handler darf nie den Dienst beenden: nur diese Verbindung schliessen.
       try {
-        msg = JSON.parse(rawData.toString()) as IncomingMsg
+        handleMessage(rawData)
+      } catch (err) {
+        fastify.log.error({ event: 'ws_handler_error', type: (err as Error)?.name ?? 'Error' }, 'Fehler')
+        sendJson(socket, { type: 'error', code: 'internal', message: 'Interner Fehler. Bitte neu verbinden.' })
+        try { socket.close(1011, 'Internal error.') } catch { /* ignorieren */ }
+      }
+    })
+
+    function handleMessage(rawData: unknown): void {
+      let raw: unknown
+      try {
+        raw = JSON.parse(String(rawData))
       } catch {
         sendJson(socket, { type: 'error', code: 'invalid_json', message: 'Ungültige JSON-Nachricht.' })
         return
       }
+      const parsed = incomingSchema.safeParse(raw)
+      if (!parsed.success) {
+        sendJson(socket, { type: 'error', code: 'invalid_message', message: 'Unbekannte Nachricht.' })
+        return
+      }
+      const msg: IncomingMsg = parsed.data
 
       // BEITRITT
       if (msg.type === 'teacher_join') {
@@ -438,7 +471,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
           handleStudentAnswer(msg, room)
         }
       }
-    })
+    }
 
     socket.on('close', () => {
       if (roomId === null) return
@@ -458,8 +491,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
     // ---- Innere Hilfsfunktionen ----
 
     function handleTeacherJoin(msg: TeacherJoin): void {
-      const token = cookieToken || msg.token || ''
-      const session = validateSession(db, token)
+      const session = cookieToken ? validateSession(db, cookieToken) : null
       if (!session) {
         sendJson(socket, { type: 'error', code: 'unauthorized', message: 'Ungültige Sitzung.' })
         socket.close(1008, 'Unauthorized.')
@@ -502,8 +534,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
 
     function handleStudentJoin(msg: StudentJoin): void {
       // Schritt 1: Sitzung pruefen - NUR mit Konto (K4, Datenschutz quiz)
-      const studentToken = cookieToken || msg.token || ''
-      const session = validateSession(db, studentToken)
+      const session = cookieToken ? validateSession(db, cookieToken) : null
       if (!session) {
         sendJson(socket, { type: 'error', code: 'login_required', message: 'Quiz erfordert ein Konto. Bitte melde dich an.' })
         socket.close(1008, 'Login required.')
@@ -531,7 +562,7 @@ const quizWsPlugin: FastifyPluginAsync<QuizWsOptions> = async (fastify, opts) =>
       // Schritt 2: PIN pruefen
       const roomRow = db.prepare(
         `SELECT id, class_id, state, pin FROM quiz_rooms WHERE pin = ? AND state != 'ended'`
-      ).get(msg.pin?.toUpperCase()) as { id: number; class_id: number | null; state: string; pin: string } | undefined
+      ).get(msg.pin.trim().toUpperCase()) as { id: number; class_id: number | null; state: string; pin: string } | undefined
 
       if (!roomRow) {
         sendJson(socket, { type: 'error', code: 'invalid_pin', message: 'Ungültiger PIN.' })

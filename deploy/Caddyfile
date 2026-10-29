@@ -27,6 +27,19 @@ tabulasql.de {
 www.tabulasql.de {
 	encode zstd gzip
 
+	# Sicherheits-Header für alle Antworten. Keine Skript-Regeln (CSP für Skripte erst nach eigenem
+	# Test), nur Einbetten in fremde Seiten, Formularziele und Plugins sind ausgeschlossen.
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		Content-Security-Policy "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		-Server
+	}
+
 	# Kontaktformular-Dienst: MUSS vor einer allgemeinen /api/*-Regel stehen.
 	# Caddy prueft handle-Bloecke der Reihe nach; der erste passende gewinnt.
 	handle /api/contact {
@@ -36,10 +49,14 @@ www.tabulasql.de {
 	}
 
 	# Konten-API (compose.backend.yml), freigeschaltet am 25.10.2026.
-	# Caddy leitet WebSocket-Upgrades automatisch weiter. Der API-Server prüft Origin (CSRF)
-	# und protokolliert keine IP-Adressen (K10), deshalb kein X-Real-IP.
+	# Caddy leitet WebSocket-Upgrades automatisch weiter. Der API-Server prüft Origin (CSRF).
+	# X-Real-IP (von Caddy gesetzt, ein mitgeschickter Wert wird überschrieben) dient nur dem
+	# Anmeldeschutz im Arbeitsspeicher: Die API bildet daraus ein flüchtiges HMAC-Kennzeichen und
+	# speichert oder protokolliert die Adresse nicht (K10, server/src/plugins/ratelimit.ts).
 	handle /api/* {
-		reverse_proxy api:3000
+		reverse_proxy api:3000 {
+			header_up X-Real-IP {remote_host}
+		}
 	}
 
 	root * /srv/site

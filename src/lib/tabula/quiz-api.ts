@@ -286,9 +286,9 @@ export type WsInMsg =
 // ---------------------------------------------------------------------------
 
 /** Lehrkraft tritt Raum bei */
-export type WsMsgTeacherJoin = { type: 'teacher_join'; room_id: number; token?: string };
+export type WsMsgTeacherJoin = { type: 'teacher_join'; room_id: number };
 /** Schüler tritt per PIN bei */
-export type WsMsgStudentJoin = { type: 'student_join'; pin: string; token?: string };
+export type WsMsgStudentJoin = { type: 'student_join'; pin: string };
 export type WsMsgNextQuestion = { type: 'next_question' };
 export type WsMsgReveal = { type: 'reveal' };
 export type WsMsgEndQuiz = { type: 'end_quiz' };

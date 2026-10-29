@@ -207,18 +207,24 @@ export function aggregateAndCleanRoom(db: Db, roomId: number): void {
  * Startet alle Jobs in einem Interval-Timer.
  * Gibt eine cleanup-Funktion zurueck, die die Intervalle stoppt.
  */
-export function startJobs(ctx: JobContext): () => void {
-  // Stundlich aufraeuemen
-  const cleanupInterval = setInterval(() => {
+export function startJobs(ctx: JobContext, onError: (job: string, err: unknown) => void = () => {}): () => void {
+  // Ein Fehler in einem Job (z. B. Datenbank kurz gesperrt) darf den Dienst nicht beenden.
+  // Der nächste Lauf versucht es erneut.
+  const safe = (job: string, fn: () => unknown) => async () => {
+    try { await fn() } catch (err) { onError(job, err) }
+  }
+
+  // Stündlich aufräumen
+  const cleanupInterval = setInterval(safe('cleanup', () => {
     runCleanupJob(ctx.db)
     runQuizCleanupJob(ctx.db)
-  }, 60 * 60 * 1000)
+  }), 60 * 60 * 1000)
 
-  // Einmal taeglich: Inaktivitaets-Erinnerungen und Loeschungen
-  const dailyInterval = setInterval(async () => {
+  // Einmal täglich: Inaktivitäts-Erinnerungen und Löschungen
+  const dailyInterval = setInterval(safe('daily', async () => {
     await runInactivityReminderJob(ctx)
     runInactivityDeletionJob(ctx.db)
-  }, 24 * 60 * 60 * 1000)
+  }), 24 * 60 * 60 * 1000)
 
   return () => {
     clearInterval(cleanupInterval)
