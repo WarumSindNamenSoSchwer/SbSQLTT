@@ -270,8 +270,9 @@
 						</div>
 						<div class="field">
 							<label for="cl-name">Name</label>
-							<input id="cl-name" type="text" autocomplete="off" placeholder="so, wie du ihn beim Beitreten geschrieben hast"
+							<input id="cl-name" type="text" autocomplete="off" placeholder="z. B. Lena S."
 								class:err={nameErr} disabled={busy} bind:value={loginName} />
+							<span class="field-hint">Derselbe Name wie beim Beitreten. Groß- und Kleinschreibung ist egal.</span>
 							{#if nameErr}<span class="field-hint err-hint">Bitte gib deinen Namen ein.</span>{/if}
 						</div>
 						<div class="field">
@@ -329,7 +330,9 @@
 					</div>
 					<div class="field">
 						<label for="sr-name">Name</label>
-						<input id="sr-name" type="text" autocomplete="off" class:err={nameErr} disabled={busy} bind:value={loginName} />
+						<input id="sr-name" type="text" autocomplete="off" placeholder="z. B. Lena S." class:err={nameErr} disabled={busy} bind:value={loginName} />
+						<span class="field-hint">Derselbe Name wie beim Beitreten. Groß- und Kleinschreibung ist egal.</span>
+						{#if nameErr}<span class="field-hint err-hint">Bitte gib deinen Namen ein.</span>{/if}
 					</div>
 					<div class="field">
 						<label for="sr-rc">Einmal-Code der Lehrkraft</label>
