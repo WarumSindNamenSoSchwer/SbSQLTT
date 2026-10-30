@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SiteFooter from '$lib/tabula/SiteFooter.svelte';
 	import { siteOrigin, siteHost } from '$lib/tabula/site.js';
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
@@ -269,6 +270,7 @@
 			</div>
 		{/if}
 	{/if}
+	<SiteFooter />
 </div>
 
 <style>

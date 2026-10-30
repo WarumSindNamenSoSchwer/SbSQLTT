@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SiteFooter from '$lib/tabula/SiteFooter.svelte';
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -79,6 +80,7 @@
 			</div>
 		</main>
 	{/if}
+	<SiteFooter />
 </div>
 
 <style>

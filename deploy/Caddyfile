@@ -49,6 +49,10 @@ tabulasql.de {
 	root * /srv/site
 	header /sql/* Cache-Control "public, max-age=31536000"
 	header /_app/immutable/* Cache-Control "public, max-age=31536000, immutable"
+	# Alles andere (HTML, version.json, Sitemaps) bei jedem Aufruf neu prüfen, sonst zeigen
+	# Browser nach einem Deploy stundenlang die alte Seite (heuristisches Caching).
+	@revalidate not path /_app/immutable/* /sql/*
+	header @revalidate Cache-Control "no-cache"
 
 	# Statische Seite. Eigener handle-Block, damit try_files nicht /api/* auf /200.html umschreibt.
 	handle {

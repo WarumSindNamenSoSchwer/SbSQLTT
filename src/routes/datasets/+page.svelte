@@ -2,6 +2,7 @@
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
 	import TopNav from '$lib/tabula/TopNav.svelte';
+	import SiteFooter from '$lib/tabula/SiteFooter.svelte';
 	import G from '$lib/edgar/owl-gen.js';
 	import { BOOKS_SEED } from '$lib/tabula/course/data';
 	import { SCHOOL_SEED } from '$lib/tabula/course/l9-ddl';
@@ -506,6 +507,7 @@ print(df.head())`
 			</section>
 		</div>
 	</main>
+	<SiteFooter />
 </div>
 
 <style>
