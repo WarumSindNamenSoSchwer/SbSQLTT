@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { LIVE as TERMS_LIVE } from '$lib/tabula/terms';
 	// Startseite v12: Markup aus docs/design/v12/export/index.html, als Svelte 5 Runes ohne tb-render.js.
-	import { onMount } from 'svelte';
+	import { onMount, tick as svelteTick } from 'svelte';
 	import G from '$lib/edgar/owl-gen.js';
 	import { tok } from '$lib/tabula/highlight';
 	import { BOOKS_SEED } from '$lib/tabula/lessons';
@@ -93,6 +93,17 @@
 	let dbBusy = $state(false);
 	let menuOpen = $state(false);
 	let reduce = $state(false);
+	// Handy und Tablet hochkant (unter 900px): eigene Sticky-Bühnen. Die Überschrift scrollt weg,
+	// der animierte Teil (data-stage) bleibt stehen. Passt eine Bühne nicht auf den kleinsten
+	// Bildschirm (100svh), bleibt der Abschnitt wie bisher zum Antippen.
+	let mobile = $state(false);
+	type PK = 'teach' | 'stunde' | 'path' | 'role' | 'clause';
+	const DESK_WRAP: Record<PK, string> = { teach: '280vh', stunde: '300vh', path: '320vh', role: '340vh', clause: '300vh' };
+	// Scrollweg in Bildschirmhöhen, wie auf dem Desktop (Wrap-Höhe minus eine Bildschirmhöhe)
+	const PIN_K: Record<PK, number> = { teach: 1.8, stunde: 2.0, path: 2.2, role: 2.4, clause: 2.0 };
+	type MPin = { top: number; h: number; wrap: number; maxStage: number; maxInner: number } | null;
+	const NO_PIN: Record<PK, MPin> = { teach: null, stunde: null, path: null, role: null, clause: null };
+	let mPin = $state<Record<PK, MPin>>({ ...NO_PIN });
 	// Hero-Überschrift wird beim Laden getippt, danach blinkt der Strich weiter (wie in einem Editor)
 	const HERO_LINES = ['SQL lernen.', 'Einfach', 'ausprobieren.'];
 	const HERO_OFFS = HERO_LINES.map((_, i) => HERO_LINES.slice(0, i).reduce((n, l) => n + l.length, 0));
@@ -119,6 +130,19 @@
 	let roleSection: HTMLElement | undefined = $state();
 	let roleViewport: HTMLElement | undefined = $state();
 	let roleTrack: HTMLElement | undefined = $state();
+	let teachInner: HTMLElement | undefined = $state();
+	let stundeInner: HTMLElement | undefined = $state();
+	let pathInner: HTMLElement | undefined = $state();
+	let roleInner: HTMLElement | undefined = $state();
+	let clauseInner: HTMLElement | undefined = $state();
+	let svhProbe: HTMLElement | undefined = $state();
+	let mqRow: HTMLElement | undefined = $state();
+	let ctaBox: HTMLElement | undefined = $state();
+	let teachStage: HTMLElement | undefined = $state();
+	let stundeStage: HTMLElement | undefined = $state();
+	let pathStage: HTMLElement | undefined = $state();
+	let clauseStage: HTMLElement | undefined = $state();
+	let clauseTilesH = $state(320);
 	let owlIcon: { [k: string]: string } = { light: G.icon({}), dark: G.icon(G.DARK) };
 
 	// ---- Derived ----
@@ -218,16 +242,16 @@
 	const phLeft = $derived(((phase[0] + phase[1]) / 2 / 90 * 100) + '%');
 	const phRange = $derived(phase[0] + '–' + phase[1] + ' min');
 
-	// sticky / pinned
-	const stickyPos = $derived(pinned ? 'sticky' : 'relative');
-	const stickyMinH = $derived(pinned ? 'calc(100vh - 68px)' : '0');
-	const teachWrapH = $derived(pinned ? '280vh' : 'auto');
-	const stundeWrapH = $derived(pinned ? '300vh' : 'auto');
-	const pathWrapH = $derived(pinned ? '320vh' : 'auto');
-	const clauseWrapH = $derived(pinned ? '300vh' : 'auto');
-	const roleWrapH = $derived(pinned ? '340vh' : 'auto');
-	const roleOverflow = $derived(pinned ? 'hidden' : 'auto');
-	const clauseIntro = $derived(pinned
+	// sticky / pinned (Desktop: pinned, Handy: mPin je Abschnitt)
+	const pinOf = (k: PK) => pinned || !!mPin[k];
+	const wrapOf = (k: PK) => (pinned ? DESK_WRAP[k] : mPin[k] ? mPin[k]!.wrap + 'px' : 'auto');
+	const stickOf = (k: PK) => {
+		const m = mPin[k];
+		if (pinned) return 'position:sticky;top:68px;min-height:calc(100vh - 68px)';
+		return m ? `position:sticky;top:${m.top}px;min-height:0` : 'position:relative;top:68px;min-height:0';
+	};
+	const roleOverflow = $derived(pinOf('role') ? 'hidden' : 'auto');
+	const clauseIntro = $derived(pinOf('clause')
 		? 'Scrolle weiter: Klausel für Klausel wächst die Abfrage, und die 30 Bücher der Schulbibliothek ordnen sich neu. Du kannst jede Klausel auch selbst an- und ausschalten.'
 		: 'Schalte die Klauseln an und aus. Die Abfrage wächst, und die 30 Bücher der Schulbibliothek ordnen sich neu.');
 
@@ -352,16 +376,42 @@
 		if (marqueeSection) {
 			const r = marqueeSection.getBoundingClientRect();
 			marqueeSection.style.setProperty('--mp', clamp((vh - r.top) / (vh + r.height)).toFixed(4));
+			// Unter 900px rechnet der Entwurf in Prozent der Zeilenbreite (= Bildschirmbreite) und Edgar
+			// bleibt rechts außerhalb. Hier in Pixeln: Edgar läuft von rechts herein und steht ganz im
+			// Bild, solange das Band noch im unteren Teil des Bildschirms ist.
+			if (mobile && mqRow && mqOwlSpan) {
+				const W = innerWidth;
+				const t = clamp((vh - r.top) / (vh * 0.8));
+				const rowR = mqRow.getBoundingClientRect(), o = mqOwlSpan.getBoundingClientRect();
+				const owlC = o.left - rowR.left + o.width / 2;
+				const x1 = W * (1.15 - 0.85 * t) - owlC;
+				marqueeSection.style.setProperty('--mx1', x1.toFixed(1) + 'px');
+				const row2 = mqRow.nextElementSibling as HTMLElement | null;
+				const w2 = row2 ? row2.scrollWidth : W * 3;
+				const x2 = clamp(-0.85 * (w2 - W) + t * 0.6 * (w2 - W), W - w2, 0);
+				marqueeSection.style.setProperty('--mx2', x2.toFixed(1) + 'px');
+			} else {
+				marqueeSection.style.removeProperty('--mx1');
+				marqueeSection.style.removeProperty('--mx2');
+			}
 		}
 
-		// mqOwl
+		// mqOwl: winkt, sobald er ganz im Bild ist (Handy) bzw. ab 85 % der Breite (Desktop)
 		if (mqOwlSpan) {
 			const r = mqOwlSpan.getBoundingClientRect();
-			const w = r.left <= innerWidth * 0.85 && r.right > 0 && r.bottom > 0 && r.top < vh;
+			const w = mobile
+				? r.left >= -r.width * 0.1 && r.right <= innerWidth + r.width * 0.1 && r.bottom > 0 && r.top < vh
+				: r.left <= innerWidth * 0.85 && r.right > 0 && r.bottom > 0 && r.top < vh;
 			if (w !== mqWave) mqWave = w;
 		}
 
-		if (!pinned) return;
+		// CTA: ohne Maus (Touch) wacht Edgar auf, sobald die Karte gut im Bild ist
+		if (ctaBox && !awake && !canHover) {
+			const r = ctaBox.getBoundingClientRect();
+			if (r.top < vh * 0.7 && r.bottom > 0) wake();
+		}
+
+		if (!pinned) { if (mobile) mobileTick(); return; }
 
 		const prog = (el: HTMLElement) => {
 			const r = el.getBoundingClientRect();
@@ -409,6 +459,122 @@
 		}
 	}
 	let lastClause = -1;
+	let canHover = true;
+
+	// ---- Handy: Fortschritt der Sticky-Bühnen (gleiche Schritte wie am Desktop) ----
+	function mobileProg(k: PK, el: HTMLElement | undefined): number | null {
+		const m = mPin[k];
+		if (!m || !el) return null;
+		const r = el.getBoundingClientRect();
+		return clamp((m.top - r.top) / Math.max(1, m.wrap - m.h));
+	}
+	function mobileTick() {
+		let p = mobileProg('clause', clauseSection);
+		if (p !== null && clauseSection) applyClause(clauseSection, p);
+		p = mobileProg('path', pathSection);
+		if (p !== null) applyPath(p);
+		p = mobileProg('role', roleSection);
+		if (p !== null && roleSection && roleTrack && roleViewport) applyRole(p);
+		p = mobileProg('stunde', stundeSection);
+		if (p !== null && stundeSection) applyStunde(stundeSection, p);
+		p = mobileProg('teach', teachSection);
+		if (p !== null && teachSection) applyTeach(teachSection, p);
+	}
+	function applyClause(sec: HTMLElement, p: number) {
+		sec.style.setProperty('--cp', p.toFixed(3));
+		const n = Math.min(4, Math.floor(p * 5.2));
+		if (n !== lastClause) {
+			lastClause = n;
+			const on: Record<string, boolean> = {};
+			CLAUSES.slice(0, n).forEach((x) => { on[x.id] = true; });
+			clauseOn = on;
+			if (n) flashClause(['curious', 'curious', 'lookaround', 'surprised'][n - 1]);
+		}
+	}
+	function applyPath(p: number) {
+		const s = Math.min(10, Math.round(p * 10));
+		if (s !== selIdx) selIdx = s;
+	}
+	function applyRole(p: number) {
+		const max = Math.max(0, roleTrack!.scrollWidth - roleViewport!.clientWidth);
+		roleSection!.style.setProperty('--rp', p.toFixed(3));
+		roleTrack!.style.setProperty('--rx', (p * max).toFixed(1));
+	}
+	function applyStunde(sec: HTMLElement, p: number) {
+		sec.style.setProperty('--sp', p.toFixed(3));
+		const s = Math.min(4, Math.floor(p * 5));
+		if (s !== phaseIdx) phaseIdx = s;
+	}
+	function applyTeach(sec: HTMLElement, p: number) {
+		sec.style.setProperty('--tp', p.toFixed(3));
+		const s = Math.min(3, Math.floor(p * 4));
+		if (s !== tStep) tStep = s;
+	}
+
+	// ---- Handy: Bühnen ausmessen ----
+	// Die Überschrift eines Abschnitts scrollt normal weg, der animierte Teil (Stage) bleibt unter der
+	// Kopfzeile stehen. Maßstab ist 100svh (Browserleisten sichtbar), damit nichts unter der Leiste liegt.
+	const HEAD = 61, GAP = 10, PROG = 30;
+	let lastMeasure = '';
+	async function measurePins(force = false) {
+		const wasMobile = mobile;
+		mobile = !pinned && innerWidth < 900;
+		if (!mobile || reduce) {
+			if (Object.values(mPin).some(Boolean)) mPin = { ...NO_PIN };
+			return;
+		}
+		const svh = svhProbe?.offsetHeight || innerHeight;
+		const key = innerWidth + 'x' + svh;
+		if (!force && key === lastMeasure && wasMobile) return;
+		lastMeasure = key;
+		if (!wasMobile) await svelteTick();
+		for (let pass = 0; pass < 2; pass++) {
+			const avail = svh - HEAD - GAP * 2;
+			const next: Record<PK, MPin> = { ...NO_PIN };
+			const pairs: [PK, HTMLElement | undefined, HTMLElement | undefined][] = [
+				['teach', teachInner, teachStage], ['stunde', stundeInner, stundeStage],
+				['path', pathInner, pathStage], ['role', roleInner, roleViewport], ['clause', clauseInner, clauseStage]
+			];
+			let tilesH = clauseTilesH;
+			for (const [k, inner, stage] of pairs) {
+				if (!inner || !stage) continue;
+				const ir = inner.getBoundingClientRect();
+				const stTop = stage.getBoundingClientRect().top - ir.top;
+				const padB = parseFloat(getComputedStyle(inner).paddingBottom) || 0;
+				const progAdd = mPin[k] ? 0 : PROG;
+				let ih = ir.height + progAdd;
+				if (k === 'clause' && tileBox) {
+					// Kacheln füllen den Rest der Bühne, behaltene Bücher stehen ohnehin oben
+					const tTop = tileBox.getBoundingClientRect().top - ir.top;
+					tilesH = Math.floor(avail - (tTop - stTop) - PROG - padB);
+					if (tilesH < 150) continue;
+					ih = tTop + tilesH + PROG + padB;
+				}
+				const stageH = ih - stTop;
+				if (stageH > avail) continue;
+				const top = ih <= avail
+					? HEAD + GAP + (avail - ih) / 2
+					: HEAD + GAP - stTop + Math.min(GAP, (avail - stageH) / 2);
+				next[k] = { top: Math.round(top), h: Math.round(ih), wrap: Math.round(ih + PIN_K[k] * svh), maxStage: Math.round(stageH), maxInner: Math.round(ih) };
+			}
+			clauseTilesH = tilesH;
+			const same = JSON.stringify(next) === JSON.stringify(mPin);
+			mPin = next;
+			await svelteTick();
+			if (same) break;
+		}
+		tick();
+	}
+
+	// Lernpfad: die Spur ist breiter als das Handy, also zur aktuellen Lektion mitscrollen
+	$effect(() => {
+		const i = selIdx;
+		if (!mobile || !pathStage) return;
+		const track = pathStage.firstElementChild as HTMLElement | null;
+		if (!track) return;
+		const x = ((i + 0.5) / 11) * track.offsetWidth - pathStage.clientWidth / 2;
+		pathStage.scrollTo({ left: Math.max(0, x), behavior: reduce ? 'auto' : 'smooth' });
+	});
 
 	function onScroll() {
 		if (!raf) raf = requestAnimationFrame(() => { raf = 0; tick(); });
@@ -420,6 +586,7 @@
 			const w = Math.round(tileBox.getBoundingClientRect().width);
 			if (w && w !== boxW) boxW = w;
 		}
+		measurePins();
 		onScroll();
 	}
 
@@ -482,6 +649,8 @@
 
 		reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		pinned = !reduce && innerWidth >= 900 && innerHeight >= 680;
+		mobile = !pinned && innerWidth < 900;
+		canHover = matchMedia('(hover: hover)').matches;
 
 		// Owl icons are prepared at declaration (otherwise the first paint stores an empty icon)
 
@@ -491,6 +660,8 @@
 
 		paintOwls();
 		tick();
+		measurePins(true);
+		document.fonts?.ready.then(() => measurePins(true));
 
 		window.addEventListener('scroll', onScroll, { passive: true });
 		window.addEventListener('resize', onResize);
@@ -641,9 +812,100 @@
 		.lp-nav-desktop { display: none !important; }
 		.lp-nav-mobile { display: grid !important; }
 	}
+
+	/* ---- Handy und Tablet hochkant (unter 900px). Desktop bleibt exakt wie im Entwurf. ---- */
+	@media (max-width: 899px) {
+		/* Mehr Luft zwischen den Abschnitten, damit sie sich klar voneinander absetzen */
+		.lp .sec-p { padding-top: 136px !important; }
+		.lp .sec-p-s { padding-top: 104px !important; }
+		.lp .sec-m { margin-top: 136px !important; }
+
+		/* Hero: Edgar etwas kleiner, Sprechblase bleibt links neben ihm im Bild */
+		.lp .hero-owl-box { right: 12px !important; width: 132px !important; height: 122px !important; }
+		.lp .hero-owl { width: 132px !important; height: 119px !important; }
+		.lp .hero-bubble { right: 150px !important; bottom: calc(100% + 40px) !important; max-width: calc(100% - 160px) !important; font-size: 14px !important; }
+		/* Schema als Chips statt langer Liste */
+		.lp .schema-aside { flex: 1 1 100% !important; min-width: 0 !important; border-right: 0 !important; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 16px !important; }
+		.lp .schema-aside > p { flex: 1 1 100%; margin-left: 0 !important; }
+		.lp .schema-aside > button { width: auto !important; min-height: 32px !important; border: 1px solid var(--line) !important; background: var(--surface) !important; gap: 6px !important; }
+		.lp .editor-col { border-right: 0 !important; border-bottom: 1px solid var(--line); }
+
+		/* Lehrkräfte: Reiter als 2x2-Raster, Beschreibung darunter, Karte kompakter */
+		.lp .t-compact { gap: 14px !important; margin-top: 24px !important; }
+		.lp .t-compact .t-tabs { flex: 1 1 100% !important; max-width: none !important; display: grid !important; grid-template-columns: 1fr 1fr; border-top: 0 !important; gap: 6px; }
+		.lp .t-compact .t-tab { padding: 10px 12px !important; border: 1px solid var(--line) !important; border-radius: 10px; box-shadow: none !important; }
+		.lp .t-compact .t-tab[aria-selected='true'] { border-color: var(--blue) !important; background: var(--blue-soft) !important; }
+		.lp .t-compact .t-tab > span:first-child { font-size: 15px !important; line-height: 1.25; }
+		.lp .t-compact .t-tab-desc, .lp .t-compact .t-demo { display: none !important; }
+		.lp .t-compact .t-cardcol { padding-top: 44px !important; }
+		.lp .t-compact .t-owl { width: 88px !important; height: 79px !important; top: -30px !important; right: 16px !important; }
+		.lp .t-compact .t-card { min-height: 0 !important; }
+		/* Karteninhalt kompakter und gleich hoch, damit die Bühne beim Wechsel nicht springt */
+		.lp .t-compact .t-desc-m { min-height: calc(3 * 1.5em); font-size: 14px !important; line-height: 1.5 !important; }
+		.lp .t-compact .t-card { height: 300px; }
+		@media (max-height: 700px) {
+			.lp .t-compact .t-card { height: 276px; }
+			.lp .t-compact .t-cardcol { padding-top: 34px !important; }
+			.lp .t-compact .t-owl { width: 72px !important; height: 65px !important; top: -26px !important; }
+			.lp .t-compact .t-tab { padding: 8px 10px !important; }
+			.lp .t-compact { gap: 10px !important; }
+			.lp .t-compact .t-s1 tbody tr:last-child { display: none; }
+			.lp .t-compact .t-desc-m { font-size: 13px !important; min-height: calc(3 * 1.45em); line-height: 1.45 !important; }
+		}
+		.lp .t-compact .t-s0 { padding: 16px !important; gap: 12px !important; }
+		.lp .t-compact .t-code { flex: 1 1 100% !important; min-width: 0 !important; flex-direction: row !important; flex-wrap: wrap; justify-content: center; gap: 4px 10px !important; padding: 10px !important; }
+		.lp .t-compact .t-code > span:last-child { flex: 1 1 100%; text-align: center; }
+		.lp .t-compact .t-joined { margin-bottom: 10px !important; }
+		.lp .t-compact .t-joined strong { font-size: 36px !important; }
+		.lp .t-compact .t-chips { gap: 5px !important; }
+		.lp .t-compact .t-chips > span { font-size: 12px !important; padding: 3px 8px !important; }
+		.lp .t-compact .t-s1 > div > div { padding: 10px 14px !important; }
+		.lp .t-compact .t-s1 strong { font-size: 24px !important; }
+		.lp .t-compact .t-s1 th, .lp .t-compact .t-s1 td { padding: 7px 14px !important; }
+		.lp .t-compact .t-s2 { padding: 16px !important; gap: 10px !important; }
+		.lp .t-compact .t-s3 { padding: 14px 16px !important; }
+		.lp .t-compact .t-s3 > p { margin-bottom: 10px !important; }
+		.lp .t-compact .t-s3 > div { gap: 6px !important; }
+		.lp .t-compact .t-s3 > div > div { padding: 9px 12px !important; font-size: 14px !important; }
+
+		/* Doppelstunde und Lernpfad: Textblock immer gleich hoch, Edgar und Zahl etwas kleiner */
+		.lp .s-text { margin-top: 20px !important; padding-top: 16px !important; min-height: 210px; align-content: flex-start; }
+		.lp .s-text h3 { font-size: 22px !important; }
+		.lp .s-text p:not(:first-child) { font-size: 15px !important; line-height: 1.55 !important; }
+		.lp .p-owl { width: 96px !important; }
+		.lp .p-track { padding-top: 96px !important; }
+		.lp .p-text { min-height: 250px; align-content: flex-start; gap: 6px 16px !important; }
+		.lp .p-num { font-size: 72px !important; }
+		.lp .p-text h3 { font-size: 22px !important; }
+		.lp .p-text p { font-size: 14px !important; }
+
+		/* Klauseln: Schalter untereinander, Eule und Zähler daneben, Kacheln füllen den Rest */
+		.lp .c-compact .c-left { display: grid; grid-template-columns: max-content 1fr; grid-template-areas: 'h h' 'i i' 't c' 'q q'; column-gap: 12px; }
+		.lp .c-compact .c-left > h2 { grid-area: h; }
+		.lp .c-compact .c-left > p { grid-area: i; }
+		.lp .c-compact .c-toggles { grid-area: t; display: flex !important; flex-direction: column; gap: 5px !important; margin-top: 20px !important; }
+		.lp .c-compact .c-toggle { height: 34px !important; padding: 0 12px 0 8px !important; gap: 8px !important; font-size: 12px !important; }
+		.lp .c-compact .c-count { grid-area: c; margin-top: 20px !important; flex-direction: column; justify-content: center; gap: 4px !important; text-align: center; }
+		.lp .c-compact .c-owl { width: 64px !important; height: 58px !important; }
+		.lp .c-compact .c-count p:first-child { font-size: 36px !important; }
+		.lp .c-compact .c-count p:last-child { font-size: 12px !important; line-height: 1.35; }
+		.lp .c-compact .c-pre { grid-area: q; margin-top: 10px !important; min-height: 0 !important; height: 122px; padding: 10px 12px !important; font-size: 12.5px !important; overflow: hidden; }
+		.lp .c-tiles.c-clip { overflow: hidden; -webkit-mask-image: linear-gradient(#000 calc(100% - 36px), transparent); mask-image: linear-gradient(#000 calc(100% - 36px), transparent); }
+
+		/* FAQ: Überschrift steht über den Fragen, also nicht mitlaufen lassen (würde sie verdecken) */
+		.lp .faq-h { position: static !important; }
+
+		/* Lernpfad: Spur breiter, damit die Bereichsnamen unter den Lektionen Platz haben */
+		.lp .p-track { min-width: 1040px !important; }
+		/* Sticky-Bühnen: weniger Rand innen, damit sie auch auf kleinen Handys passen */
+		.lp .sec-m > div { padding-bottom: 20px !important; }
+		.lp #lehrkraefte > div { padding-top: 32px !important; }
+	}
 </style>
 
 <div class="lp">
+  <!-- Misst die kleinste Bildschirmhöhe (Browserleisten sichtbar), stabil beim Scrollen -->
+  <div bind:this={svhProbe} aria-hidden="true" style="position:fixed;top:0;left:0;width:0;height:100vh;height:100svh;visibility:hidden;pointer-events:none"></div>
   <!-- Header -->
   <header style="position:sticky;top:0;z-index:40;background:var(--bg);border-bottom:1px solid var(--line)">
     <div style="max-width:1760px;margin:0 auto;padding:0 clamp(16px,4vw,64px);min-height:60px;display:flex;align-items:center;gap:16px">
@@ -728,10 +990,10 @@
 
       <!-- Studio -->
       <div id="studio" style="position:relative;margin-top:clamp(150px,18vh,220px)">
-        <div aria-hidden="true" style="position:absolute;right:clamp(16px,6%,120px);bottom:100%;width:180px;height:166px;overflow:hidden;z-index:3;pointer-events:none">
+        <div aria-hidden="true" class="hero-owl-box" style="position:absolute;right:clamp(16px,6%,120px);bottom:100%;width:180px;height:166px;overflow:hidden;z-index:3;pointer-events:none">
           <span bind:this={edgarSpan} data-owl={heroFbData.owl} class="hero-owl" style="position:absolute;left:0;bottom:-4px;width:180px;height:162px;transform:translateY(calc((1 - var(--hp,1)) * 105%)) rotate(calc((1 - var(--hp,1)) * 8deg));transform-origin:50% 100%;will-change:transform"></span>
         </div>
-        <p aria-live="polite" style="position:absolute;right:calc(clamp(16px,6%,120px) + 192px);bottom:calc(100% + 56px);margin:0;padding:10px 14px;max-width:260px;border:1px solid var(--line);border-radius:12px 12px 2px 12px;background:var(--surface);font-size:15px;line-height:1.4;color:var(--text);text-wrap:balance;opacity:{heroDocked ? 1 : 0};transform:translateY({heroDocked ? '0' : '10px'});transition:opacity .35s ease, transform .5s cubic-bezier(.34,1.56,.64,1)">{heroFbData.bubble}</p>
+        <p aria-live="polite" class="hero-bubble" style="position:absolute;right:calc(clamp(16px,6%,120px) + 192px);bottom:calc(100% + 56px);margin:0;padding:10px 14px;max-width:260px;border:1px solid var(--line);border-radius:12px 12px 2px 12px;background:var(--surface);font-size:15px;line-height:1.4;color:var(--text);text-wrap:balance;opacity:{heroDocked ? 1 : 0};transform:translateY({heroDocked ? '0' : '10px'});transition:opacity .35s ease, transform .5s cubic-bezier(.34,1.56,.64,1)">{heroFbData.bubble}</p>
         <div style="position:relative;z-index:2;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 22px;border-bottom:1px solid var(--line)">
             <span style="font-size:15px;font-weight:600">Probier es aus</span>
@@ -740,7 +1002,7 @@
             <span style="font-size:13px;color:var(--muted)">Aus Lektion 3 · Mit WHERE filtern</span>
           </div>
           <div style="display:flex;flex-wrap:wrap">
-            <aside aria-label="Schema books" style="flex:0 1 230px;min-width:200px;border-right:1px solid var(--line);padding:16px 10px;background:var(--bg)">
+            <aside aria-label="Schema books" class="schema-aside" style="flex:0 1 230px;min-width:200px;border-right:1px solid var(--line);padding:16px 10px;background:var(--bg)">
               <p style="margin:0 0 8px 8px;font:600 13px 'IBM Plex Mono',monospace">books <span style="font-weight:400;color:var(--muted)">· 30 Zeilen</span></p>
               {#each BOOK_COLS as [name, type]}
                 <button type="button" onclick={() => insertHero(name)} style="width:100%;display:flex;justify-content:space-between;gap:8px;min-height:30px;padding:0 8px;border:0;border-radius:6px;background:transparent;cursor:pointer;font:13px 'IBM Plex Mono',monospace;color:var(--text);text-align:left" data-hv="9">
@@ -749,7 +1011,7 @@
               {/each}
               <p style="margin:10px 8px 0;font-size:12px;line-height:1.5;color:var(--muted)">Klick fügt den Namen in die Abfrage ein.</p>
             </aside>
-            <div style="flex:1 1 440px;min-width:0;border-right:1px solid var(--line);display:flex;flex-direction:column">
+            <div class="editor-col" style="flex:1 1 440px;min-width:0;border-right:1px solid var(--line);display:flex;flex-direction:column">
               <div style="padding:22px 24px 18px">
                 <h2 style="margin:0 0 6px;font-size:clamp(20px,1.6vw,26px);font-weight:600;letter-spacing:-.015em">Welche Bücher sind nach 2020 erschienen?</h2>
                 <p style="margin:0;font-size:15px;color:var(--muted)">Zeige title und year.</p>
@@ -813,7 +1075,7 @@
     </section>
 
     <!-- Lehrer kurz -->
-    <section id="lehrer-kurz" aria-label="Für Lehrkräfte kurz" style="max-width:1760px;margin:0 auto;padding:clamp(80px,11vh,140px) clamp(20px,4vw,64px) 0">
+    <section id="lehrer-kurz" aria-label="Für Lehrkräfte kurz" class="sec-p" style="max-width:1760px;margin:0 auto;padding:clamp(80px,11vh,140px) clamp(20px,4vw,64px) 0">
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:32px clamp(32px,4vw,80px);padding:clamp(28px,3.5vw,56px);border-radius:22px;background:var(--surface);border:1px solid var(--line)">
         <span data-owl="raisehand" style="flex:none;width:clamp(110px,9vw,160px);aspect-ratio:200/180"></span>
         <div style="flex:1 1 300px;min-width:0">
@@ -834,48 +1096,53 @@
     </section>
 
     <!-- Marquee -->
-    <section bind:this={marqueeSection} aria-hidden="true" style="margin-top:clamp(96px,14vh,180px);overflow:hidden;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-      <div style="display:flex;align-items:center;gap:.35em;white-space:nowrap;font-size:clamp(64px,12vw,250px);line-height:1;font-weight:700;letter-spacing:-.05em;transform:translateX(calc(var(--mp,0) * -38% + 2%));will-change:transform">
+    <section bind:this={marqueeSection} aria-hidden="true" class="sec-m" style="margin-top:clamp(96px,14vh,180px);overflow:hidden;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+      <!-- Handy: --mx1/--mx2 in px aus tick(), damit Edgar ganz durchs Bild läuft. Desktop: Prozent wie im Entwurf. -->
+      <div bind:this={mqRow} style="display:flex;align-items:center;gap:.35em;white-space:nowrap;font-size:clamp(64px,12vw,250px);line-height:1;font-weight:700;letter-spacing:-.05em;transform:translateX(var(--mx1, calc(var(--mp,0) * -38% + 2%)));will-change:transform">
         <span>SELECT</span><span style="color:var(--blue)">*</span><span>FROM</span><span bind:this={mqOwlSpan} data-owl={mqWave ? 'wave' : 'lookaround'} style="display:inline-block;width:1.05em;height:.95em;flex:none"></span><span>WHERE</span><span style="color:var(--blue)">JOIN</span><span>GROUP BY</span>
       </div>
-      <div style="display:flex;gap:.35em;white-space:nowrap;font-size:clamp(64px,12vw,250px);line-height:1;font-weight:700;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:2px var(--blue);transform:translateX(calc(var(--mp,0) * 38% - 46%));will-change:transform">
+      <div style="display:flex;gap:.35em;white-space:nowrap;font-size:clamp(64px,12vw,250px);line-height:1;font-weight:700;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:2px var(--blue);transform:translateX(var(--mx2, calc(var(--mp,0) * 38% - 46%)));will-change:transform">
         <span>ORDER BY</span><span>HAVING</span><span>LIMIT</span><span>CREATE TABLE</span><span>PRIMARY KEY</span>
       </div>
     </section>
 
     <!-- Lehrkräfte (sticky) -->
-    <section bind:this={teachSection} id="lehrkraefte" aria-label="Für Lehrkräfte" style="position:relative;height:{teachWrapH};margin-top:clamp(64px,10vh,140px);background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-      <div style="position:{stickyPos};top:68px;min-height:{stickyMinH};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:40px clamp(20px,4vw,64px)">
+    <section bind:this={teachSection} id="lehrkraefte" aria-label="Für Lehrkräfte" class="sec-m" style="position:relative;height:{wrapOf('teach')};margin-top:clamp(64px,10vh,140px);background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+      <div bind:this={teachInner} style="{stickOf('teach')};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:40px clamp(20px,4vw,64px)">
         <div style="display:flex;flex-wrap:wrap;gap:20px 64px;align-items:flex-end;justify-content:space-between">
           <h2 style="margin:0;font-size:clamp(36px,4.4vw,84px);line-height:.98;font-weight:700;letter-spacing:-.045em;max-width:14ch">Den Lernstand sehen. Gezielt unterstützen.</h2>
           <p style="margin:0;max-width:440px;font-size:clamp(16px,1.15vw,19px);line-height:1.6;color:var(--muted)">Von der ersten Stunde bis zur Wiederholung: So begleitet Tabula Ihren Unterricht.</p>
+          {#if mobile}<a href="/kontakt" class="t-demo-m" style="display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:10px;background:var(--primary);color:#fff;text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap">Demo anfragen</a>{/if}
         </div>
-        <div style="margin-top:clamp(28px,4vh,48px);display:flex;flex-wrap:wrap;gap:32px clamp(32px,4vw,72px)">
-          <div role="tablist" aria-label="Unterrichtsablauf" style="flex:1 1 300px;max-width:460px;display:flex;flex-direction:column;border-top:1px solid var(--line)">
+        <div bind:this={teachStage} class:t-compact={mobile} style="margin-top:clamp(28px,4vh,48px);display:flex;flex-wrap:wrap;gap:32px clamp(32px,4vw,72px)">
+          <div role="tablist" aria-label="Unterrichtsablauf" class="t-tabs" style="flex:1 1 300px;max-width:460px;display:flex;flex-direction:column;border-top:1px solid var(--line)">
             {#each T_STEPS as ts, i}
-              <button type="button" role="tab" aria-selected={i === tStep ? 'true' : 'false'} onclick={() => tStep = i} style="display:flex;flex-direction:column;gap:4px;text-align:left;padding:16px 0 16px 18px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;opacity:{i === tStep ? 1 : 0.5};box-shadow:inset 3px 0 0 {i === tStep ? 'var(--blue)' : 'transparent'};transition:opacity .3s,box-shadow .3s" data-hv="15">
+              <button type="button" role="tab" class="t-tab" aria-selected={i === tStep ? 'true' : 'false'} onclick={() => tStep = i} style="display:flex;flex-direction:column;gap:4px;text-align:left;padding:16px 0 16px 18px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;opacity:{i === tStep ? 1 : 0.5};box-shadow:inset 3px 0 0 {i === tStep ? 'var(--blue)' : 'transparent'};transition:opacity .3s,box-shadow .3s" data-hv="15">
                 <span style="font-size:clamp(17px,1.2vw,20px);font-weight:600">{ts[0]}</span>
-                <span style="font-size:14px;line-height:1.55;color:var(--muted)">{ts[1]}</span>
+                <span class="t-tab-desc" style="font-size:14px;line-height:1.55;color:var(--muted)">{ts[1]}</span>
               </button>
             {/each}
-            <a href="/kontakt" style="margin-top:24px;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 22px;border-radius:10px;background:var(--primary);color:#fff;text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap" data-hv="16">Demo anfragen</a>
+            <a href="/kontakt" class="t-demo" style="margin-top:24px;align-self:flex-start;display:inline-flex;align-items:center;gap:10px;height:48px;padding:0 22px;border-radius:10px;background:var(--primary);color:#fff;text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap" data-hv="16">Demo anfragen</a>
           </div>
-          <div style="flex:999 1 520px;min-width:0;position:relative;padding-top:56px">
-            <span data-owl={T_STEPS[tStep][2]} style="position:absolute;right:28px;top:-36px;width:110px;height:99px;z-index:2"></span>
-            <div style="position:relative;background:var(--bg);border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:clamp(340px,40vh,460px)">
+          {#if mobile}
+            {#key tStep}<p class="t-desc-m" aria-live="polite" style="flex:1 1 100%;margin:0;font-size:15px;line-height:1.55;color:var(--muted);animation:tbIn .35s ease-out">{T_STEPS[tStep][1]}</p>{/key}
+          {/if}
+          <div class="t-cardcol" style="flex:999 1 520px;min-width:0;position:relative;padding-top:56px">
+            <span data-owl={T_STEPS[tStep][2]} class="t-owl" style="position:absolute;right:28px;top:-36px;width:110px;height:99px;z-index:2"></span>
+            <div class="t-card" style="position:relative;background:var(--bg);border:1px solid var(--line);border-radius:16px;overflow:hidden;min-height:clamp(340px,40vh,460px)">
               <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--line);font-size:13px">
                 <span style="font-weight:600">Informatik 10b</span><span style="color:var(--muted)">Fokus: Mit WHERE filtern</span><span style="flex:1"></span><span style="font:11px 'IBM Plex Mono',monospace;color:var(--muted)">Beispieldaten</span>
               </div>
               {#if tStep === 0}
-                <div style="display:flex;flex-wrap:wrap;gap:24px;padding:28px;animation:tbIn .35s ease-out">
-                  <div style="flex:0 1 260px;min-width:220px;display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface)">
+                <div class="t-s0" style="display:flex;flex-wrap:wrap;gap:24px;padding:28px;animation:tbIn .35s ease-out">
+                  <div class="t-code" style="flex:0 1 260px;min-width:220px;display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface)">
                     <span style="font-size:13px;color:var(--muted)">Klassencode</span>
                     <strong style="font:600 clamp(15px,1.25vw,19px) 'IBM Plex Mono',monospace;text-align:center;overflow-wrap:anywhere">sonne-apfel-kugel-33</strong>
                     <span style="font-size:13px;color:var(--muted)">app.tabulasql.de/beitreten</span>
                   </div>
                   <div style="flex:1 1 240px">
-                    <p style="margin:0 0 14px;display:flex;align-items:baseline;gap:8px"><strong style="font-size:48px;font-weight:700;color:var(--blue);line-height:1;font-variant-numeric:tabular-nums">17</strong><span style="font-size:15px;color:var(--muted)">von 24 beigetreten</span></p>
-                    <div style="display:flex;flex-wrap:wrap;gap:6px">
+                    <p class="t-joined" style="margin:0 0 14px;display:flex;align-items:baseline;gap:8px"><strong style="font-size:48px;font-weight:700;color:var(--blue);line-height:1;font-variant-numeric:tabular-nums">17</strong><span style="font-size:15px;color:var(--muted)">von 24 beigetreten</span></p>
+                    <div class="t-chips" style="display:flex;flex-wrap:wrap;gap:6px">
                       {#each JOINED as j}<span style="font-size:13px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:var(--surface)">{j}</span>{/each}
                       <span style="font-size:13px;padding:4px 10px;border-radius:20px;border:1px solid var(--blue);color:var(--blue);background:var(--blue-soft)">Finn</span>
                     </div>
@@ -883,7 +1150,7 @@
                 </div>
               {/if}
               {#if tStep === 1}
-                <div style="animation:tbIn .35s ease-out">
+                <div class="t-s1" style="animation:tbIn .35s ease-out">
                   <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)">
                     <div style="padding:18px;border-right:1px solid var(--line)"><strong style="font-size:32px;font-weight:600;font-variant-numeric:tabular-nums">14</strong><p style="margin:2px 0 0;font-size:13px;color:var(--muted)">Fertig</p></div>
                     <div style="padding:18px;border-right:1px solid var(--line)"><strong style="font-size:32px;font-weight:600;font-variant-numeric:tabular-nums">6</strong><p style="margin:2px 0 0;font-size:13px;color:var(--muted)">In Arbeit</p></div>
@@ -900,14 +1167,14 @@
                 </div>
               {/if}
               {#if tStep === 2}
-                <div style="padding:24px 28px;display:flex;flex-direction:column;gap:12px;animation:tbIn .35s ease-out">
+                <div class="t-s2" style="padding:24px 28px;display:flex;flex-direction:column;gap:12px;animation:tbIn .35s ease-out">
                   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><strong style="font-size:19px;font-weight:600">Mia K.</strong><span style="font-size:13px;color:var(--err)">Braucht Hilfe</span></div>
                   <div style="border:1px solid var(--line);border-radius:10px;background:var(--code-bg);padding:14px 16px;font:14px/1.6 'IBM Plex Mono',monospace;color:var(--text)">SELECT title year FROM books WHERE year > 2015</div>
                   <div style="padding:12px 16px;border-radius:8px;background:var(--err-bg);font-size:14px;color:var(--err)">Syntaxfehler: Komma zwischen title und year fehlt.</div>
                 </div>
               {/if}
               {#if tStep === 3}
-                <div style="padding:24px 28px;animation:tbIn .35s ease-out">
+                <div class="t-s3" style="padding:24px 28px;animation:tbIn .35s ease-out">
                   <p style="margin:0 0 16px;font-size:14px;color:var(--muted)">Frage: Welche SQL-Klausel filtert Zeilen?</p>
                   <div style="display:flex;flex-direction:column;gap:8px">
                     {#each ANSWERS as an}
@@ -921,57 +1188,57 @@
             </div>
           </div>
         </div>
-        {#if pinned}
+        {#if pinOf('teach')}
           <div aria-hidden="true" style="margin-top:28px;height:2px;background:var(--line);border-radius:1px;overflow:hidden"><div style="height:100%;width:calc(var(--tp,0) * 100%);background:var(--blue)"></div></div>
         {/if}
       </div>
     </section>
 
     <!-- Doppelstunde -->
-    <section bind:this={stundeSection} id="stunde" aria-label="Ablauf einer Doppelstunde" style="position:relative;height:{stundeWrapH};margin-top:clamp(64px,10vh,140px)">
-      <div style="position:{stickyPos};top:68px;min-height:{stickyMinH};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:32px clamp(20px,4vw,64px)">
+    <section bind:this={stundeSection} id="stunde" aria-label="Ablauf einer Doppelstunde" class="sec-m" style="position:relative;height:{wrapOf('stunde')};margin-top:clamp(64px,10vh,140px)">
+      <div bind:this={stundeInner} style="{stickOf('stunde')};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:32px clamp(20px,4vw,64px)">
         <div style="display:flex;flex-wrap:wrap;gap:20px 64px;align-items:flex-end;justify-content:space-between">
           <h2 style="margin:0;font-size:clamp(36px,4.4vw,84px);line-height:.98;font-weight:700;letter-spacing:-.045em;max-width:14ch">Eine Doppelstunde mit Tabula.</h2>
           <p style="margin:0;max-width:440px;font-size:clamp(16px,1.15vw,19px);line-height:1.6;color:var(--muted)">Ein Beispiel für 90 Minuten: wiederholen, selbst üben, gemeinsam besprechen.</p>
         </div>
-        <div style="margin-top:clamp(32px,5vh,56px);position:relative;padding-top:clamp(100px,10vw,150px)">
+        <div bind:this={stundeStage} style="margin-top:clamp(32px,5vh,56px);position:relative;padding-top:clamp(100px,10vw,150px)">
           <span data-owl={phase[4]} style="position:absolute;top:0;left:{phLeft};width:clamp(100px,8vw,150px);aspect-ratio:200/180;transform:translateX(-50%);transition:left .7s cubic-bezier(.16,1,.3,1);pointer-events:none"></span>
           <div role="tablist" aria-label="Phasen der Doppelstunde" style="display:flex;gap:4px;height:64px">
             {#each PHASES as ph, i}
               <button type="button" role="tab" aria-selected={i === phaseIdx ? 'true' : 'false'}
-                onmouseenter={() => { if (!pinned && i !== phaseIdx) phaseIdx = i; }}
+                onmouseenter={() => { if (!pinOf('stunde') && i !== phaseIdx) phaseIdx = i; }}
                 onfocus={() => phaseIdx = i}
                 onclick={() => phaseIdx = i}
                 style="flex:{ph[1] - ph[0]} 1 0;min-width:0;display:flex;align-items:center;justify-content:center;padding:0 8px;border:1px solid {i === phaseIdx ? 'var(--primary)' : 'var(--line)'};border-radius:10px;background:{i === phaseIdx ? 'var(--primary)' : 'var(--surface)'};color:{i === phaseIdx ? '#fff' : 'var(--muted)'};font:600 14px 'IBM Plex Mono',monospace;cursor:pointer;transition:background .25s,border-color .25s,color .25s;overflow:hidden;white-space:nowrap">
-                {ph[1] - ph[0] >= 10 ? (ph[1] - ph[0]) + ' min' : (ph[1] - ph[0]) + '′'}
+                {ph[1] - ph[0] >= (mobile ? 20 : 10) ? (ph[1] - ph[0]) + ' min' : (ph[1] - ph[0]) + '′'}
               </button>
             {/each}
           </div>
           <div style="display:flex;justify-content:space-between;margin-top:8px;font:12px 'IBM Plex Mono',monospace;color:var(--muted)"><span>0 min</span><span>45 min</span><span>90 min</span></div>
         </div>
-        <div style="margin-top:28px;display:flex;flex-wrap:wrap;gap:16px clamp(24px,4vw,80px);align-items:baseline;padding-top:24px;border-top:1px solid var(--line);animation:tbIn .3s ease-out">
+        <div class="s-text" style="margin-top:28px;display:flex;flex-wrap:wrap;gap:16px clamp(24px,4vw,80px);align-items:baseline;padding-top:24px;border-top:1px solid var(--line);animation:tbIn .3s ease-out">
           <p style="margin:0;flex:0 0 auto;font:600 clamp(18px,1.4vw,24px) 'IBM Plex Mono',monospace;color:var(--blue)">{phRange}</p>
           <div style="flex:1 1 420px;min-width:0">
             <h3 style="margin:0;font-size:clamp(24px,2.2vw,40px);font-weight:600;letter-spacing:-.025em;line-height:1.1">{phase[2]}</h3>
             <p style="margin:10px 0 0;max-width:62ch;font-size:16px;line-height:1.6;color:var(--muted);text-wrap:pretty">{phase[3]}</p>
           </div>
         </div>
-        {#if pinned}
+        {#if pinOf('stunde')}
           <div aria-hidden="true" style="margin-top:28px;height:2px;background:var(--line);border-radius:1px;overflow:hidden"><div style="height:100%;width:calc(var(--sp,0) * 100%);background:var(--blue)"></div></div>
         {/if}
       </div>
     </section>
 
     <!-- Lernpfad -->
-    <section bind:this={pathSection} id="lernpfad" aria-label="Der Lernpfad" style="position:relative;height:{pathWrapH};margin-top:clamp(64px,10vh,140px)">
-      <div style="position:{stickyPos};top:68px;min-height:{stickyMinH};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:32px clamp(20px,4vw,64px)">
+    <section bind:this={pathSection} id="lernpfad" aria-label="Der Lernpfad" class="sec-m" style="position:relative;height:{wrapOf('path')};margin-top:clamp(64px,10vh,140px)">
+      <div bind:this={pathInner} style="{stickOf('path')};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:32px clamp(20px,4vw,64px)">
         <div style="display:flex;flex-wrap:wrap;gap:20px 64px;align-items:flex-end;justify-content:space-between">
           <h2 style="margin:0;font-size:clamp(36px,4.4vw,84px);line-height:.98;font-weight:700;letter-spacing:-.045em;max-width:15ch">Von SELECT bis zur Datenanalyse mit Python.</h2>
           <p style="margin:0;max-width:440px;font-size:clamp(16px,1.15vw,19px);line-height:1.6;color:var(--muted)">Zehn Lektionen und ein Abschlussprojekt. Passend für Klasse 10 bis zum Abitur. Rund 340 Minuten Lernzeit, also knapp vier Doppelstunden. Jede Lektion lässt sich einzeln freischalten.</p>
         </div>
-        <div style="margin-top:clamp(24px,4vh,48px);overflow-x:auto;padding-bottom:6px">
-          <div style="position:relative;min-width:720px;padding-top:clamp(110px,13vh,150px)">
-            <span data-owl={pathOwl} style="position:absolute;top:0;left:{owlLeft};width:clamp(110px,8vw,160px);aspect-ratio:200/180;transform:translateX(-50%);transition:left .8s cubic-bezier(.16,1,.3,1);pointer-events:none"></span>
+        <div bind:this={pathStage} style="margin-top:clamp(24px,4vh,48px);overflow-x:auto;padding-bottom:6px">
+          <div class="p-track" style="position:relative;min-width:720px;padding-top:clamp(110px,13vh,150px)">
+            <span data-owl={pathOwl} class="p-owl" style="position:absolute;top:0;left:{owlLeft};width:clamp(110px,8vw,160px);aspect-ratio:200/180;transform:translateX(-50%);transition:left .8s cubic-bezier(.16,1,.3,1);pointer-events:none"></span>
             <div style="position:relative">
               <div style="position:absolute;left:4.5%;right:4.5%;top:21px;height:2px;background:var(--line)"></div>
               <div style="position:absolute;left:4.5%;top:21px;height:2px;width:{pathFill};background:var(--blue);transition:width .8s cubic-bezier(.16,1,.3,1)"></div>
@@ -979,7 +1246,7 @@
                 {#each cat as s, i}
                   <button type="button" role="tab" aria-selected={i === selIdx ? 'true' : 'false'} aria-label={'Lektion ' + s.n + ': ' + s.title}
                     onclick={() => selIdx = i}
-                    onmouseenter={() => { if (!pinned) selIdx = i; }}
+                    onmouseenter={() => { if (!pinOf('path')) selIdx = i; }}
                     style="display:grid;place-items:center;height:44px;border:0;background:transparent;cursor:pointer;padding:0">
                     <span style="width:{i === selIdx ? '44px' : '30px'};height:{i === selIdx ? '44px' : '30px'};border-radius:50%;display:grid;place-items:center;background:{i === selIdx ? 'var(--primary)' : i < selIdx ? 'var(--blue-soft)' : 'var(--bg)'};border:2px solid {i <= selIdx ? 'var(--primary)' : 'var(--line)'};color:{i === selIdx ? '#fff' : i < selIdx ? 'var(--blue)' : 'var(--muted)'};font:600 13px 'IBM Plex Mono',monospace;transition:all .3s">{s.n}</span>
                   </button>
@@ -993,8 +1260,8 @@
             </div>
           </div>
         </div>
-        <div style="margin-top:clamp(20px,3vh,40px);display:flex;flex-wrap:wrap;gap:16px clamp(24px,3vw,64px);align-items:center;padding-top:clamp(16px,2.5vh,32px);border-top:1px solid var(--line)">
-          <span aria-hidden="true" style="flex:none;font-size:clamp(96px,11vw,220px);line-height:.8;font-weight:700;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:2px var(--blue);font-variant-numeric:tabular-nums;min-width:1.3em">{selEntry.n}</span>
+        <div class="p-text" style="margin-top:clamp(20px,3vh,40px);display:flex;flex-wrap:wrap;gap:16px clamp(24px,3vw,64px);align-items:center;padding-top:clamp(16px,2.5vh,32px);border-top:1px solid var(--line)">
+          <span aria-hidden="true" class="p-num" style="flex:none;font-size:clamp(96px,11vw,220px);line-height:.8;font-weight:700;letter-spacing:-.06em;color:transparent;-webkit-text-stroke:2px var(--blue);font-variant-numeric:tabular-nums;min-width:1.3em">{selEntry.n}</span>
           <div style="flex:1 1 380px;min-width:0">
             <p style="margin:0 0 6px;font-size:14px;color:var(--muted)">{selEntry.n === 'P' ? 'Abschlussprojekt' : 'Lektion ' + selEntry.n} · {selEntry.dur} · {TRACK_INFO[(selEntry.track ?? 1) - 1]?.name ?? ''}</p>
             <h3 style="margin:0;font-size:clamp(26px,2.4vw,44px);font-weight:600;letter-spacing:-.025em;line-height:1.1">{selEntry.title}</h3>
@@ -1011,8 +1278,8 @@
     </section>
 
     <!-- Datenschutz + Kosten -->
-    <section id="datenschutz-kosten" aria-label="Datenschutz und Kosten" style="max-width:1760px;margin:0 auto;padding:clamp(96px,14vh,180px) clamp(20px,4vw,64px) 0">
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:28px clamp(40px,5vw,96px)">
+    <section id="datenschutz-kosten" aria-label="Datenschutz und Kosten" class="sec-p" style="max-width:1760px;margin:0 auto;padding:clamp(96px,14vh,180px) clamp(20px,4vw,64px) 0">
+      <div class="dk-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:28px clamp(40px,5vw,96px)">
         <div style="min-width:0;display:grid;grid-row:span 2;grid-template-rows:subgrid;row-gap:28px">
           <div>
             <h2 style="margin:0;font-size:clamp(32px,3.2vw,56px);line-height:1.02;font-weight:700;letter-spacing:-.04em;max-width:22ch;text-wrap:balance">Server in Deutschland. Nur die nötigsten Daten.</h2>
@@ -1040,13 +1307,13 @@
     </section>
 
     <!-- Edgar Rollen (sticky scroll) -->
-    <section bind:this={roleSection} id="eule" aria-label="Edgar im Unterricht" style="position:relative;height:{roleWrapH};margin-top:clamp(64px,10vh,140px)">
-      <div style="position:{stickyPos};top:68px;min-height:{stickyMinH};display:flex;flex-direction:column;justify-content:center;gap:clamp(28px,5vh,56px);overflow:hidden;padding:32px 0">
+    <section bind:this={roleSection} id="eule" aria-label="Edgar im Unterricht" class="sec-m" style="position:relative;height:{wrapOf('role')};margin-top:clamp(64px,10vh,140px)">
+      <div bind:this={roleInner} style="{stickOf('role')};display:flex;flex-direction:column;justify-content:center;gap:clamp(28px,5vh,56px);overflow:hidden;padding:32px 0">
         <div style="width:100%;max-width:1760px;margin:0 auto;padding:0 clamp(20px,4vw,64px);display:flex;flex-wrap:wrap;gap:20px 64px;align-items:flex-end;justify-content:space-between">
           <h2 style="margin:0;font-size:clamp(36px,4.4vw,84px);line-height:.98;font-weight:700;letter-spacing:-.045em;max-width:15ch">Hilft beim Denken. Verrät keine Lösungen.</h2>
           <p style="margin:0;max-width:440px;font-size:clamp(16px,1.15vw,19px);line-height:1.6;color:var(--muted);text-wrap:pretty">Edgar, die Eule, hat feste Aufgaben. Er meldet sich an wenigen, klaren Stellen und lässt den nächsten Schritt bei den Schülern.</p>
         </div>
-        <div bind:this={roleViewport} style="overflow-x:{roleOverflow};scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch">
+        <div bind:this={roleViewport} class="r-view" style="overflow-x:{roleOverflow};scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch">
           <div bind:this={roleTrack} style="display:flex;gap:clamp(16px,2vw,32px);width:max-content;padding:0 clamp(20px,4vw,64px);transform:translateX(calc(var(--rx,0) * -1px));will-change:transform">
             {#each ROLES as r}
               <article style="scroll-snap-align:start;flex:none;width:min(84vw,1080px);min-height:clamp(300px,46vh,520px);display:flex;flex-wrap:wrap;align-items:center;gap:24px clamp(24px,4vw,72px);padding:clamp(24px,3.5vw,56px);border-radius:24px;background:var(--surface);border:1px solid var(--line)">
@@ -1059,14 +1326,14 @@
             {/each}
           </div>
         </div>
-        {#if pinned}
+        {#if pinOf('role')}
           <div aria-hidden="true" style="width:100%;max-width:1760px;margin:0 auto;padding:0 clamp(20px,4vw,64px)"><div style="height:2px;background:var(--line);border-radius:1px;overflow:hidden"><div style="height:100%;width:calc(var(--rp,0) * 100%);background:var(--blue)"></div></div></div>
         {/if}
       </div>
     </section>
 
     <!-- Vorteile -->
-    <section aria-label="Vorteile" style="max-width:1760px;margin:0 auto;padding:clamp(72px,10vh,120px) clamp(20px,4vw,64px) 0">
+    <section aria-label="Vorteile" class="sec-p sec-p-s" style="max-width:1760px;margin:0 auto;padding:clamp(72px,10vh,120px) clamp(20px,4vw,64px) 0">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));border-top:1px solid var(--text)">
         <div style="padding:22px 32px 0 0"><h3 style="margin:0 0 6px;font-size:clamp(18px,1.3vw,22px);font-weight:600">Direkt loslegen</h3><p style="margin:0;font-size:15px;line-height:1.6;color:var(--muted);max-width:44ch">Browser öffnen, Abfrage schreiben. Auch auf dem Schulrechner.</p></div>
         <div style="padding:22px 32px 0 0"><h3 style="margin:0 0 6px;font-size:clamp(18px,1.3vw,22px);font-weight:600">Verstehen, was fehlt</h3><p style="margin:0;font-size:15px;line-height:1.6;color:var(--muted);max-width:44ch">Konkrete Hinweise helfen beim nächsten Versuch.</p></div>
@@ -1075,30 +1342,30 @@
     </section>
 
     <!-- Klauseln -->
-    <section bind:this={clauseSection} id="klauseln" aria-label="Klauseln ausprobieren" style="position:relative;height:{clauseWrapH};margin-top:clamp(64px,10vh,140px)">
-      <div style="position:{stickyPos};top:68px;min-height:{stickyMinH};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:32px clamp(20px,4vw,64px)">
+    <section bind:this={clauseSection} id="klauseln" aria-label="Klauseln ausprobieren" class="sec-m" style="position:relative;height:{wrapOf('clause')};margin-top:clamp(64px,10vh,140px)">
+      <div bind:this={clauseInner} class:c-compact={mobile} style="{stickOf('clause')};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:32px clamp(20px,4vw,64px)">
         <div style="display:flex;flex-wrap:wrap;gap:32px clamp(32px,4vw,80px);align-items:flex-start">
-          <div style="flex:1 1 360px;max-width:560px;min-width:0">
+          <div class="c-left" style="flex:1 1 360px;max-width:560px;min-width:0">
             <h2 style="margin:0;font-size:clamp(36px,4.4vw,84px);line-height:.98;font-weight:700;letter-spacing:-.045em">Jede Klausel ändert das Ergebnis.</h2>
             <p style="margin:18px 0 0;font-size:clamp(16px,1.15vw,19px);line-height:1.6;color:var(--muted);text-wrap:pretty">{clauseIntro}</p>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:24px" role="group" aria-label="Klauseln">
+            <div bind:this={clauseStage} class="c-toggles" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:24px" role="group" aria-label="Klauseln">
               {#each CLAUSES as cl}
                 {@const on = !!clauseOn[cl.id]}
-                <button type="button" onclick={() => { clauseOn = { ...clauseOn, [cl.id]: !clauseOn[cl.id] }; flashClause(cl.id === 'order' ? 'lookaround' : cl.id === 'limit' ? 'surprised' : 'curious'); }} aria-pressed={on} style="display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px 0 12px;border:1px solid {on ? 'var(--blue)' : 'var(--line)'};border-radius:10px;background:{on ? 'var(--blue-soft)' : 'var(--surface)'};color:var(--text);font:500 14px 'IBM Plex Mono',monospace;cursor:pointer;white-space:nowrap;transition:background .25s,border-color .25s">
+                <button type="button" class="c-toggle" onclick={() => { clauseOn = { ...clauseOn, [cl.id]: !clauseOn[cl.id] }; flashClause(cl.id === 'order' ? 'lookaround' : cl.id === 'limit' ? 'surprised' : 'curious'); }} aria-pressed={on} style="display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px 0 12px;border:1px solid {on ? 'var(--blue)' : 'var(--line)'};border-radius:10px;background:{on ? 'var(--blue-soft)' : 'var(--surface)'};color:var(--text);font:500 14px 'IBM Plex Mono',monospace;cursor:pointer;white-space:nowrap;transition:background .25s,border-color .25s">
                   <span style="width:30px;height:18px;border-radius:9px;background:{on ? 'var(--primary)' : 'var(--line)'};position:relative;transition:background .25s;flex:none"><span style="position:absolute;top:2px;left:{on ? '14px' : '2px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left .25s cubic-bezier(.2,.8,.2,1)"></span></span>{cl.label}
                 </button>
               {/each}
             </div>
-            <pre bind:this={clauseHlPre} style="margin:18px 0 0;padding:16px 18px;min-height:132px;border:1px solid var(--line);border-radius:12px;background:var(--code-bg);font:clamp(14px,1vw,17px)/1.65 'IBM Plex Mono',monospace;white-space:pre-wrap;color:var(--text)"></pre>
-            <div style="display:flex;align-items:center;gap:16px;margin-top:20px">
-              <span data-owl={clauseOwl} style="width:110px;height:99px;flex:none"></span>
+            <pre bind:this={clauseHlPre} class="c-pre" style="margin:18px 0 0;padding:16px 18px;min-height:132px;border:1px solid var(--line);border-radius:12px;background:var(--code-bg);font:clamp(14px,1vw,17px)/1.65 'IBM Plex Mono',monospace;white-space:pre-wrap;color:var(--text)"></pre>
+            <div class="c-count" style="display:flex;align-items:center;gap:16px;margin-top:20px">
+              <span data-owl={clauseOwl} class="c-owl" style="width:110px;height:99px;flex:none"></span>
               <div>
                 <p style="margin:0;font-size:clamp(44px,4vw,72px);font-weight:700;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1">{tileData().clauseCount}</p>
                 <p style="margin:4px 0 0;font-size:14px;color:var(--muted)">{tileData().clauseCountLabel}</p>
               </div>
             </div>
           </div>
-          <div bind:this={tileBox} style="flex:2 1 520px;min-width:0;position:relative;height:{tileData().tileH}">
+          <div bind:this={tileBox} class="c-tiles" class:c-clip={!!mPin.clause} style="flex:2 1 520px;min-width:0;position:relative;height:{tileData().tileH};{mPin.clause ? `max-height:${clauseTilesH}px` : ''}">
             {#each tileData().tiles as t}
               <div style="position:absolute;left:0;top:0;width:{t.w};height:60px;padding:8px 12px;border:1px solid {t.border};border-radius:10px;background:{t.bg};transform:{t.tf};opacity:{t.op};transition:transform .8s cubic-bezier(.16,1,.3,1),opacity .45s,background .3s,border-color .3s;display:flex;flex-direction:column;justify-content:center;overflow:hidden">
                 <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{t.title}</span>
@@ -1107,16 +1374,16 @@
             {/each}
           </div>
         </div>
-        {#if pinned}
+        {#if pinOf('clause')}
           <div aria-hidden="true" style="margin-top:28px;height:2px;background:var(--line);border-radius:1px;overflow:hidden"><div style="height:100%;width:calc(var(--cp,0) * 100%);background:var(--blue)"></div></div>
         {/if}
       </div>
     </section>
 
     <!-- FAQ -->
-    <section id="faq" aria-label="Häufige Fragen" style="max-width:1760px;margin:0 auto;padding:clamp(96px,14vh,180px) clamp(20px,4vw,64px) 0">
+    <section id="faq" aria-label="Häufige Fragen" class="sec-p" style="max-width:1760px;margin:0 auto;padding:clamp(96px,14vh,180px) clamp(20px,4vw,64px) 0">
       <div style="display:flex;flex-wrap:wrap;gap:24px clamp(40px,5vw,96px);align-items:flex-start">
-        <h2 style="margin:0;flex:1 1 300px;font-size:clamp(32px,3.2vw,56px);line-height:1.02;font-weight:700;letter-spacing:-.04em;position:sticky;top:100px">Häufige Fragen</h2>
+        <h2 class="faq-h" style="margin:0;flex:1 1 300px;font-size:clamp(32px,3.2vw,56px);line-height:1.02;font-weight:700;letter-spacing:-.04em;position:sticky;top:100px">Häufige Fragen</h2>
         <div style="flex:2 1 560px;border-top:1px solid var(--line)">
           {#each FAQ as f}
             <details style="border-bottom:1px solid var(--line)">
@@ -1131,8 +1398,8 @@
     </section>
 
     <!-- CTA -->
-    <section aria-label="Kontakt" style="max-width:1760px;margin:0 auto;padding:clamp(96px,14vh,180px) clamp(20px,4vw,64px) 0">
-      <div onmouseenter={wake} style="position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:24px 48px;padding:clamp(28px,4vw,64px);border-radius:22px;background:var(--primary);color:#fff">
+    <section aria-label="Kontakt" class="sec-p" style="max-width:1760px;margin:0 auto;padding:clamp(96px,14vh,180px) clamp(20px,4vw,64px) 0">
+      <div bind:this={ctaBox} onmouseenter={wake} style="position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:24px 48px;padding:clamp(28px,4vw,64px);border-radius:22px;background:var(--primary);color:#fff">
         <span data-owl={ctaOwl} data-owl-dark="1" style="width:clamp(120px,10vw,180px);aspect-ratio:200/180;flex:none;padding:10px;border-radius:20px;background:#fff;box-sizing:content-box"></span>
         <div style="flex:1 1 320px">
           <h2 style="margin:0;font-size:clamp(30px,3.4vw,60px);font-weight:700;letter-spacing:-.04em;line-height:1.02">SQL in Ihren Unterricht bringen?</h2>
