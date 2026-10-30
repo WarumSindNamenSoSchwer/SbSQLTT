@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { LIVE as TERMS_LIVE } from '$lib/tabula/terms';
 	import Logo from './Logo.svelte';
 	import Icon from './Icon.svelte';
 </script>
@@ -36,6 +37,7 @@
 			</a>
 			<a href="/impressum" class="hover:text-ink-900">Impressum</a>
 			<a href="/datenschutz" class="hover:text-ink-900">Datenschutz</a>
+			{#if TERMS_LIVE}<a href="/nutzungsbedingungen" class="hover:text-ink-900">Nutzungsbedingungen</a>{/if}
 			<a href="/kontakt" class="hover:text-ink-900">Kontaktformular</a>
 		</div>
 	</div>

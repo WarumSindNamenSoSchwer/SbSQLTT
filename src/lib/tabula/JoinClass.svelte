@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { LIVE as TERMS_LIVE } from '$lib/tabula/terms';
 	import SiteFooter from '$lib/tabula/SiteFooter.svelte';
 	// Klasse beitreten: Code -> Klasse prüfen -> Name+Passwort -> Erfolg
 	import '$lib/tabula/theme.css';
@@ -191,6 +192,7 @@
 					</div>
 
 					<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Beitreten ...' : 'Klasse beitreten'}</button>
+					{#if TERMS_LIVE}<p class="terms-note">Mit dem Beitritt gelten die <a href="/nutzungsbedingungen" target="_blank" rel="noopener">Nutzungsbedingungen</a>. Wie wir mit deinen Daten umgehen, steht in der <a href="/datenschutz" target="_blank" rel="noopener">Datenschutzerklärung</a>.</p>{/if}
 				</form>
 
 			{:else if step === 'success'}
@@ -352,6 +354,8 @@
 	.rule-no { color: var(--ink-3); }
 
 	/* Datenschutz */
+	.terms-note { margin: 0; font-size: 13px; line-height: 19px; color: var(--ink-3); text-align: center; }
+	.terms-note a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 2px; }
 	.privacy-note {
 		display: flex;
 		gap: 12px;

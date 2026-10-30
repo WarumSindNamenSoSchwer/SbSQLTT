@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { LIVE as TERMS_LIVE } from '$lib/tabula/terms';
 	// Datenschutzerklärung im Layout A5 (Inhaltsverzeichnis links, Lesespalte 680 px).
 	// Inhalt: $lib/tabula/privacy.ts. Belege je Absatz (src) nur intern, Prüfprotokoll: docs/DATENSCHUTZ-QUELLEN.md
 	import '$lib/tabula/theme.css';
@@ -90,6 +91,7 @@
 		<span style="margin-right:auto">Kostenlos und Open Source unter AGPL-3.0.</span>
 		<a href="/impressum" style="color:var(--ink-3)">Impressum</a>
 		<a href="/datenschutz" style="color:var(--ink-3)">Datenschutzerklärung</a>
+		{#if TERMS_LIVE}<a href="/nutzungsbedingungen" style="color:var(--ink-3)">Nutzungsbedingungen</a>{/if}
 	</footer>
 </div>
 

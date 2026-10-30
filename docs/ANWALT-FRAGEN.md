@@ -82,5 +82,5 @@ Sicherheit allgemein: HTTPS, Server-Zugang nur per SSH-Schlüssel, kein Root-Log
 7. Quiz-Rangliste mit Namen am Beamer: Passt das so, oder brauche ich eine Einwilligung oder eine anonyme Teilnahme?
 8. Impressum (tabulasql.de/impressum): Reicht das so?
 9. Datenschutzerklärung (tabulasql.de/datenschutz): Sie beschreibt schon den Klassen-Login aus Teil 1. Muss noch etwas rein oder raus?
-10. Nutzungsbedingungen gibt es keine. Lehrkräfte bestätigen bei der Registrierung nur, dass sie die Datenschutzhinweise gelesen haben. Brauche ich welche, und wenn ja, was muss rein?
+10. Nutzungsbedingungen: Seit 30.10.2026 gibt es einen Entwurf unter tabulasql.de/nutzungsbedingungen (Text: `src/lib/tabula/terms.ts`, Begründung und Quellen je Absatz: `docs/NUTZUNGSBEDINGUNGEN-QUELLEN.md`, dort am Ende sechs konkrete Fragen). Lehrkräfte stimmen bei der Registrierung zu, Schüler bekommen beim Klassenbeitritt einen Hinweis. Passt der Text, und was muss geändert werden? Er lässt sich mit einem Schalter sofort offline nehmen.
 11. Reicht Teil 1 als Verzeichnis von Verarbeitungstätigkeiten nach Art. 30 DSGVO, oder fehlt etwas?

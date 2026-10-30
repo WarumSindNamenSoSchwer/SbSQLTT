@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { LIVE as TERMS_LIVE } from '$lib/tabula/terms';
 	// Impressum im Layout A5 (wie Datenschutz). Angaben: $lib/tabula/privacy.ts (CONTROLLER).
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
@@ -58,6 +59,7 @@
 		<span style="margin-right:auto">Kostenlos und Open Source unter AGPL-3.0.</span>
 		<a href="/impressum" style="color:var(--ink-3)">Impressum</a>
 		<a href="/datenschutz" style="color:var(--ink-3)">Datenschutzerklärung</a>
+		{#if TERMS_LIVE}<a href="/nutzungsbedingungen" style="color:var(--ink-3)">Nutzungsbedingungen</a>{/if}
 	</footer>
 </div>
 

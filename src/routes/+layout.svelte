@@ -44,6 +44,7 @@
 		/^\/passwort-zuruecksetzen(\/|$)/.test(page.url.pathname) ||
 		/^\/email-bestaetigen(\/|$)/.test(page.url.pathname) ||
 		page.url.pathname === '/datenschutz' ||
+		page.url.pathname === '/nutzungsbedingungen' ||
 		page.url.pathname === '/impressum' ||
 		page.url.pathname === '/kontakt' ||
 		// Fehlerseite bringt eigene TopNav mit

@@ -1,8 +1,13 @@
 <!-- Fußzeile für App-Seiten (Entwurf v12, Systemseiten): Pflichtlinks immer erreichbar. -->
+<script lang="ts">
+	import { LIVE as TERMS_LIVE } from '$lib/tabula/terms';
+</script>
+
 <footer class="sitefoot">
 	<span class="grow">Kostenlos und Open Source unter AGPL-3.0.</span>
 	<a href="/impressum">Impressum</a>
 	<a href="/datenschutz">Datenschutz</a>
+	{#if TERMS_LIVE}<a href="/nutzungsbedingungen">Nutzungsbedingungen</a>{/if}
 </footer>
 
 <style>

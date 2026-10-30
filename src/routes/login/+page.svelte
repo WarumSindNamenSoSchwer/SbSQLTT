@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { LIVE as TERMS_LIVE } from '$lib/tabula/terms';
 	import SiteFooter from '$lib/tabula/SiteFooter.svelte';
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
@@ -441,10 +442,10 @@
 					</div>
 					<label class="check-row" class:chk-err={regAcceptedErr}>
 						<input type="checkbox" disabled={busy} bind:checked={regAccepted} style="width:18px;height:18px;accent-color:#2563eb;flex:none;margin-top:2px" />
-						<span>Ich habe die <a href="/datenschutz" class="link-inline">Datenschutzerklärung</a> gelesen. Gespeichert werden Name, E-Mail-Adresse, das Passwort nur als Hash und optional die Schule.</span>
+						<span>{#if TERMS_LIVE}Ich stimme den <a href="/nutzungsbedingungen" target="_blank" rel="noopener" class="link-inline">Nutzungsbedingungen</a> zu und habe{:else}Ich habe{/if} die <a href="/datenschutz" target="_blank" rel="noopener" class="link-inline">Datenschutzerklärung</a> gelesen. Gespeichert werden Name, E-Mail-Adresse, das Passwort nur als Hash und optional die Schule.</span>
 					</label>
 					{#if regAcceptedErr}
-						<span class="hint err">Bitte bestätigen Sie, dass Sie die Datenschutzerklärung gelesen haben.</span>
+						<span class="hint err">{TERMS_LIVE ? 'Bitte stimmen Sie den Nutzungsbedingungen zu und bestätigen Sie die Datenschutzerklärung.' : 'Bitte bestätigen Sie, dass Sie die Datenschutzerklärung gelesen haben.'}</span>
 					{/if}
 					<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Konto wird erstellt ...' : 'Lehrer-Konto erstellen'}</button>
 					<p class="foot-inline">Schon ein Konto? <button type="button" class="link-sm" onclick={() => switchSeg(1)}>Anmelden</button></p>

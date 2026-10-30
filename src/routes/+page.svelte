@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { LIVE as TERMS_LIVE } from '$lib/tabula/terms';
 	// Startseite v12: Markup aus docs/design/v12/export/index.html, als Svelte 5 Runes ohne tb-render.js.
 	import { onMount } from 'svelte';
 	import G from '$lib/edgar/owl-gen.js';
@@ -1168,6 +1169,7 @@
         <a href="/kontakt" style="color:var(--muted);text-decoration:none" data-hv="27">Kontakt</a>
         <a href="/impressum" style="color:var(--muted);text-decoration:none" data-hv="28">Impressum</a>
         <a href="/datenschutz" style="color:var(--muted);text-decoration:none" data-hv="29">Datenschutzerklärung</a>
+        {#if TERMS_LIVE}<a href="/nutzungsbedingungen" style="color:var(--muted);text-decoration:none" data-hv="29">Nutzungsbedingungen</a>{/if}
       </nav>
     </div>
   </footer>

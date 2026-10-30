@@ -86,7 +86,7 @@ app.tabulasql.de {
 	import security_headers
 
 	# Website-Seiten gehören nach www (Links aus der App, Fußzeilen, alte Lesezeichen).
-	@website path /datasets /datasets/* /datenschutz /impressum /kontakt /docs /fuer-lehrkraefte
+	@website path /datasets /datasets/* /datenschutz /nutzungsbedingungen /impressum /kontakt /docs /fuer-lehrkraefte
 	redir @website https://www.tabulasql.de{uri} permanent
 
 	# Suchmaschinen: eigene Sitemap mit den Lektionen
