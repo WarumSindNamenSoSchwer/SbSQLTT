@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Datensätze · Tabula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{color-scheme:light;--bg:#f8fafc;--surface:#fff;--subtle:#f1f5f9;--line:#e2e8f0;--line-strong:#cbd5e1;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#2563eb;--accent-strong:#1d4ed8;--accent-soft:#eff6ff;--accent-line:#bfdbfe;--accent-ink:#1d4ed8;--ok:#16a34a;--ok-soft:#f0fdf4;--ok-ink:#166534;--danger:#dc2626;--danger-soft:#fef2f2;--danger-line:#fecaca;--danger-ink:#991b1b;--code-bg:#fcfdfe;--tok-kw:#1d4ed8;--tok-str:#15803d;--tok-num:#b45309;--tok-com:#64748b;--shadow-pop:0 12px 32px -12px rgb(15 23 42/.28)}
+:root[data-tb="dark"]{color-scheme:dark;--bg:#0b1220;--surface:#111a2e;--subtle:#1e293b;--line:#334155;--line-strong:#475569;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#94a3b8;--accent-strong:#60a5fa;--accent-soft:#172554;--accent-line:#1e3a8a;--accent-ink:#93c5fd;--ok:#4ade80;--ok-soft:#052e16;--ok-ink:#86efac;--danger:#f87171;--danger-soft:#450a0a;--danger-line:#7f1d1d;--danger-ink:#fca5a5;--code-bg:#0d1526;--tok-kw:#93c5fd;--tok-str:#86efac;--tok-num:#fdba74;--tok-com:#94a3b8;--shadow-pop:0 12px 32px -12px rgb(0 0 0/.6)}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+::selection{background:var(--accent-line);color:var(--ink)}
+*::-webkit-scrollbar{width:10px;height:10px}*::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+a{color:var(--accent-ink);text-underline-offset:3px}a:hover{color:var(--accent-strong)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes tbIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes tbSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="min-height:100vh;background:var(--bg)">
+  <header style="position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)">
+    <div style="max-width:1680px;margin:0 auto;padding:0 clamp(16px,3vw,48px);min-height:60px;display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+      <a href="Tabula Landing.dc.html" style="display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:18px;letter-spacing:-.02em"><span data-owl-icon="1" style="width:28px;height:25px;display:block"></span>Tabula</a>
+      <nav aria-label="Hauptnavigation" style="display:flex;gap:4px;flex:1;font-size:14px">
+        <a href="Tabula Lernen.dc.html" style="padding:6px 10px;border-radius:6px;color:var(--ink-2);text-decoration:none" style-hover="background:var(--subtle);color:var(--ink)">Lernen</a>
+        <a href="Tabula Datensätze.dc.html" aria-current="page" style="padding:6px 10px;border-radius:6px;color:var(--ink);background:var(--subtle);text-decoration:none;font-weight:500">Datensätze</a>
+        <a href="Tabula Landing.dc.html#lehrkraefte" style="padding:6px 10px;border-radius:6px;color:var(--ink-2);text-decoration:none" style-hover="background:var(--subtle);color:var(--ink)">Für Lehrkräfte</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" onClick="{{ toggleTheme }}" aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--subtle);color:var(--ink)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+        </button>
+        <a href="#" style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:7px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:500" style-hover="background:var(--subtle);color:var(--ink)">Anmelden</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1680px;margin:0 auto;padding:28px clamp(16px,3vw,48px) 80px">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:24px">
+      <span data-owl="{{ headOwl }}" style="width:84px;height:76px;flex:none"></span>
+      <div style="flex:1 1 320px">
+        <h1 style="margin:0;font-size:clamp(28px,2.4vw,40px);font-weight:600;letter-spacing:-.025em;line-height:1.1">Datensätze</h1>
+        <p style="margin:6px 0 0;font-size:16px;line-height:1.55;color:var(--ink-2);max-width:62ch">Die Datenbanken aus den Lektionen zum Herunterladen. Für Python, den DB Browser for SQLite oder eigene Projekte.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+      <nav aria-label="Datensatz wählen" style="flex:1 1 300px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ list }}" as="d" hint-placeholder-count="3">
+          <button type="button" onClick="{{ d.pick }}" aria-current="{{ d.current }}" style="display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;padding:16px 16px 14px;border:1px solid {{ d.border }};border-radius:12px;background:{{ d.bg }};cursor:pointer;transition:border-color .2s,background .2s" style-hover="border-color:var(--line-strong)">
+            <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <span style="font-size:16px;font-weight:600">{{ d.name }}</span>
+              <span style="font:12px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ d.file }}</span>
+            </span>
+            <span style="font-size:14px;line-height:1.5;color:var(--ink-2)">{{ d.desc }}</span>
+            <span style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <sc-for list="{{ d.tags }}" as="tg" hint-placeholder-count="2"><span style="font-size:12px;font-weight:500;padding:2px 8px;border-radius:5px;background:var(--subtle);color:var(--ink-2)">{{ tg }}</span></sc-for>
+              <span style="font-size:12px;color:var(--ink-3);margin-left:auto;font-variant-numeric:tabular-nums">{{ d.meta }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </nav>
+
+      <section aria-label="Datensatz-Details" style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:20px">
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(20px,2vw,28px);display:flex;flex-wrap:wrap;gap:20px 40px;align-items:flex-start">
+          <div style="flex:1 1 420px;min-width:0">
+            <p style="margin:0 0 4px;font:13px 'IBM Plex Mono',monospace;color:var(--accent-ink)">{{ file }}</p>
+            <h2 style="margin:0;font-size:clamp(24px,2vw,32px);font-weight:600;letter-spacing:-.02em">{{ name }}</h2>
+            <p style="margin:10px 0 0;font-size:16px;line-height:1.6;color:var(--ink-2);max-width:68ch;text-wrap:pretty">{{ story }}</p>
+            <p style="margin:10px 0 0;font-size:14px;color:var(--ink-3)">Verwendet in: {{ usedIn }} · <span style="font-variant-numeric:tabular-nums">{{ metaLine }}</span></p>
+          </div>
+          <div style="flex:0 1 280px;display:flex;flex-direction:column;gap:8px">
+            <button type="button" onClick="{{ dlDb }}" disabled="{{ noDb }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;opacity:{{ dbOpacity }}" style-hover="background:#1d4ed8">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"></path></svg>{{ dbLabel }}
+            </button>
+            <button type="button" onClick="{{ dlCsv }}" disabled="{{ noDb }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:40px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:14px;font-weight:500;cursor:pointer" style-hover="background:var(--subtle)">Alle Tabellen als CSV (ZIP)</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:12px;padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink-2);font-size:14px">
+            <span style="width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:tbSpin .7s linear infinite"></span>Datenbank wird geladen …
+          </div>
+        </sc-if>
+        <sc-if value="{{ failed }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:16px;padding:20px 24px;border:1px solid var(--danger-line);border-radius:14px;background:var(--danger-soft)">
+            <span data-owl="sleep" style="width:64px;height:58px;flex:none"></span>
+            <p style="margin:0;flex:1;font-size:15px;color:var(--danger-ink)">Datenbank konnte nicht geladen werden.</p>
+            <button type="button" onClick="{{ retry }}" style="height:36px;padding:0 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;cursor:pointer">Erneut versuchen</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+            <div style="flex:1 1 460px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)">
+                <h3 style="margin:0;font-size:15px;font-weight:600">Schema</h3>
+                <span style="font-size:13px;color:var(--ink-3)">{{ tableCount }}</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:16px">
+                <sc-for list="{{ schema }}" as="t" hint-placeholder-count="3">
+                  <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:9px 12px;background:var(--subtle);border-bottom:1px solid var(--line)">
+                      <span style="font:600 13px 'IBM Plex Mono',monospace">{{ t.table }}</span>
+                      <span style="font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ t.countLabel }}</span>
+                    </div>
+                    <sc-for list="{{ t.cols }}" as="c" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--line);font:13px 'IBM Plex Mono',monospace">
+                        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</span>
+                        <span style="font-size:11px;color:var(--ink-3)">{{ c.type }}</span>
+                        <span style="font-size:10px;font-weight:600;min-width:18px;text-align:right;color:{{ c.keyInk }}">{{ c.key }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ hasRels }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-wrap:wrap;gap:8px 20px;padding:12px 18px;border-top:1px solid var(--line);font:13px 'IBM Plex Mono',monospace;color:var(--ink-2)">
+                  <span style="font-family:'IBM Plex Sans',sans-serif;color:var(--ink-3)">Verbindungen</span>
+                  <sc-for list="{{ rels }}" as="r" hint-placeholder-count="2"><span>{{ r.from }} <span style="color:var(--accent-ink)">→</span> {{ r.to }}</span></sc-for>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="flex:1 1 380px;min-width:0;border-radius:14px;overflow:hidden;background:#0f172a;color:#e2e8f0">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 10px 18px;border-bottom:1px solid #1e293b">
+                <h3 style="margin:0;font-size:14px;font-weight:600;color:#e2e8f0">In Python öffnen</h3>
+                <button type="button" onClick="{{ copyPy }}" style="height:30px;padding:0 12px;border:0;border-radius:6px;background:#1e293b;color:#e2e8f0;font-size:13px;font-weight:500;cursor:pointer" style-hover="background:#334155">{{ copyLabel }}</button>
+              </div>
+              <pre ref="{{ pyRef }}" style="margin:0;padding:14px 18px;font:13px/22px 'IBM Plex Mono',monospace;white-space:pre;overflow-x:auto;color:#e2e8f0"></pre>
+              <p style="margin:0;padding:10px 18px 14px;font-size:13px;line-height:1.5;color:#94a3b8">Lade die .db-Datei herunter und lege sie in denselben Ordner wie dein Skript.</p>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px 10px 18px;border-bottom:1px solid var(--line)">
+              <h3 style="margin:0;font-size:15px;font-weight:600;margin-right:auto">Vorschau</h3>
+              <div role="tablist" aria-label="Tabelle wählen" style="display:flex;gap:2px;padding:3px;border-radius:8px;background:var(--subtle)">
+                <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3">
+                  <button type="button" role="tab" aria-selected="{{ tb.sel }}" onClick="{{ tb.pick }}" style="height:30px;padding:0 12px;border:0;border-radius:6px;background:{{ tb.bg }};color:{{ tb.ink }};font:500 13px 'IBM Plex Mono',monospace;cursor:pointer;box-shadow:{{ tb.shadow }}">{{ tb.name }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="overflow:auto;max-height:440px">
+              <table style="width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">
+                <thead><tr><sc-for list="{{ pvCols }}" as="h" hint-placeholder-count="4"><th style="position:sticky;top:0;text-align:left;padding:8px 16px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-2);background:var(--subtle);border-bottom:1px solid var(--line);white-space:nowrap">{{ h }}</th></sc-for></tr></thead>
+                <tbody>
+                  <sc-for list="{{ pvRows }}" as="row" hint-placeholder-count="5">
+                    <tr style-hover="background:var(--subtle)"><sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="4"><td style="padding:8px 16px;border-bottom:1px solid var(--line);white-space:nowrap;color:{{ cell.color }};font-style:{{ cell.fs }}">{{ cell.v }}</td></sc-for></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin:0;padding:10px 18px;font-size:13px;color:var(--ink-3)">{{ pvFoot }}</p>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line)">
+              <span data-owl="{{ qOwl }}" style="width:48px;height:43px;flex:none"></span>
+              <div style="flex:1;min-width:0">
+                <h3 style="margin:0;font-size:15px;font-weight:600">Selbst abfragen</h3>
+                <p style="margin:2px 0 0;font-size:13px;color:var(--ink-3)">Freies SQL auf diesem Datensatz. Änderungen werden nach jeder Abfrage zurückgesetzt.</p>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap">
+              <div style="flex:1 1 420px;min-width:0;border-right:1px solid var(--line);display:flex;flex-direction:column">
+                <div style="position:relative;flex:1;min-height:150px;background:var(--code-bg);overflow:auto">
+                  <pre ref="{{ qHl }}" aria-hidden="true" style="position:absolute;inset:0;margin:0;padding:14px 16px;font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;color:var(--ink);pointer-events:none"></pre>
+                  <textarea aria-label="SQL-Abfrage" value="{{ q }}" onChange="{{ onQ }}" onKeyDown="{{ onQKey }}" spellcheck="false" autocomplete="off" autocapitalize="off" style="position:relative;display:block;width:100%;height:{{ qH }};margin:0;padding:14px 16px;border:0;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:var(--accent);font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;outline:none"></textarea>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--line)">
+                  <button type="button" onClick="{{ runQ }}" disabled="{{ noDb }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:0;border-radius:7px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#1d4ed8">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"></path></svg>Ausführen
+                  </button>
+                  <span style="font-size:13px;color:var(--ink-3)">Strg / ⌘ + Enter</span>
+                </div>
+              </div>
+              <div style="flex:1 1 420px;min-width:0;display:flex;flex-direction:column">
+                <sc-if value="{{ qErr }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:14px 18px;background:var(--danger-soft);border-bottom:1px solid var(--danger-line)">
+                    <p style="margin:0;font-size:15px;font-weight:600;color:var(--danger-ink)">{{ qErrMsg }}</p>
+                    <p style="margin:4px 0 0;font:12px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ qErrOrig }}</p>
+                  </div>
+                </sc-if>
+                <div style="display:flex;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--line);font-size:13px"><span style="font-weight:600">Ergebnis</span><span style="color:var(--ink-3);font-variant-numeric:tabular-nums">{{ qMeta }}</span></div>
+                <div style="flex:1;overflow:auto;max-height:300px">
+                  <sc-if value="{{ qEmpty }}" hint-placeholder-val="{{ true }}"><p style="margin:0;padding:32px 18px;text-align:center;font-size:14px;color:var(--ink-3)">{{ qEmptyText }}</p></sc-if>
+                  <sc-if value="{{ qHasRows }}" hint-placeholder-val="{{ false }}">
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">
+                      <thead><tr><sc-for list="{{ qCols }}" as="h" hint-placeholder-count="2"><th style="position:sticky;top:0;text-align:left;padding:8px 16px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-2);background:var(--subtle);white-space:nowrap">{{ h }}</th></sc-for></tr></thead>
+                      <tbody><sc-for list="{{ qRows }}" as="row" hint-placeholder-count="3"><tr><sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="2"><td style="padding:8px 16px;border-top:1px solid var(--line);white-space:nowrap;color:{{ cell.color }};font-style:{{ cell.fs }}">{{ cell.v }}</td></sc-for></tr></sc-for></tbody>
+                    </table>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </section>
+    </div>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:40;padding:12px 18px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;box-shadow:var(--shadow-pop);animation:tbIn .2s ease-out">{{ toastText }}</div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DS = [
+  { id: 'books', file: 'bibliothek.db', name: 'Schulbibliothek', desc: 'Bücher, Verlage und Ausleihen aus der Schulbibliothek. Der Datensatz aus den SQL-Grundlagen.', story: 'Bücher, ihre Verlage und wer sie wann ausgeliehen hat. Einige Preise und Rückgabedaten fehlen absichtlich, damit sich NULL üben lässt. Gut für erste Abfragen, Filter, Gruppierungen und JOINs über drei Tabellen.', tags: ['Einstieg', 'JOIN', 'Aggregation'], usedIn: 'Lektionen 1 bis 8, Lektion 10', main: 'books', q: 'SELECT genre, COUNT(*) AS anzahl\nFROM books\nGROUP BY genre\nORDER BY anzahl DESC;' },
+  { id: 'schule', file: 'schule.db', name: 'Schule', desc: 'Klassen einer Schule. Wird für Lektion 9 (Eigene Datenbank entwerfen) verwendet.', story: 'Ein bewusst kleiner Startpunkt: nur die Tabelle klassen. Schüler, Lehrer und Noten legen die Lernenden in Lektion 9 selbst an.', tags: ['DDL', 'CREATE TABLE'], usedIn: 'Lektion 9', main: 'klassen', q: 'SELECT * FROM klassen;' },
+  { id: 'traffic', file: 'app-traffic.db', name: 'App-Traffic', desc: 'Stündliche Nutzerzahlen, Antwortzeiten und Fehler einer App über sechs Wochen.', story: 'Ein Tagesrhythmus mit Abendspitze, ruhigere Wochenenden und stetiges Wachstum. Ab Release v2.4 werden die Antwortzeiten deutlich länger, v2.4.1 behebt das nur teilweise. Ideal, um mit SQL und pandas einer echten Frage nachzugehen.', tags: ['Zeitreihe', 'Python', 'Projekt'], usedIn: 'Abschlussprojekt', main: 'traffic', q: "SELECT substr(ts, 1, 10) AS tag, ROUND(AVG(avg_ms)) AS ms\nFROM traffic\nGROUP BY tag\nORDER BY tag\nLIMIT 14;" }
+];
+const crcT = (() => { const t = []; for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = crcT[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(files) {
+  const enc = new TextEncoder(), parts = [], cen = []; let off = 0;
+  for (const f of files) {
+    const name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    cen.push(new Uint8Array(c.buffer), name); off += 30 + name.length + data.length;
+  }
+  const cs = cen.reduce((a, b) => a + b.length, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cs, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cen, new Uint8Array(e.buffer)], { type: 'application/zip' });
+}
+const csvCell = v => v === null ? '' : /[",\n;]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+
+class Component extends DCLogic {
+  state = { theme: 'light', sel: 'books', info: {}, status: {}, tab: {}, q: {}, qres: {}, toast: '', copied: false };
+  rootRef = React.createRef(); pyRef = React.createRef(); qHl = React.createRef(); dbs = {};
+  async componentDidMount() {
+    this.C = await import(new URL('tabula-core.js', document.baseURI).href);
+    const theme = this.C.getTheme('light'); document.documentElement.dataset.tb = theme;
+    let sel = 'books'; const m = location.hash.slice(1); if (DS.some(d => d.id === m)) sel = m;
+    this.setState({ theme, sel, q: Object.fromEntries(DS.map(d => [d.id, d.q])) });
+    await this.C.loadOwl();
+    const G = (await import(new URL('owl-gen.js', document.baseURI).href)).default;
+    this.icons = { light: G.icon({}), dark: G.icon(G.DARK) };
+    this.load(sel); DS.forEach(d => d.id !== sel && this.load(d.id));
+  }
+  componentDidUpdate() { this.paint(); }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  paint() {
+    const root = this.rootRef.current; if (!this.C || !root) return;
+    const dark = this.state.theme === 'dark';
+    this.C.paintOwls(root, dark);
+    if (this.icons) root.querySelectorAll('[data-owl-icon]').forEach(el => { const k = dark ? 'dark' : 'light'; if (el.dataset.k !== k) { el.innerHTML = this.icons[k].replace('<svg ', '<svg style="width:100%;height:100%;display:block" aria-hidden="true" '); el.dataset.k = k; } });
+    if (this.qHl.current) this.qHl.current.innerHTML = this.C.highlight(this.state.q[this.state.sel] || '');
+    if (this.pyRef.current) this.pyRef.current.innerHTML = this.pyHtml();
+  }
+  async load(id) {
+    if (this.state.status[id] === 'ok' || this.state.status[id] === 'loading') return;
+    this.setState(S => ({ status: { ...S.status, [id]: 'loading' } }));
+    try {
+      let seed = this.C.BOOKS_SEED;
+      if (id !== 'books') { const X = await import(new URL('tabula-datasets.js', document.baseURI).href); seed = id === 'schule' ? X.SCHOOL_SEED : X.TRAFFIC_SEED; }
+      const db = await this.C.openDb(seed); this.dbs[id] = db;
+      const schema = this.C.readSchema(db);
+      const rels = []; schema.forEach(t => this.C.run(db, 'PRAGMA foreign_key_list("' + t.table + '")').rows.forEach(r => rels.push({ from: t.table + '.' + r[3], to: r[2] + '.' + r[4] })));
+      const rows = schema.reduce((a, t) => a + t.count, 0);
+      this.setState(S => ({ status: { ...S.status, [id]: 'ok' }, info: { ...S.info, [id]: { schema, rels, rows, size: db.export().byteLength } } }));
+    } catch (e) { console.error(e); this.setState(S => ({ status: { ...S.status, [id]: 'fail' } })); }
+  }
+  ds() { return DS.find(d => d.id === this.state.sel); }
+  py() { const d = this.ds(); return 'import sqlite3\nimport pandas as pd\n\ncon = sqlite3.connect("' + d.file + '")\ndf = pd.read_sql_query("SELECT * FROM ' + d.main + '", con)\nprint(df.head())'; }
+  pyHtml() {
+    const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return this.py().split('\n').map(l => esc(l).replace(/("[^"]*")/g, '<span style="color:#86efac">$1</span>').replace(/^(import|from)\b/, '<span style="color:#60a5fa">$1</span>').replace(/\bas\b/, '<span style="color:#60a5fa">as</span>')).join('\n');
+  }
+  say(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: '', copied: false }), 2600); }
+  runQ() {
+    const id = this.state.sel, db = this.dbs[id]; if (!db) return;
+    const sql = (this.state.q[id] || '').trim(); if (!sql) return;
+    const t0 = performance.now();
+    let r;
+    try { const res = this.C.runChecked(db, sql); r = { res, ms: Math.max(1, Math.round(performance.now() - t0)) }; }
+    catch (e) { const x = this.C.explainError(sql, e); r = { err: x.msg, orig: x.orig }; }
+    this.setState(S => ({ qres: { ...S.qres, [id]: r } }));
+  }
+  renderVals() {
+    const S = this.state, C = this.C, d = this.ds(), info = S.info[d.id], st = S.status[d.id] || 'loading';
+    const fmt = b => b < 1024 ? b + ' B' : Math.round(b / 1024) + ' KB';
+    const cellOf = v => ({ v: v === null ? 'NULL' : String(v), color: v === null ? 'var(--ink-3)' : 'var(--ink)', fs: v === null ? 'italic' : 'normal' });
+    let pvCols = [], pvRows = [], pvFoot = '';
+    const tab = info ? (S.tab[d.id] || d.main) : d.main;
+    if (info && this.dbs[d.id]) {
+      const r = C.run(this.dbs[d.id], 'SELECT * FROM "' + tab + '" LIMIT 10'), t = info.schema.find(x => x.table === tab);
+      pvCols = r.columns; pvRows = r.rows.map(row => ({ cells: row.map(cellOf) }));
+      pvFoot = 'Erste ' + r.rows.length + ' von ' + (t ? t.count : r.rows.length) + ' Zeilen';
+    }
+    const qr = S.qres[d.id], q = S.q[d.id] || '';
+    const qn = qr && qr.res ? qr.res.rows.length : 0;
+    let qOwl = 'curious'; if (qr && qr.err) qOwl = 'error'; else if (qr && qr.res) qOwl = 'success';
+    return {
+      rootRef: this.rootRef, pyRef: this.pyRef, qHl: this.qHl,
+      toggleTheme: () => { const th = S.theme === 'dark' ? 'light' : 'dark'; C.setTheme(th); this.setState({ theme: th }); },
+      headOwl: st === 'loading' ? 'loading' : d.id === 'traffic' ? 'laptop' : d.id === 'schule' ? 'graduate' : 'read',
+      list: DS.map(x => { const i = S.info[x.id], cur = x.id === d.id; return { name: x.name, file: x.file, desc: x.desc, tags: x.tags, current: cur ? 'page' : 'false',
+        meta: i ? i.schema.length + (i.schema.length === 1 ? ' Tabelle' : ' Tabellen') + ' · ' + i.rows.toLocaleString('de-DE') + ' Zeilen' : S.status[x.id] === 'fail' ? 'Fehler' : '…',
+        bg: cur ? 'var(--accent-soft)' : 'var(--surface)', border: cur ? 'var(--accent)' : 'var(--line)', pick: () => { this.setState({ sel: x.id }); history.replaceState(null, '', '#' + x.id); this.load(x.id); } }; }),
+      file: d.file, name: d.name, story: d.story, usedIn: d.usedIn,
+      metaLine: info ? info.schema.length + (info.schema.length === 1 ? ' Tabelle' : ' Tabellen') + ' · ' + info.rows.toLocaleString('de-DE') + ' Zeilen · ' + fmt(info.size) : '',
+      noDb: !info, dbOpacity: info ? 1 : .55, dbLabel: d.file + (info ? ' · ' + fmt(info.size) : ''),
+      dlDb: () => { if (this.dbs[d.id]) { C.exportDb(this.dbs[d.id], d.file); this.say(d.file + ' wird heruntergeladen.'); } },
+      dlCsv: () => {
+        const db = this.dbs[d.id]; if (!db) return;
+        const files = info.schema.map(t => { const r = C.run(db, 'SELECT * FROM "' + t.table + '"'); return { name: t.table + '.csv', text: [r.columns.join(','), ...r.rows.map(row => row.map(csvCell).join(','))].join('\n') }; });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(zip(files)); a.download = d.file.replace('.db', '') + '-csv.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        this.say(files.length + (files.length === 1 ? ' Tabelle' : ' Tabellen') + ' als CSV heruntergeladen.');
+      },
+      loading: st === 'loading', failed: st === 'fail', ready: st === 'ok', retry: () => { this.setState(X => ({ status: { ...X.status, [d.id]: undefined } }), () => this.load(d.id)); },
+      tableCount: info ? info.schema.length + (info.schema.length === 1 ? ' Tabelle' : ' Tabellen') : '',
+      schema: info ? info.schema.map(t => ({ table: t.table, countLabel: t.count.toLocaleString('de-DE') + ' Zeilen', cols: t.cols.map(c => ({ name: c.name, type: c.type, key: c.key, keyInk: c.key === 'PK' ? 'var(--accent-ink)' : 'var(--ink-3)' })) })) : [],
+      hasRels: !!(info && info.rels.length), rels: info ? info.rels : [],
+      copyLabel: S.copied ? 'Kopiert' : 'Kopieren',
+      copyPy: () => { navigator.clipboard && navigator.clipboard.writeText(this.py()).catch(() => {}); this.setState({ copied: true }); this.say('Python-Code kopiert.'); },
+      tabs: info ? info.schema.map(t => { const s = t.table === tab; return { name: t.table, sel: s ? 'true' : 'false', bg: s ? 'var(--surface)' : 'transparent', ink: s ? 'var(--ink)' : 'var(--ink-2)', shadow: s ? '0 1px 2px rgb(15 23 42/.12)' : 'none', pick: () => this.setState(X => ({ tab: { ...X.tab, [d.id]: t.table } })) }; }) : [],
+      pvCols, pvRows, pvFoot,
+      qOwl, q, qH: (Math.max(5, q.split('\n').length) * 22 + 28) + 'px',
+      onQ: e => { const v = e.target.value; this.setState(X => ({ q: { ...X.q, [d.id]: v } })); },
+      onQKey: e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); this.runQ(); } },
+      runQ: () => this.runQ(),
+      qErr: !!(qr && qr.err), qErrMsg: qr && qr.err, qErrOrig: qr && qr.orig,
+      qMeta: qr && qr.res ? qn + (qn === 1 ? ' Zeile' : ' Zeilen') + ' · ' + qr.ms + ' ms' : qr && qr.err ? 'Fehler' : 'Bereit',
+      qEmpty: !qr || !qr.res || qn === 0, qEmptyText: qr && qr.res ? 'Die Abfrage liefert keine Zeilen.' : qr && qr.err ? 'Kein Ergebnis, weil die Abfrage einen Fehler hat.' : 'Führe die Abfrage aus, um das Ergebnis zu sehen.',
+      qHasRows: !!(qr && qr.res && qn > 0), qCols: qr && qr.res ? qr.res.columns : [], qRows: qr && qr.res ? qr.res.rows.slice(0, 100).map(r => ({ cells: r.map(cellOf) })) : [],
+      toast: !!S.toast, toastText: S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

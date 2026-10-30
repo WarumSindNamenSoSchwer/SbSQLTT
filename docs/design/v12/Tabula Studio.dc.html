@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Mit WHERE filtern · Tabula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{color-scheme:light;--bg:#f8fafc;--surface:#fff;--subtle:#f1f5f9;--line:#e2e8f0;--line-strong:#cbd5e1;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#2563eb;--accent-strong:#1d4ed8;--accent-soft:#eff6ff;--accent-line:#bfdbfe;--accent-ink:#1d4ed8;--ok:#16a34a;--ok-soft:#f0fdf4;--ok-line:#bbf7d0;--ok-ink:#166534;--danger:#dc2626;--danger-soft:#fef2f2;--danger-line:#fecaca;--danger-ink:#991b1b;--warn-soft:#fffbeb;--warn-line:#fde68a;--warn-ink:#92400e;--code-bg:#fcfdfe;--tok-kw:#1d4ed8;--tok-str:#15803d;--tok-num:#b45309;--tok-com:#64748b;--shadow-pop:0 12px 32px -12px rgb(15 23 42/.28)}
+:root[data-tb="dark"]{color-scheme:dark;--bg:#0b1220;--surface:#111a2e;--subtle:#1e293b;--line:#334155;--line-strong:#475569;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#94a3b8;--accent:#2563eb;--accent-strong:#60a5fa;--accent-soft:#172554;--accent-line:#1e3a8a;--accent-ink:#93c5fd;--ok:#4ade80;--ok-soft:#052e16;--ok-line:#14532d;--ok-ink:#86efac;--danger:#f87171;--danger-soft:#450a0a;--danger-line:#7f1d1d;--danger-ink:#fca5a5;--warn-soft:#3b2a0a;--warn-line:#78350f;--warn-ink:#fcd34d;--code-bg:#0d1526;--tok-kw:#93c5fd;--tok-str:#86efac;--tok-num:#fdba74;--tok-com:#94a3b8;--shadow-pop:0 12px 32px -12px rgb(0 0 0/.6)}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+::selection{background:var(--accent-line);color:var(--ink)}
+*::-webkit-scrollbar{width:10px;height:10px}*::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+a{color:var(--accent-ink);text-underline-offset:3px}a:hover{color:var(--accent-strong)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes tbIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes tbSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="min-height:100vh;display:flex;flex-direction:column;background:var(--bg)">
+
+  <header style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 20px;min-height:56px;background:var(--surface);border-bottom:1px solid var(--line)">
+    <a href="Tabula Lernen.dc.html" style="display:flex;align-items:center;gap:6px;color:var(--ink-2);text-decoration:none;font-size:14px;font-weight:500;padding:6px 8px;margin-left:-8px;border-radius:6px" style-hover="background:var(--subtle);color:var(--ink)">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"></path></svg>Lektionen
+    </a>
+    <div style="width:1px;height:22px;background:var(--line)"></div>
+    <div style="display:flex;flex-direction:column;min-width:0;line-height:1.25">
+      <span style="font-size:12px;color:var(--ink-3)">SQL-Grundlagen · Lektion 3</span>
+      <span style="font-size:15px;font-weight:600;letter-spacing:-.01em">Mit WHERE filtern</span>
+    </div>
+    <nav aria-label="Schritte der Lektion" style="flex:1 1 280px;display:flex;align-items:center;gap:12px;min-width:220px;justify-content:center">
+      <div style="display:flex;gap:4px;flex:1;max-width:420px">
+        <sc-for list="{{ segs }}" as="sg" hint-placeholder-count="9">
+          <button type="button" title="{{ sg.title }}" aria-label="{{ sg.title }}" aria-current="{{ sg.current }}" disabled="{{ sg.locked }}" onClick="{{ sg.go }}" style="flex:1;height:24px;padding:0;border:0;background:transparent;display:flex;align-items:center;cursor:{{ sg.cursor }}">
+            <span style="display:block;width:100%;height:{{ sg.h }};border-radius:3px;background:{{ sg.bg }};transition:background .2s,height .2s"></span>
+          </button>
+        </sc-for>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums">{{ stepLabel }}</span>
+    </nav>
+    <div style="display:flex;align-items:center;gap:6px">
+      <button type="button" onClick="{{ download }}" disabled="{{ noDb }}" title="Datenbank herunterladen (.db)" aria-label="Datenbank herunterladen" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--subtle);color:var(--ink)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"></path></svg>
+      </button>
+      <button type="button" onClick="{{ toggleTheme }}" aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--subtle);color:var(--ink)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+      </button>
+      <span title="Gast" style="width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--subtle);color:var(--ink-2);font-size:13px;font-weight:600;margin-left:4px">G</span>
+    </div>
+  </header>
+
+  <sc-if value="{{ showWork }}" hint-placeholder-val="{{ true }}">
+  <main style="flex:1;display:flex;flex-wrap:wrap;gap:16px;padding:16px clamp(16px,2vw,32px);align-items:flex-start;max-width:2200px;width:100%;margin:0 auto">
+
+    <section aria-label="Aufgabe" style="flex:1 1 340px;max-width:520px;min-width:0;display:flex;flex-direction:column;gap:16px">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 22px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);padding:2px 8px;border-radius:5px">{{ stepType }}</span>
+          <span style="font-size:13px;color:var(--ink-3)">{{ stepName }}</span>
+        </div>
+
+        <sc-if value="{{ isExplain }}" hint-placeholder-val="{{ false }}">
+          <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.015em;text-wrap:balance">{{ explainTitle }}</h1>
+          <div style="display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.65;color:var(--ink-2);text-wrap:pretty">
+            <sc-for list="{{ paras }}" as="p" hint-placeholder-count="3"><p style="margin:0">{{ p }}</p></sc-for>
+          </div>
+          <div style="margin-top:18px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--code-bg)">
+            <pre ref="{{ exHlRef }}" style="margin:0;padding:12px 14px;font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;overflow-x:auto"></pre>
+            <div style="display:flex;justify-content:flex-end;padding:8px;border-top:1px solid var(--line);background:var(--surface)">
+              <button type="button" onClick="{{ tryExample }}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;font-weight:500;cursor:pointer" style-hover="background:var(--subtle)">Im Editor ausprobieren
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+              </button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isTask }}" hint-placeholder-val="{{ true }}">
+          <h1 style="margin:0 0 8px;font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.015em;text-wrap:balance">{{ task }}</h1>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink-2);text-wrap:pretty">{{ taskSub }}</p>
+          <sc-if value="{{ hasCols }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:14px">
+              <span style="font-size:13px;color:var(--ink-3);margin-right:2px">Erwartete Spalten</span>
+              <sc-for list="{{ cols }}" as="c" hint-placeholder-count="2">
+                <code style="font:500 12px 'IBM Plex Mono',monospace;padding:3px 7px;border-radius:5px;background:var(--subtle);border:1px solid var(--line)">{{ c }}</code>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)">
+          <h2 style="margin:0;font-size:14px;font-weight:600">Schema</h2>
+          <span style="font-size:12px;color:var(--ink-3)">Klick fügt den Namen ein</span>
+        </div>
+        <sc-if value="{{ dbLoading }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
+            <div style="height:14px;width:40%;border-radius:4px;background:var(--subtle)"></div>
+            <div style="height:12px;width:70%;border-radius:4px;background:var(--subtle)"></div>
+            <div style="height:12px;width:55%;border-radius:4px;background:var(--subtle)"></div>
+          </div>
+        </sc-if>
+        <sc-for list="{{ tables }}" as="t" hint-placeholder-count="0">
+          <div style="border-bottom:1px solid var(--line)">
+            <div style="display:flex;align-items:center">
+              <button type="button" onClick="{{ t.toggle }}" aria-expanded="{{ t.open }}" aria-label="Tabelle {{ t.table }} auf- oder zuklappen" style="width:36px;height:40px;display:grid;place-items:center;border:0;background:transparent;cursor:pointer;color:var(--ink-3)">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:{{ t.rot }};transition:transform .15s"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+              </button>
+              <button type="button" onClick="{{ t.insert }}" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;height:40px;padding:0 16px 0 0;border:0;background:transparent;cursor:pointer;text-align:left" style-hover="color:var(--accent-ink)">
+                <span style="font:600 13px 'IBM Plex Mono',monospace">{{ t.table }}</span>
+                <span style="font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ t.countLabel }}</span>
+              </button>
+            </div>
+            <sc-if value="{{ t.open }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 8px 8px 28px;display:flex;flex-direction:column">
+                <sc-for list="{{ t.cols }}" as="col" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ col.insert }}" style="display:flex;align-items:center;gap:8px;min-height:30px;padding:0 8px;border:0;border-radius:5px;background:transparent;cursor:pointer;text-align:left" style-hover="background:var(--accent-soft)">
+                    <span style="font:13px 'IBM Plex Mono',monospace;flex:1">{{ col.name }}</span>
+                    <span style="font:11px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ col.type }}</span>
+                    <span style="font:600 10px 'IBM Plex Mono',monospace;color:{{ col.keyColor }};min-width:18px;text-align:right">{{ col.key }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ dbFail }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:20px 16px;display:flex;gap:14px;align-items:center">
+            <span data-owl="sleep" style="width:64px;height:58px;flex:none"></span>
+            <div>
+              <p style="margin:0 0 8px;font-size:14px;font-weight:500">Datenbank konnte nicht geladen werden.</p>
+              <button type="button" onClick="{{ retryDb }}" style="height:32px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;cursor:pointer">Erneut versuchen</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ showGuest }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:14px;line-height:1.5;color:var(--ink-2)">
+          <p style="margin:0;flex:1">Fortschritt wird nur in diesem Browser gespeichert. Mit dem Klassencode deiner Lehrkraft kannst du einer <a href="Tabula Konto.dc.html">Klasse beitreten</a>.</p>
+          <button type="button" onClick="{{ hideGuest }}" aria-label="Hinweis schließen" style="width:28px;height:28px;display:grid;place-items:center;border:0;background:transparent;border-radius:5px;cursor:pointer;color:var(--ink-3)" style-hover="background:var(--subtle)">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg>
+          </button>
+        </div>
+      </sc-if>
+    </section>
+
+    <section aria-label="Editor und Ergebnis" style="flex:999 1 520px;min-width:0;display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px">
+      <div style="flex:1 1 560px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 8px 8px 16px;border-bottom:1px solid var(--line)">
+          <label for="tb-query" style="font:500 13px 'IBM Plex Mono',monospace;color:var(--ink-2);flex:1">query.sql</label>
+          <div style="position:relative;display:flex;gap:6px;flex-wrap:wrap">
+            <sc-if value="{{ isExercise }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ openTip }}" disabled="{{ tipLocked }}" title="{{ tipTitle }}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid {{ tipBorder }};border-radius:6px;background:{{ tipBg }};color:{{ tipInk }};font-size:13px;font-weight:500;cursor:pointer" style-hover="filter:brightness(.97)">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5h4M6.5 14.5h3M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.1V11h4v-.2c0-.4.2-.8.6-1.1A4.5 4.5 0 0 0 8 1.5Z"></path></svg>{{ tipLabel }}
+              </button>
+              <sc-if value="{{ canSolution }}" hint-placeholder-val="{{ false }}">
+                <button type="button" onClick="{{ askSolution }}" style="height:32px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--subtle);color:var(--ink)">Lösung zeigen</button>
+              </sc-if>
+            </sc-if>
+            <button type="button" onClick="{{ askReset }}" title="Startcode wiederherstellen" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--subtle);color:var(--ink)">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3v3.5H6"></path><path d="M3 9.5A5 5 0 1 0 4 4.4L2.5 6.5"></path></svg>Zurücksetzen
+            </button>
+            <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+              <div role="alertdialog" aria-label="{{ confirmTitle }}" style="position:absolute;right:0;top:40px;z-index:10;width:280px;padding:16px;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow-pop);animation:tbIn .16s ease-out">
+                <p style="margin:0 0 4px;font-size:14px;font-weight:600">{{ confirmTitle }}</p>
+                <p style="margin:0 0 14px;font-size:13px;line-height:1.5;color:var(--ink-2)">{{ confirmText }}</p>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                  <button type="button" onClick="{{ closeConfirm }}" style="height:32px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;cursor:pointer">Abbrechen</button>
+                  <button type="button" onClick="{{ doConfirm }}" style="height:32px;padding:0 12px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;font-size:13px;font-weight:500;cursor:pointer">{{ confirmCta }}</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="max-height:max(260px,calc(100vh - 340px));overflow:auto;background:var(--code-bg)">
+          <div style="display:flex;min-width:100%;width:max-content">
+            <div aria-hidden="true" style="flex:none;padding:14px 0;width:44px;text-align:right;border-right:1px solid var(--line);font:13px/22px 'IBM Plex Mono',monospace;color:var(--ink-3);user-select:none;position:sticky;left:0;background:var(--code-bg);z-index:2">
+              <sc-for list="{{ lines }}" as="ln" hint-placeholder-count="6">
+                <div style="padding-right:10px;color:{{ ln.color }};background:{{ ln.bg }};font-weight:{{ ln.weight }}">{{ ln.n }}</div>
+              </sc-for>
+            </div>
+            <div style="position:relative;flex:1;min-width:300px">
+              <sc-if value="{{ hasErrLine }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;left:0;right:0;top:{{ errTop }};height:22px;background:var(--danger-soft);border-bottom:1px dashed var(--danger)"></div>
+              </sc-if>
+              <pre ref="{{ hlRef }}" aria-hidden="true" style="position:absolute;inset:0;margin:0;padding:14px 16px;font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;color:var(--ink);pointer-events:none"></pre>
+              <textarea id="tb-query" ref="{{ taRef }}" value="{{ code }}" onChange="{{ onCode }}" onKeyDown="{{ onKey }}" spellcheck="false" autocomplete="off" autocapitalize="off" aria-invalid="{{ invalid }}" aria-describedby="tb-feedback" placeholder="SELECT …" style="position:relative;display:block;width:{{ taWidth }};min-width:100%;height:{{ taHeight }};margin:0;padding:14px 16px;border:0;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:var(--accent);font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;outline:none;tab-size:2"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)">
+          <button type="button" onClick="{{ exec }}" disabled="{{ runDisabled }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:{{ runOpacity }}" style-hover="background:#1d4ed8;border-color:#1d4ed8">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"></path></svg>{{ runLabel }}
+          </button>
+          <span style="font-size:13px;color:var(--ink-3)"><kbd style="font:12px 'IBM Plex Mono',monospace;padding:2px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;background:var(--surface)">{{ modKey }}</kbd> + <kbd style="font:12px 'IBM Plex Mono',monospace;padding:2px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;background:var(--surface)">Enter</kbd></span>
+          <span style="flex:1"></span>
+          <span style="font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ attemptsLabel }}</span>
+        </div>
+      </div>
+
+      <div style="flex:1 1 480px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div id="tb-feedback" aria-live="polite" style="display:flex;gap:14px;align-items:center;padding:12px 16px;min-height:76px;background:{{ fbBg }};border-bottom:1px solid {{ fbLine }};transition:background .2s">
+          <span data-owl="{{ owl }}" style="width:62px;height:56px;flex:none"></span>
+          <div style="flex:1;min-width:0">
+            <p style="margin:0;font-size:15px;font-weight:600;color:{{ fbInk }}">{{ fbTitle }}</p>
+            <p style="margin:2px 0 0;font-size:14px;line-height:1.5;color:{{ fbSubInk }};text-wrap:pretty">{{ fbSub }}</p>
+            <sc-if value="{{ hasOrig }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:4px 0 0;font:12px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ errOrig }}</p>
+            </sc-if>
+          </div>
+          <sc-if value="{{ canNext }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ next }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;animation:tbIn .2s ease-out" style-hover="background:#1d4ed8">Weiter
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+            </button>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ tipShown }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--warn-soft);color:var(--warn-ink);font-size:14px;line-height:1.55;animation:tbIn .2s ease-out">
+            <strong style="font-weight:600;flex:none">Tipp von Edgar</strong><span style="color:var(--ink)">{{ tip }}</span>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)">
+          <h2 style="margin:0;font-size:14px;font-weight:600">Ergebnis</h2>
+          <span style="font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ resultMeta }}</span>
+        </div>
+        <sc-if value="{{ running }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:10px;padding:24px 16px;color:var(--ink-2);font-size:14px">
+            <span style="width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:tbSpin .7s linear infinite"></span>Abfrage läuft …
+          </div>
+        </sc-if>
+        <sc-if value="{{ resultEmpty }}" hint-placeholder-val="{{ true }}">
+          <p style="margin:0;padding:28px 16px;font-size:14px;color:var(--ink-3);text-align:center">{{ emptyText }}</p>
+        </sc-if>
+        <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ false }}">
+          <div style="max-height:max(280px,calc(100vh - 380px));overflow:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">
+              <thead><tr>
+                <sc-for list="{{ resCols }}" as="h" hint-placeholder-count="2">
+                  <th style="position:sticky;top:0;text-align:left;padding:8px 16px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-2);background:var(--subtle);border-bottom:1px solid var(--line);white-space:nowrap">{{ h }}</th>
+                </sc-for>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ resRows }}" as="row" hint-placeholder-count="4">
+                  <tr style="border-bottom:1px solid var(--line)" style-hover="background:var(--subtle)">
+                    <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="2">
+                      <td style="padding:8px 16px;border-bottom:1px solid var(--line);white-space:nowrap;color:{{ cell.color }};font-style:{{ cell.fs }}">{{ cell.v }}</td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <sc-if value="{{ truncated }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:0;padding:8px 16px;font-size:13px;color:var(--ink-3);border-top:1px solid var(--line)">{{ truncLabel }}</p>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0;padding:24px 16px;font-size:14px;color:var(--ink-2);text-align:center">Keine Zeile erfüllt die Bedingung.</p>
+        </sc-if>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ showSummary }}" hint-placeholder-val="{{ false }}">
+    <main style="flex:1;display:flex;justify-content:center;padding:48px 20px">
+      <div style="width:100%;max-width:680px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;align-items:center;gap:18px">
+          <span data-owl="read" style="width:96px;height:86px;flex:none"></span>
+          <div>
+            <p style="margin:0 0 4px;font-size:13px;color:var(--ink-3)">Zusammenfassung · Lektion 3</p>
+            <h1 style="margin:0;font-size:30px;font-weight:600;letter-spacing:-.02em">Das hast du gelernt</h1>
+          </div>
+        </div>
+        <ul style="margin:0;padding:0;list-style:none;border-top:1px solid var(--line)">
+          <sc-for list="{{ sumPoints }}" as="pt" hint-placeholder-count="4">
+            <li style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-size:16px;line-height:1.55">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M3 8.5 6.5 12 13 4.5"></path></svg>{{ pt }}
+            </li>
+          </sc-for>
+        </ul>
+        <div style="padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px">
+          <h2 style="margin:0 0 6px;font-size:15px;font-weight:600">Wozu braucht man das in echt?</h2>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink-2);text-wrap:pretty">{{ sumReal }}</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="button" onClick="{{ finish }}" style="display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#1d4ed8">Lektion abschließen</button>
+          <button type="button" onClick="{{ prev }}" style="height:44px;padding:0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:15px;cursor:pointer" style-hover="background:var(--subtle)">Zurück zur letzten Übung</button>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ finished }}" hint-placeholder-val="{{ false }}">
+    <main style="flex:1;display:grid;place-items:center;padding:48px 20px">
+      <div style="width:100%;max-width:560px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;animation:tbIn .3s ease-out">
+        <span data-owl="celebrate" style="width:180px;height:162px"></span>
+        <h1 style="margin:0;font-size:34px;font-weight:600;letter-spacing:-.02em">Lektion geschafft</h1>
+        <p style="margin:0;font-size:16px;line-height:1.6;color:var(--ink-2)">{{ doneSub }}</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+          <a href="Tabula Lernen.dc.html" style="display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;text-decoration:none" style-hover="background:#1d4ed8;color:#fff">Nächste Lektion: Ergebnisse sortieren</a>
+          <a href="Tabula Lernen.dc.html" style="display:flex;align-items:center;height:44px;padding:0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:15px;text-decoration:none" style-hover="background:var(--subtle);color:var(--ink)">Zur Übersicht</a>
+        </div>
+        <button type="button" onClick="{{ restart }}" style="margin-top:8px;border:0;background:none;color:var(--ink-3);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Lektion von vorn beginnen</button>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ showWork }}" hint-placeholder-val="{{ true }}">
+    <footer style="position:sticky;bottom:0;z-index:15;display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--surface);border-top:1px solid var(--line)">
+      <button type="button" onClick="{{ prev }}" disabled="{{ isFirst }}" style="display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;cursor:pointer;opacity:{{ prevOpacity }}" style-hover="background:var(--subtle)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8H3M7.5 3.5 3 8l4.5 4.5"></path></svg>Zurück
+      </button>
+      <span style="flex:1;text-align:center;font-size:13px;color:var(--ink-3)">{{ nextHint }}</span>
+      <sc-if value="{{ showSkip }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ skip }}" style="border:0;background:none;color:var(--ink-2);font-size:14px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:8px">Überspringen</button>
+      </sc-if>
+      <button type="button" onClick="{{ next }}" disabled="{{ nextLocked }}" style="display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border:1px solid {{ nextBorder }};border-radius:7px;background:{{ nextBg }};color:{{ nextInk }};font-size:14px;font-weight:500;cursor:pointer">Weiter
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+      </button>
+    </footer>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { cur: 0, reached: 0, theme: 'light', dbState: 'loading', schema: [], open: { books: true }, st: [], confirm: null, finished: false, guest: false, total: 0 };
+  rootRef = React.createRef(); taRef = React.createRef(); hlRef = React.createRef(); exHlRef = React.createRef();
+  core = null; db = null;
+
+  async componentDidMount() {
+    this.core = await import(new URL('tabula-core.js', document.baseURI).href);
+    const C = this.core, L = C.LESSON;
+    const theme = C.getTheme('light'); document.documentElement.dataset.tb = theme;
+    let saved = {}; try { saved = JSON.parse(localStorage.getItem('tabula-l3') || '{}'); } catch (e) {}
+    let guest = false; try { guest = !localStorage.getItem('tabula-guest-hint'); } catch (e) {}
+    const st = L.steps.map(s => ({ code: s.kind === 'exercise' ? s.starter : s.kind === 'example' ? s.code : s.kind === 'explain' ? s.example : '', attempts: 0, state: 'new', result: null, errLine: null, errMsg: '', errOrig: '', sub: '', tipOpen: false, ms: 0 }));
+    const reached = Math.min(saved.reached || 0, L.steps.length - 1);
+    this.setState({ theme, st, reached, cur: Math.min(saved.cur || 0, reached), guestAllowed: guest });
+    this.onGlobalKey = e => { if (e.key === 'Escape' && this.state.confirm) this.setState({ confirm: null }); };
+    window.addEventListener('keydown', this.onGlobalKey);
+    C.loadOwl().then(() => this.paint());
+    this.loadDb();
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onGlobalKey); }
+  componentDidUpdate() { this.paint(); }
+  paint() {
+    const C = this.core; if (!C) return;
+    C.paintOwls(this.rootRef.current, this.state.theme === 'dark');
+    const s = this.state.st[this.state.cur];
+    if (this.hlRef.current && s) this.hlRef.current.innerHTML = C.highlight(s.code);
+    const step = C.LESSON.steps[this.state.cur];
+    if (this.exHlRef.current && step && step.kind === 'explain') this.exHlRef.current.innerHTML = C.highlight(step.example);
+  }
+  async loadDb() {
+    this.setState({ dbState: 'loading' });
+    try {
+      this.db = await this.core.openDb();
+      this.setState({ dbState: 'ok', schema: this.core.readSchema(this.db), total: this.core.run(this.db, 'SELECT COUNT(*) FROM books').rows[0][0] });
+    } catch (e) { console.error(e); this.setState({ dbState: 'fail' }); }
+  }
+  save(cur, reached) { try { localStorage.setItem('tabula-l3', JSON.stringify({ cur, reached })); } catch (e) {} }
+  patch(fn) { this.setState(S => { const st = S.st.slice(); st[S.cur] = { ...st[S.cur], ...fn(st[S.cur]) }; return { st }; }); }
+  goto(i) { if (i > this.state.reached || i < 0) return; this.setState({ cur: i, confirm: null, finished: false }); this.save(i, this.state.reached); }
+  advance() {
+    const L = this.core.LESSON, n = Math.min(this.state.cur + 1, L.steps.length - 1);
+    const reached = Math.max(this.state.reached, n);
+    this.setState({ cur: n, reached, confirm: null }); this.save(n, reached);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  insertText(txt) {
+    const ta = this.taRef.current, s = this.state.st[this.state.cur]; if (!s) return;
+    const a = ta ? ta.selectionStart : s.code.length, b = ta ? ta.selectionEnd : s.code.length;
+    const before = s.code.slice(0, a), pad = before && !/[\s(,]$/.test(before) ? ' ' : '';
+    const code = before + pad + txt + s.code.slice(b);
+    this.patch(() => ({ code, errLine: null }));
+    const pos = a + pad.length + txt.length;
+    requestAnimationFrame(() => { if (ta) { ta.focus(); ta.setSelectionRange(pos, pos); } });
+  }
+  async exec() {
+    const C = this.core, L = C.LESSON, step = L.steps[this.state.cur], s = this.state.st[this.state.cur];
+    if (!this.db || !s || s.state === 'running') return;
+    const sql = s.code.trim(); if (!sql) return;
+    const prevState = s.state;
+    this.patch(() => ({ state: 'running' }));
+    const t0 = performance.now();
+    let res = null, err = null;
+    try { res = C.runChecked(this.db, sql); } catch (e) { err = e; }
+    const ms = Math.max(1, Math.round(performance.now() - t0));
+    await new Promise(r => setTimeout(r, 220));
+    if (err) {
+      const x = C.explainError(sql, err);
+      this.patch(o => ({ state: 'error', result: null, errMsg: x.msg, errOrig: x.orig, errLine: x.line, attempts: o.attempts + (step.kind === 'exercise' ? 1 : 0), ms }));
+      return;
+    }
+    if (step.kind === 'exercise') {
+      if (prevState === 'shown' || prevState === 'solved') { const c = C.compare(res, C.run(this.db, step.solution), step.ordered); this.patch(() => ({ state: c.ok ? prevState : 'wrong', result: res, errLine: null, sub: c.ok ? '' : c.sub, ms })); return; }
+      const c = C.compare(res, C.run(this.db, step.solution), step.ordered);
+      this.patch(o => ({ state: c.ok ? 'solved' : 'wrong', result: res, errLine: null, errOrig: '', sub: c.ok ? step.okSub : c.sub, attempts: o.attempts + (c.ok ? 0 : 1), ms }));
+      if (c.ok && this.state.guestAllowed) this.setState({ guest: true });
+    } else {
+      this.patch(() => ({ state: 'ran', result: res, errLine: null, errOrig: '', ms }));
+    }
+  }
+
+  renderVals() {
+    const C = this.core, S = this.state;
+    const L = C ? C.LESSON : null;
+    if (!L || !S.st.length) return { showWork: true, dbLoading: true, segs: [], tables: [], lines: [{ n: 1 }], stepLabel: '', owl: 'loading', fbTitle: 'Datenbank wird geladen …', fbSub: '', resultEmpty: true, emptyText: '' };
+    const step = L.steps[S.cur], s = S.st[S.cur], K = step.kind;
+    const isEx = K === 'exercise', isSum = K === 'summary';
+    const solved = s.state === 'solved' || s.state === 'shown';
+    const exDone = i => { const k = L.steps[i].kind; return k !== 'exercise' || ['solved', 'shown'].includes(S.st[i].state) || i < S.reached; };
+    const segs = L.steps.map((x, i) => {
+      const cur = i === S.cur, locked = i > S.reached, done = i < S.reached || (i === S.cur && solved) || (i <= S.reached && !cur && i < S.cur);
+      return { title: (i + 1) + '. ' + x.name + (locked ? ' (gesperrt)' : ''), current: cur ? 'step' : 'false', locked, cursor: locked ? 'not-allowed' : 'pointer', go: () => this.goto(i),
+        h: cur ? '8px' : '5px', bg: cur ? 'var(--accent)' : done ? 'var(--accent-line)' : 'var(--line)' };
+    });
+    const lineArr = s.code.split('\n');
+    const lines = lineArr.map((_, i) => { const e = s.state === 'error' && s.errLine === i + 1; return { n: i + 1, color: e ? 'var(--danger)' : 'inherit', bg: e ? 'var(--danger-soft)' : 'transparent', weight: e ? 600 : 400 }; });
+    const longest = Math.max(20, ...lineArr.map(l => l.length));
+    const tipReady = isEx && s.attempts >= 3;
+    // Edgar
+    let owl = 'idle';
+    if (S.dbState === 'loading' || s.state === 'running') owl = 'loading';
+    else if (S.dbState === 'fail') owl = 'sleep';
+    else if (K === 'explain') owl = s.state === 'ran' ? 'wink' : 'read';
+    else if (K === 'example') owl = s.state === 'ran' ? 'success' : 'point';
+    else if (s.state === 'error') owl = tipReady && !s.tipOpen ? 'raisehand' : 'error';
+    else if (s.state === 'wrong') owl = s.tipOpen ? 'hint' : tipReady ? 'raisehand' : 'thinking';
+    else if (s.state === 'solved') owl = 'success';
+    else if (s.state === 'shown') owl = 'curious';
+    else if (s.tipOpen) owl = 'hint';
+    // Feedback
+    const tones = { neutral: ['var(--surface)', 'var(--line)', 'var(--ink)'], danger: ['var(--danger-soft)', 'var(--danger-line)', 'var(--danger-ink)'], ok: ['var(--ok-soft)', 'var(--ok-line)', 'var(--ok-ink)'], accent: ['var(--accent-soft)', 'var(--accent-line)', 'var(--accent-ink)'] };
+    let tone = 'neutral', fbTitle = '', fbSub = '';
+    const rows = s.result ? s.result.rows.length : 0;
+    if (S.dbState === 'loading') { fbTitle = 'Datenbank wird geladen …'; fbSub = 'Die Schulbibliothek läuft gleich direkt in deinem Browser.'; }
+    else if (S.dbState === 'fail') { tone = 'danger'; fbTitle = 'Datenbank konnte nicht geladen werden.'; fbSub = 'Prüfe die Internetverbindung und versuche es erneut.'; }
+    else if (s.state === 'running') { fbTitle = 'Edgar prüft deine Abfrage …'; }
+    else if (s.state === 'error') { tone = 'danger'; fbTitle = s.errMsg; fbSub = tipReady && !s.tipOpen ? 'Du hängst hier schon eine Weile. Edgar hat einen Tipp für dich.' : 'Korrigiere die markierte Stelle und führe die Abfrage erneut aus.'; }
+    else if (s.state === 'wrong') { tone = 'accent'; fbTitle = 'Noch nicht ganz.'; fbSub = s.sub + (tipReady && !s.tipOpen ? ' Ein Tipp ist jetzt verfügbar.' : ''); }
+    else if (s.state === 'solved') { tone = 'ok'; fbTitle = 'Richtig!'; fbSub = s.sub || step.okSub; }
+    else if (s.state === 'shown') { tone = 'accent'; fbTitle = 'Das ist die Musterlösung.'; fbSub = 'Führe sie aus und vergleiche sie mit deinem Versuch. Danach geht es weiter.'; }
+    else if (s.state === 'ran' && K === 'example') { tone = 'ok'; fbTitle = rows + ' von ' + S.total + ' Büchern erfüllen die Bedingung year > 2010.'; fbSub = step.sub; }
+    else if (s.state === 'ran') { fbTitle = 'Ausgeführt.'; fbSub = 'Lies weiter oder ändere die Abfrage und probiere es noch einmal.'; }
+    else if (K === 'explain') { fbTitle = 'Lies die Erklärung.'; fbSub = 'Das Beispiel kannst du direkt im Editor ausprobieren.'; }
+    else if (K === 'example') { fbTitle = 'Führe das Beispiel aus.'; fbSub = step.taskSub; }
+    else if (s.tipOpen) { fbTitle = 'Edgar hat dir einen Tipp gegeben.'; fbSub = 'Lies ihn und versuche es noch einmal.'; }
+    else { fbTitle = 'Schreib deine Abfrage.'; fbSub = 'Ergänze die Bedingung nach WHERE und führe die Abfrage aus.'; }
+    const t = tones[tone];
+    const res = s.result, shown = res ? res.rows.slice(0, 100) : [];
+    const canAdvance = !isEx || solved;
+    const confirmMap = { reset: ['Startcode wiederherstellen?', 'Deine Änderungen in diesem Schritt gehen verloren.', 'Zurücksetzen'], solution: ['Lösung wirklich anzeigen?', 'Die Musterlösung ersetzt deinen Code. Die Übung zählt dann als angesehen, nicht als gelöst.', 'Lösung zeigen'] };
+    const cf = S.confirm ? confirmMap[S.confirm] : ['', '', ''];
+    const mac = /Mac|iPhone|iPad/.test(navigator.platform || '');
+    const attemptsLeft = Math.max(0, 3 - s.attempts);
+    return {
+      rootRef: this.rootRef, taRef: this.taRef, hlRef: this.hlRef, exHlRef: this.exHlRef,
+      segs, stepLabel: (S.cur + 1) + ' / ' + L.steps.length,
+      showWork: !isSum && !S.finished, showSummary: isSum && !S.finished, finished: S.finished,
+      stepType: step.type, stepName: step.name,
+      isExplain: K === 'explain', explainTitle: step.title, paras: step.paras || [],
+      isTask: K === 'exercise' || K === 'example', task: step.task, taskSub: step.taskSub,
+      hasCols: isEx, cols: step.cols || [],
+      isExercise: isEx,
+      dbLoading: S.dbState === 'loading', dbFail: S.dbState === 'fail', noDb: !this.db, retryDb: () => this.loadDb(),
+      tables: S.schema.map(tb => ({ table: tb.table, countLabel: tb.count + ' Zeilen', open: !!S.open[tb.table], rot: S.open[tb.table] ? 'rotate(90deg)' : 'none',
+        toggle: () => this.setState(X => ({ open: { ...X.open, [tb.table]: !X.open[tb.table] } })), insert: () => this.insertText(tb.table),
+        cols: tb.cols.map(c => ({ name: c.name, type: c.type, key: c.key, keyColor: c.key === 'PK' ? 'var(--accent-ink)' : 'var(--ink-3)', insert: () => this.insertText(c.name) })) })),
+      showGuest: S.guest, hideGuest: () => { this.setState({ guest: false, guestAllowed: false }); try { localStorage.setItem('tabula-guest-hint', '1'); } catch (e) {} },
+      download: () => this.db && C.exportDb(this.db, L.db),
+      toggleTheme: () => { const th = S.theme === 'dark' ? 'light' : 'dark'; C.setTheme(th); this.setState({ theme: th }); },
+      tryExample: () => { this.patch(() => ({ code: step.example, state: 'new', result: null })); requestAnimationFrame(() => this.taRef.current && this.taRef.current.focus()); },
+      code: s.code, lines, taWidth: 'calc(' + longest + 'ch + 40px)', taHeight: (Math.max(lineArr.length, 7) * 22 + 28) + 'px',
+      hasErrLine: s.state === 'error' && !!s.errLine, errTop: (14 + ((s.errLine || 1) - 1) * 22) + 'px', invalid: s.state === 'error' ? 'true' : 'false',
+      onCode: e => { const v = e.target.value; this.patch(o => ({ code: v, errLine: o.state === 'error' ? o.errLine : null })); },
+      onKey: e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); this.exec(); }
+        else if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); this.insertRaw('  '); }
+      },
+      exec: () => this.exec(), runDisabled: !this.db || s.state === 'running' || !s.code.trim(), runOpacity: !this.db || !s.code.trim() ? 0.55 : 1,
+      runLabel: s.state === 'running' ? 'Läuft …' : res || s.state === 'error' ? 'Erneut ausführen' : 'Ausführen',
+      modKey: mac ? '⌘' : 'Strg',
+      attemptsLabel: isEx && s.attempts ? s.attempts + (s.attempts === 1 ? ' Versuch' : ' Versuche') : '',
+      tipLocked: !tipReady || s.tipOpen, tipTitle: tipReady ? 'Tipp anzeigen' : 'Der Tipp erscheint nach 3 Versuchen',
+      tipLabel: s.tipOpen ? 'Tipp offen' : tipReady ? 'Tipp anzeigen' : 'Tipp in ' + attemptsLeft + (attemptsLeft === 1 ? ' Versuch' : ' Versuchen'),
+      tipBg: tipReady && !s.tipOpen ? 'var(--warn-soft)' : 'var(--surface)', tipBorder: tipReady && !s.tipOpen ? 'var(--warn-line)' : 'var(--line)', tipInk: tipReady && !s.tipOpen ? 'var(--warn-ink)' : 'var(--ink-3)',
+      openTip: () => this.patch(() => ({ tipOpen: true })), tipShown: isEx && s.tipOpen, tip: step.tip,
+      canSolution: isEx && s.tipOpen && s.state !== 'solved' && s.state !== 'shown',
+      askSolution: () => this.setState({ confirm: 'solution' }), askReset: () => this.setState({ confirm: 'reset' }),
+      confirmOpen: !!S.confirm, confirmTitle: cf[0], confirmText: cf[1], confirmCta: cf[2], closeConfirm: () => this.setState({ confirm: null }),
+      doConfirm: () => {
+        if (S.confirm === 'reset') this.patch(() => ({ code: isEx ? step.starter : K === 'example' ? step.code : step.example, state: 'new', result: null, errLine: null, sub: '' }));
+        else this.patch(() => ({ code: step.solution, state: 'shown', errLine: null }));
+        this.setState({ confirm: null });
+      },
+      owl, fbBg: t[0], fbLine: t[1], fbInk: t[2], fbSubInk: tone === 'neutral' ? 'var(--ink-2)' : 'var(--ink)', fbTitle, fbSub,
+      hasOrig: s.state === 'error' && !!s.errOrig, errOrig: s.errOrig,
+      canNext: isEx && solved && S.cur < L.steps.length - 1, next: () => canAdvance && this.advance(),
+      running: s.state === 'running', resultMeta: res ? rows + (rows === 1 ? ' Zeile' : ' Zeilen') + ' · ' + s.ms + ' ms' : s.state === 'error' ? 'Fehler' : 'Bereit',
+      resultEmpty: !res && s.state !== 'running', emptyText: s.state === 'error' ? 'Kein Ergebnis, weil die Abfrage einen Fehler hat.' : 'Führe deine Abfrage aus, um das Ergebnis zu sehen.',
+      hasRows: !!res && rows > 0 && s.state !== 'running', noRows: !!res && rows === 0 && s.state !== 'running',
+      resCols: res ? res.columns : [], resRows: shown.map(r => ({ cells: r.map(v => ({ v: v === null ? 'NULL' : String(v), color: v === null ? 'var(--ink-3)' : 'var(--ink)', fs: v === null ? 'italic' : 'normal' })) })),
+      truncated: rows > 100, truncLabel: 'Erste 100 von ' + rows + ' Zeilen',
+      isFirst: S.cur === 0, prevOpacity: S.cur === 0 ? 0.45 : 1, prev: () => this.goto(S.cur - 1),
+      nextLocked: !canAdvance, nextBg: canAdvance ? 'var(--surface)' : 'var(--subtle)', nextBorder: 'var(--line)', nextInk: canAdvance ? 'var(--ink)' : 'var(--ink-3)',
+      nextHint: canAdvance ? 'Nächster Schritt: ' + (L.steps[S.cur + 1] ? L.steps[S.cur + 1].name : '') : 'Löse die Übung, um weiterzugehen.',
+      showSkip: isEx && !solved, skip: () => { this.patch(() => ({ state: 'shown' })); this.advance(); },
+      sumPoints: isSum ? step.points : [], sumReal: isSum ? step.real : '',
+      finish: () => { this.setState({ finished: true }); this.save(S.cur, S.reached); },
+      doneSub: L.done.sub, restart: () => { this.setState({ finished: false, cur: 0 }); this.save(0, S.reached); }
+    };
+  }
+  insertRaw(txt) {
+    const ta = this.taRef.current, s = this.state.st[this.state.cur]; if (!ta || !s) return;
+    const a = ta.selectionStart, b = ta.selectionEnd, code = s.code.slice(0, a) + txt + s.code.slice(b);
+    this.patch(() => ({ code }));
+    requestAnimationFrame(() => ta.setSelectionRange(a + txt.length, a + txt.length));
+  }
+}
+</script>
+</body>
+</html>

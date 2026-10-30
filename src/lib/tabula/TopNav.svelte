@@ -67,12 +67,11 @@
 	<a class="brand" href="/"><span class="ic">{@html icon}</span>Tabula</a>
 	<nav class="links">
 		{#each links as l}
-			<a href={l.href} class:on={l.href === '/#lehrkraefte' ? path === '/' : path.startsWith(l.href)}>{l.label}</a>
+			<a href={l.href} aria-current={(l.href === '/#lehrkraefte' ? path === '/' : path.startsWith(l.href)) ? 'page' : undefined} class:on={l.href === '/#lehrkraefte' ? path === '/' : path.startsWith(l.href)}>{l.label}</a>
 		{/each}
 	</nav>
 	<span class="grow"></span>
-	<button class="theme" onclick={toggleTheme} aria-label="Hell/Dunkel umschalten">◐</button>
-	<span class="lang mono">DE</span>
+	<button class="theme" onclick={toggleTheme} aria-label="Hell/Dunkel umschalten"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg></button>
 
 	{#if ACCOUNTS_LIVE && session.user}
 		<!-- Avatar-Menue (Design A2-04) -->
@@ -121,19 +120,19 @@
 </header>
 
 <style>
-	.nav { height: 64px; flex: none; display: flex; align-items: center; gap: 32px; padding: 0 32px; border-bottom: 1px solid var(--line); background: var(--surface); position: relative; z-index: 10; }
-	.brand { display: flex; align-items: center; gap: 9px; font-size: 19px; font-weight: 600; letter-spacing: -0.5px; }
-	.ic { width: 30px; height: 26px; display: block; }
+	.nav { height: 60px; flex: none; display: flex; align-items: center; gap: 28px; padding: 0 clamp(16px, 3vw, 48px); border-bottom: 1px solid var(--line); background: var(--surface); position: relative; z-index: 10; }
+	.brand { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+	.ic { width: 28px; height: 25px; display: block; }
 	.ic :global(svg) { display: block; }
-	.links { display: flex; gap: 24px; font-size: 14px; color: var(--ink-2); }
-	.links a { padding: 20px 0; }
-	.links a:hover { color: var(--ink); }
-	.links a.on { color: var(--ink); font-weight: 500; box-shadow: 0 2px 0 var(--accent); }
+	.links { display: flex; gap: 4px; font-size: 14px; color: var(--ink-2); }
+	.links a { padding: 6px 10px; border-radius: 6px; }
+	.links a:hover { color: var(--ink); background: var(--subtle); }
+	.links a.on { color: var(--ink); font-weight: 500; background: var(--subtle); }
 	.grow { flex: 1; }
-	.theme { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line) !important; border-radius: 6px; color: var(--ink-2) !important; }
-	.lang { font-size: 12px; color: var(--ink-2); }
+	.theme { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--line) !important; border-radius: 7px; background: var(--surface) !important; color: var(--ink-2) !important; }
+	.theme:hover { background: var(--subtle) !important; }
 	.mono { font-family: var(--mono, 'IBM Plex Mono', monospace); }
-	.login { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line-strong); font-size: 14px; font-weight: 500; }
+	.login { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 7px; border: 1px solid var(--line); font-size: 14px; font-weight: 500; }
 	.login:hover { background: var(--subtle); }
 	.burger { display: none; width: 44px; height: 44px; place-items: center; font-size: 18px; color: var(--ink-2) !important; }
 	.mmenu { position: absolute; top: 52px; right: 8px; width: 240px; display: flex; flex-direction: column; padding: 6px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow-pop); font-size: 15px; }
@@ -160,7 +159,7 @@
 		.nav { height: 56px; gap: 8px; padding: 0 6px 0 16px; }
 		.brand { font-size: 17px; gap: 8px; }
 		.ic { width: 26px; height: 22px; }
-		.links, .theme, .lang { display: none; }
+		.links, .theme { display: none; }
 		.login { padding: 0 12px; }
 		.burger { display: grid; }
 		.avatar-name { display: none; }

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lernen · Tabula</title>
+<meta name="description" content="Alle Lektionen von Tabula: SQL-Grundlagen, eigene Datenbank, Python und Daten.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/learn.css">
+<script type="module" src="/js/learn.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<noscript><p style="font-family:'IBM Plex Sans',sans-serif;padding:24px">Tabula braucht JavaScript, damit die SQL-Datenbank im Browser laufen kann.</p></noscript>
+<script type="text/template" id="tb-tpl">
+<div ref="{{ rootRef }}" style="min-height:100vh;background:var(--bg)">
+  <header style="position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)">
+    <div style="max-width:1680px;margin:0 auto;padding:0 clamp(16px,3vw,48px);min-height:60px;display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+      <a href="https://www.tabulasql.de/" style="display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:18px;letter-spacing:-.02em"><span data-owl-icon="1" style="width:28px;height:25px;display:block"></span>Tabula</a>
+      <nav aria-label="Hauptnavigation" style="display:flex;gap:4px;flex:1;font-size:14px">
+        <a href="/learn" aria-current="page" style="padding:6px 10px;border-radius:6px;color:var(--ink);background:var(--subtle);text-decoration:none;font-weight:500">Lernen</a>
+        <a href="https://www.tabulasql.de/datasets" style="padding:6px 10px;border-radius:6px;color:var(--ink-2);text-decoration:none" data-hv="1">Datensätze</a>
+        <a href="https://www.tabulasql.de/#lehrkraefte" style="padding:6px 10px;border-radius:6px;color:var(--ink-2);text-decoration:none" data-hv="2">Für Lehrkräfte</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" onClick="{{ toggleTheme }}" aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" data-hv="3">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+        </button>
+        <a href="/login" style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:7px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:500" data-hv="4">Anmelden</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1680px;margin:0 auto;padding:32px clamp(16px,3vw,48px) 80px;display:flex;flex-direction:column;gap:24px">
+    <sc-if value="{{ inClass }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;border-radius:12px;background:var(--accent);color:#fff">
+        <span data-owl="raisehand" data-owl-static="1" style="width:44px;height:40px;flex:none"></span>
+        <p style="margin:0;flex:1 1 260px;font-size:15px">Deine Klasse <strong>Informatik 10b</strong> arbeitet gerade an: <strong>Mit WHERE filtern</strong></p>
+        <a href="/learn/beginner/where-filters" style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:7px;background:#fff;color:#0f172a;text-decoration:none;font-size:14px;font-weight:600" data-hv="5">Öffnen</a>
+      </div>
+    </sc-if>
+
+    <section aria-label="Weiterlernen" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface)">
+      <span data-owl="{{ heroOwl }}" style="width:120px;height:108px;flex:none"></span>
+      <div style="flex:1 1 300px;min-width:0">
+        <p style="margin:0 0 4px;font-size:14px;color:var(--ink-3)">{{ heroKicker }}</p>
+        <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:600;letter-spacing:-.02em;text-wrap:balance">{{ heroTitle }}</h1>
+        <sc-if value="{{ showHeroBar }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;max-width:360px">
+            <div role="progressbar" aria-valuemin="0" aria-valuemax="{{ stepsTotal }}" aria-valuenow="{{ stepsDone }}" aria-label="Fortschritt in Lektion 3" style="flex:1;height:6px;border-radius:3px;background:var(--subtle);overflow:hidden"><div style="height:100%;width:{{ heroPct }};background:var(--accent);border-radius:3px"></div></div>
+            <span style="font:12px 'IBM Plex Mono',monospace;color:var(--ink-2);font-variant-numeric:tabular-nums">{{ heroSteps }}</span>
+          </div>
+        </sc-if>
+      </div>
+      <a href="/learn/beginner/where-filters" style="display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 20px;border-radius:9px;background:var(--accent);color:#fff;text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap" data-hv="6">{{ heroCta }}
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+      </a>
+    </section>
+
+    <sc-if value="{{ guestNote }}" hint-placeholder-val="{{ true }}">
+      <p style="margin:-8px 0 0;font-size:14px;color:var(--ink-2)">Fortschritt wird nur in diesem Browser gespeichert. Mit dem Klassencode deiner Lehrkraft kannst du einer <a href="/beitreten">Klasse beitreten</a>.</p>
+    </sc-if>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px clamp(24px,3vw,56px);align-items:start;margin-top:8px">
+    <sc-for list="{{ tracks }}" as="tr" hint-placeholder-count="3">
+      <section aria-label="{{ tr.name }}" style="margin-top:16px;grid-row:{{ tr.row }};grid-column:{{ tr.col }}">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line-strong)">
+          <h2 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em">{{ tr.name }}</h2>
+          <span style="font-size:14px;color:var(--ink-3);flex:1">{{ tr.desc }}</span>
+          <span style="font:13px 'IBM Plex Mono',monospace;color:var(--ink-2);font-variant-numeric:tabular-nums">{{ tr.progress }}</span>
+        </div>
+        <ol style="list-style:none;margin:0;padding:0">
+          <sc-for list="{{ tr.lessons }}" as="l" hint-placeholder-count="4">
+            <li style="border-bottom:1px solid var(--line)">
+              <button type="button" onClick="{{ l.open }}" title="{{ l.tooltip }}" aria-disabled="{{ l.lockedAria }}" style="width:100%;display:flex;align-items:center;gap:16px;min-height:60px;padding:10px 12px;border:0;background:{{ l.rowBg }};text-align:left;cursor:{{ l.cursor }};border-radius:8px;margin:2px 0" data-hv="7">
+                <span style="width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:50%;font:600 13px 'IBM Plex Mono',monospace;background:{{ l.numBg }};color:{{ l.numInk }};border:1.5px solid {{ l.numBorder }}">{{ l.n }}</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:16px;font-weight:500;color:{{ l.titleInk }}">{{ l.title }}</span>
+                  <span style="font-size:13px;color:var(--ink-3)">{{ l.dur }}</span>
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:{{ l.statusInk }};white-space:nowrap">
+                  <sc-if value="{{ l.locked }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg></sc-if>
+                  <sc-if value="{{ l.done }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5 6.5 12 13 4.5"></path></svg></sc-if>
+                  {{ l.status }}
+                </span>
+              </button>
+            </li>
+          </sc-for>
+        </ol>
+      </section>
+    </sc-for>
+    </div>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:40;padding:12px 18px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;box-shadow:var(--shadow-pop);animation:tbIn .2s ease-out;max-width:calc(100vw - 32px)">{{ toastText }}</div>
+    </sc-if>
+  </main>
+</div>
+</script>
+</body>
+</html>

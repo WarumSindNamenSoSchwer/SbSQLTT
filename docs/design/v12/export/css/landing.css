@@ -1,0 +1,45 @@
+/* Tabula · SQL im Informatikunterricht, kostenlos im Browser: Tokens, Resets und Hover-Zustände. Alle übrigen Styles stehen inline im Template. */
+:root{color-scheme:dark;--bg:#0b1220;--surface:#111b2d;--raised:#162237;--text:#e8eef7;--muted:#a5b4c9;--line:#2a3850;--blue:#60a5fa;--primary:#2563eb;--blue-soft:#172a54;--ok:#9ae6b4;--ok-bg:#132d29;--err:#ffb4b4;--err-bg:#371f2a;--code-bg:#0d1526;--tok-kw:#93c5fd;--tok-str:#86efac;--tok-num:#fdba74;--tok-com:#94a3b8;--ink-3:#8796ad;--shadow:0 40px 90px -40px rgb(0 0 0/.8)}
+:root[data-tb="light"]{color-scheme:light;--bg:#f8fafc;--surface:#fff;--raised:#f1f5f9;--text:#0f172a;--muted:#526176;--line:#dce3ed;--blue:#2563eb;--blue-soft:#eff6ff;--ok:#17643a;--ok-bg:#effaf3;--err:#b42333;--err-bg:#fff0f1;--code-bg:#fcfdfe;--tok-kw:#1d4ed8;--tok-str:#15803d;--tok-num:#b45309;--tok-com:#64748b;--ink-3:#64748b;--shadow:0 40px 90px -40px rgb(15 23 42/.28)}
+html{scroll-padding-top:80px}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+::selection{background:var(--primary);color:#fff}
+*::-webkit-scrollbar{width:10px;height:10px}*::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+a{color:var(--blue);text-underline-offset:3px}a:hover{color:var(--text)}
+button{font:inherit;color:inherit}
+summary{list-style:none;cursor:pointer}summary::-webkit-details-marker{display:none}
+details[open] .tb-chev{transform:rotate(90deg)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+@keyframes tbIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes tbBlink{0%,49%{opacity:1}50%,100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+[data-hv="1"]:hover{color:var(--text) !important}
+[data-hv="2"]:hover{color:var(--text) !important}
+[data-hv="3"]:hover{color:var(--text) !important}
+[data-hv="4"]:hover{color:var(--text) !important}
+[data-hv="5"]:hover{color:var(--text) !important;background:var(--surface) !important}
+[data-hv="6"]:hover{background:var(--surface) !important;color:var(--text) !important}
+[data-hv="7"]:hover{padding-left:16px !important;color:var(--blue) !important;background:var(--blue-soft) !important}
+[data-hv="8"]:hover{padding-left:16px !important;color:var(--text) !important;background:var(--surface) !important}
+[data-hv="9"]:hover{background:var(--blue-soft) !important}
+[data-hv="10"]:hover{background:#1d4ed8 !important}
+[data-hv="11"]:hover{color:var(--text) !important}
+[data-hv="12"]:hover{color:var(--blue) !important}
+[data-hv="13"]:hover{color:var(--text) !important}
+[data-hv="14"]:hover{color:var(--text) !important}
+[data-hv="15"]:hover{opacity:1 !important}
+[data-hv="16"]:hover{background:#1d4ed8 !important;color:#fff !important}
+[data-hv="17"]:hover{color:var(--text) !important}
+[data-hv="18"]:hover{color:#fff !important;opacity:.85 !important}
+[data-hv="19"]:hover{color:#fff !important;opacity:.85 !important}
+[data-hv="20"]:hover{color:#fff !important;opacity:.9 !important}
+[data-hv="21"]:hover{color:var(--text) !important}
+[data-hv="22"]:hover{color:var(--text) !important}
+[data-hv="23"]:hover{color:var(--text) !important}
+[data-hv="24"]:hover{color:var(--text) !important}
+[data-hv="25"]:hover{color:var(--text) !important}
+[data-hv="26"]:hover{color:var(--text) !important}
+[data-hv="27"]:hover{color:var(--text) !important}
+[data-hv="28"]:hover{color:var(--text) !important}
+[data-hv="29"]:hover{color:var(--text) !important}

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Lehrerbereich · Tabula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{color-scheme:light;--bg:#f8fafc;--surface:#fff;--subtle:#f1f5f9;--line:#e2e8f0;--line-strong:#cbd5e1;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#2563eb;--accent-strong:#1d4ed8;--accent-soft:#eff6ff;--accent-line:#bfdbfe;--accent-ink:#1d4ed8;--ok:#16a34a;--ok-soft:#f0fdf4;--ok-line:#bbf7d0;--ok-ink:#166534;--danger:#dc2626;--danger-soft:#fef2f2;--danger-line:#fecaca;--danger-ink:#991b1b;--warn:#d97706;--warn-soft:#fffbeb;--code-bg:#fcfdfe;--tok-kw:#1d4ed8;--tok-str:#15803d;--tok-num:#b45309;--tok-com:#64748b;--shadow-pop:0 12px 32px -12px rgb(15 23 42/.28)}
+:root[data-tb="dark"]{color-scheme:dark;--bg:#0b1220;--surface:#111a2e;--subtle:#1e293b;--line:#334155;--line-strong:#475569;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#94a3b8;--accent-strong:#60a5fa;--accent-soft:#172554;--accent-line:#1e3a8a;--accent-ink:#93c5fd;--ok:#4ade80;--ok-soft:#052e16;--ok-line:#14532d;--ok-ink:#86efac;--danger:#f87171;--danger-soft:#450a0a;--danger-line:#7f1d1d;--danger-ink:#fca5a5;--warn:#fbbf24;--warn-soft:#3b2a0a;--code-bg:#0d1526;--tok-kw:#93c5fd;--tok-str:#86efac;--tok-num:#fdba74;--tok-com:#94a3b8;--shadow-pop:0 12px 32px -12px rgb(0 0 0/.6)}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+::selection{background:var(--accent-line);color:var(--ink)}
+*::-webkit-scrollbar{width:10px;height:10px}*::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+a{color:var(--accent-ink);text-underline-offset:3px}a:hover{color:var(--accent-strong)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes tbIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes tbSlide{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="min-height:100vh;background:var(--bg)">
+  <header style="position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line)">
+    <div style="max-width:1760px;margin:0 auto;padding:0 clamp(16px,3vw,48px);min-height:60px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <button type="button" onClick="{{ goClasses }}" style="display:flex;align-items:center;gap:8px;border:0;background:none;cursor:pointer;font-weight:600;font-size:18px;letter-spacing:-.02em;padding:0"><span data-owl-icon="1" style="width:28px;height:25px;display:block"></span>Tabula</button>
+      <span style="font-size:13px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);padding:2px 8px;border-radius:5px">Lehrkraft</span>
+      <sc-if value="{{ inClass }}" hint-placeholder-val="{{ true }}">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-3)"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Klasse wählen</span>
+          <select onChange="{{ pickClass }}" data-val="{{ cid }}" style="height:36px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;font-weight:500">
+            <sc-for list="{{ classOpts }}" as="o" hint-placeholder-count="2"><option value="{{ o.id }}">{{ o.name }}</option></sc-for>
+          </select>
+        </label>
+      </sc-if>
+      <span style="flex:1"></span>
+      <button type="button" onClick="{{ toggleTheme }}" aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--subtle);color:var(--ink)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+      </button>
+      <div style="position:relative">
+        <button type="button" onClick="{{ toggleMenu }}" aria-expanded="{{ menuOpen }}" aria-label="Kontomenü" style="width:36px;height:36px;border-radius:50%;border:0;background:var(--subtle);font-size:13px;font-weight:600;cursor:pointer">AM</button>
+        <sc-if value="{{ menuOpen }}" hint-placeholder-val="{{ false }}">
+          <div role="menu" style="position:absolute;right:0;top:44px;z-index:40;width:220px;padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-pop);animation:tbIn .15s ease-out">
+            <p style="margin:0;padding:8px 10px;font-size:13px;color:var(--ink-3)">Anna Müller</p>
+            <a role="menuitem" href="Tabula Konto.dc.html" style="display:block;padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px" style-hover="background:var(--subtle);color:var(--ink)">Profil</a>
+            <a role="menuitem" href="Tabula Lernen.dc.html" style="display:block;padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px" style-hover="background:var(--subtle);color:var(--ink)">Zum Lernbereich</a>
+            <a role="menuitem" href="Tabula Landing.dc.html" style="display:block;padding:8px 10px;border-radius:6px;color:var(--ink);text-decoration:none;font-size:14px" style-hover="background:var(--subtle);color:var(--ink)">Abmelden</a>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </header>
+
+  <sc-if value="{{ vClasses }}" hint-placeholder-val="{{ true }}">
+    <main style="max-width:1760px;margin:0 auto;padding:28px clamp(16px,3vw,48px) 80px;animation:tbIn .25s ease-out">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+        <h1 style="margin:0;font-size:clamp(26px,2.2vw,34px);font-weight:600;letter-spacing:-.025em;margin-right:auto">Klassen</h1>
+        <div role="tablist" aria-label="Filter" style="display:flex;gap:2px;padding:3px;border-radius:8px;background:var(--subtle)">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="2"><button type="button" role="tab" aria-selected="{{ f.sel }}" onClick="{{ f.pick }}" style="height:32px;padding:0 12px;border:0;border-radius:6px;background:{{ f.bg }};font-size:14px;cursor:pointer;box-shadow:{{ f.shadow }}">{{ f.label }}</button></sc-for>
+        </div>
+        <button type="button" onClick="{{ goNew }}" style="display:flex;align-items:center;gap:8px;height:40px;padding:0 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#1d4ed8">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg>Neue Klasse
+        </button>
+      </div>
+      <sc-if value="{{ noClasses }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;padding:64px 24px;border:1px dashed var(--line-strong);border-radius:16px">
+          <span data-owl="curious" style="width:140px;height:126px"></span>
+          <h2 style="margin:0;font-size:22px;font-weight:600">{{ emptyTitle }}</h2>
+          <p style="margin:0;max-width:44ch;font-size:15px;line-height:1.6;color:var(--ink-2)">{{ emptyText }}</p>
+          <sc-if value="{{ showEmptyCta }}" hint-placeholder-val="{{ true }}">
+            <button type="button" onClick="{{ goNew }}" style="height:44px;padding:0 18px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer">Neue Klasse</button>
+          </sc-if>
+        </div>
+      </sc-if>
+      <sc-if value="{{ hasClasses }}" hint-placeholder-val="{{ true }}">
+        <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+          <table style="width:100%;min-width:760px;border-collapse:collapse;font-size:15px">
+            <thead><tr>
+              <th style="text-align:left;padding:12px 20px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Klasse</th>
+              <th style="text-align:left;padding:12px 20px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Fokus</th>
+              <th style="text-align:right;padding:12px 20px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Schüler</th>
+              <th style="text-align:left;padding:12px 20px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Hängt fest</th>
+              <th style="text-align:right;padding:12px 20px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Zuletzt aktiv</th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ classRows }}" as="c" hint-placeholder-count="3">
+                <tr onClick="{{ c.open }}" style="cursor:pointer" style-hover="background:var(--subtle)">
+                  <td style="padding:16px 20px;border-bottom:1px solid var(--line)"><button type="button" onClick="{{ c.open }}" style="border:0;background:none;padding:0;cursor:pointer;text-align:left"><span style="display:block;font-weight:600">{{ c.name }}</span><span style="font-size:13px;color:var(--ink-3)">Schuljahr {{ c.year }}</span></button></td>
+                  <td style="padding:16px 20px;border-bottom:1px solid var(--line);color:var(--ink-2)">{{ c.focus }}</td>
+                  <td style="padding:16px 20px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums">{{ c.count }}</td>
+                  <td style="padding:16px 20px;border-bottom:1px solid var(--line)"><span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:{{ c.stuckWeight }};color:{{ c.stuckInk }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ c.stuckDot }}"></span>{{ c.stuck }}</span></td>
+                  <td style="padding:16px 20px;border-bottom:1px solid var(--line);text-align:right;color:var(--ink-3);font-size:14px">{{ c.last }}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ vNew }}" hint-placeholder-val="{{ false }}">
+    <main style="max-width:640px;margin:0 auto;padding:40px 20px 80px;animation:tbIn .25s ease-out">
+      <button type="button" onClick="{{ goClasses }}" style="border:0;background:none;color:var(--ink-2);font-size:14px;cursor:pointer;padding:0;margin-bottom:12px">← Klassen</button>
+      <h1 style="margin:0 0 20px;font-size:30px;font-weight:600;letter-spacing:-.025em">Neue Klasse</h1>
+      <form onSubmit="{{ createClass }}" style="display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Name der Klasse
+          <input value="{{ nName }}" onChange="{{ setNName }}" placeholder="Informatik 10c" style="height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400">
+        </label>
+        <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Schuljahr
+          <input value="{{ nYear }}" onChange="{{ setNYear }}" style="height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400;max-width:200px">
+        </label>
+        <fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:8px">
+          <legend style="font-size:14px;font-weight:500;margin-bottom:8px">Zu Beginn freischalten</legend>
+          <sc-for list="{{ nTracks }}" as="t" hint-placeholder-count="3">
+            <label style="display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer"><input type="checkbox" checked="{{ t.on }}" onChange="{{ t.toggle }}" style="width:18px;height:18px;margin:0;accent-color:#2563eb">{{ t.label }}</label>
+          </sc-for>
+        </fieldset>
+        <button type="submit" disabled="{{ nInvalid }}" style="height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;opacity:{{ nOpacity }}">Klasse erstellen</button>
+      </form>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ vCreated }}" hint-placeholder-val="{{ false }}">
+    <main style="max-width:880px;margin:0 auto;padding:40px 20px 80px;animation:tbIn .3s ease-out">
+      <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:center;padding:32px;background:var(--surface);border:1px solid var(--line);border-radius:16px">
+        <div style="flex:0 0 auto;padding:14px;border-radius:12px;background:#fff;border:1px solid var(--line)">
+          <svg width="200" height="200" viewBox="0 0 25 25" shape-rendering="crispEdges" role="img" aria-label="QR-Code zum Beitreten"><path stroke="#0f172a" d="{{ qr }}"></path></svg>
+        </div>
+        <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:12px">
+          <span data-owl="celebrate" style="width:90px;height:81px"></span>
+          <h1 style="margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em">{{ curName }} ist angelegt.</h1>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink-2)">Ihre Schüler scannen den QR-Code oder geben den Klassencode auf app.tabulasql.de/beitreten ein.</p>
+          <p style="margin:4px 0 0;font:600 clamp(20px,2.2vw,28px) 'IBM Plex Mono',monospace;color:var(--accent-ink);overflow-wrap:anywhere">{{ curCode }}</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+            <button type="button" onClick="{{ openBeamer }}" style="height:42px;padding:0 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Vollbild für den Beamer</button>
+            <button type="button" onClick="{{ copyLink }}" style="height:42px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:14px;cursor:pointer" style-hover="background:var(--subtle)">Link kopieren</button>
+            <button type="button" onClick="{{ openOverview }}" style="height:42px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:14px;cursor:pointer" style-hover="background:var(--subtle)">Zur Klasse</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ vClass }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:1760px;margin:0 auto;padding:24px clamp(16px,3vw,48px) 80px">
+      <div style="display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap">
+        <h1 style="margin:0;font-size:clamp(24px,2vw,32px);font-weight:600;letter-spacing:-.02em">{{ curName }}</h1>
+        <button type="button" onClick="{{ openBeamer }}" title="QR-Code im Vollbild" style="display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font:500 13px 'IBM Plex Mono',monospace;cursor:pointer" style-hover="border-color:var(--accent)">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="4.5" height="4.5" rx=".8"></rect><rect x="9.5" y="2" width="4.5" height="4.5" rx=".8"></rect><rect x="2" y="9.5" width="4.5" height="4.5" rx=".8"></rect><path d="M9.5 9.5h2v2h-2zM12 12h2v2h-2z"></path></svg>{{ curCode }}
+        </button>
+        <span style="flex:1"></span>
+        <a href="Tabula Quiz.dc.html" style="display:flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-size:14px;font-weight:600" style-hover="background:#1d4ed8;color:#fff">Quiz starten</a>
+      </div>
+      <nav aria-label="Klassenbereich" style="display:flex;gap:4px;margin:16px 0 20px;border-bottom:1px solid var(--line);overflow-x:auto">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+          <button type="button" onClick="{{ t.pick }}" aria-current="{{ t.cur }}" style="height:42px;padding:0 14px;border:0;background:none;font-size:14px;font-weight:{{ t.weight }};color:{{ t.ink }};box-shadow:inset 0 -2px 0 {{ t.bar }};cursor:pointer;white-space:nowrap">{{ t.label }}</button>
+        </sc-for>
+      </nav>
+
+      <sc-if value="{{ tOverview }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ noStudents }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:32px;align-items:center;padding:32px;background:var(--surface);border:1px solid var(--line);border-radius:16px">
+            <div style="padding:14px;border-radius:12px;background:#fff;border:1px solid var(--line)"><svg width="180" height="180" viewBox="0 0 25 25" shape-rendering="crispEdges" role="img" aria-label="QR-Code zum Beitreten"><path stroke="#0f172a" d="{{ qr }}"></path></svg></div>
+            <div style="flex:1 1 300px">
+              <h2 style="margin:0 0 6px;font-size:22px;font-weight:600">Noch niemand in der Klasse.</h2>
+              <p style="margin:0 0 14px;font:600 20px 'IBM Plex Mono',monospace;color:var(--accent-ink)">{{ curCode }}</p>
+              <ol style="margin:0;padding-left:20px;font-size:15px;line-height:1.8;color:var(--ink-2)"><li>QR-Code scannen oder Code eingeben</li><li>Name und Passwort wählen</li><li>Fertig, der Name erscheint hier</li></ol>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hasStudents }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;margin-bottom:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)">
+            <span style="font-size:14px;color:var(--ink-3)">Fokus</span>
+            <select onChange="{{ setFocus }}" data-val="{{ focusId }}" aria-label="Fokus-Lektion" style="height:36px;padding:0 10px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;font-weight:600;min-width:240px">
+              <sc-for list="{{ focusOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.id }}">{{ o.label }}</option></sc-for>
+            </select>
+            <span style="flex:1"></span>
+            <div role="tablist" aria-label="Ansicht" style="display:flex;gap:2px;padding:3px;border-radius:8px;background:var(--subtle)">
+              <sc-for list="{{ views }}" as="v" hint-placeholder-count="2"><button type="button" role="tab" aria-selected="{{ v.sel }}" onClick="{{ v.pick }}" style="height:30px;padding:0 12px;border:0;border-radius:6px;background:{{ v.bg }};font-size:13px;cursor:pointer;box-shadow:{{ v.shadow }}">{{ v.label }}</button></sc-for>
+            </div>
+            <span aria-live="polite" style="font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums">Aktualisiert vor {{ ago }} s</span>
+          </div>
+
+          <sc-if value="{{ focusView }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;margin-bottom:16px">
+              <section aria-label="Braucht Hilfe" style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)">
+                  <span data-owl="{{ helpOwl }}" style="width:44px;height:40px;flex:none"></span>
+                  <h2 style="margin:0;font-size:16px;font-weight:600;flex:1">{{ helpTitle }}</h2>
+                  <span style="font-size:13px;color:var(--ink-3)">{{ activeNow }}</span>
+                </div>
+                <sc-if value="{{ noneStuck }}" hint-placeholder-val="{{ false }}"><p style="margin:0;padding:20px 18px;font-size:15px;color:var(--ink-2)">Gerade hängt niemand fest.</p></sc-if>
+                <sc-for list="{{ stuckCards }}" as="sc" hint-placeholder-count="2">
+                  <button type="button" onClick="{{ sc.open }}" style="width:100%;display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px 18px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer" style-hover="background:var(--subtle)">
+                    <span style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><strong style="font-size:15px;font-weight:600">{{ sc.name }}</strong><span style="font-size:13px;color:var(--ink-3);white-space:nowrap">Schritt {{ sc.step }} · {{ sc.fails }} Fehlversuche · {{ sc.when }}</span><span style="margin-left:auto;font-size:13px;font-weight:600;color:var(--accent-ink);white-space:nowrap">Ansehen →</span></span>
+                    <span style="font-size:14px;color:var(--ink-2)">{{ sc.task }}</span>
+                    <span style="align-self:flex-start;font-size:13px;padding:3px 8px;border-radius:5px;background:var(--danger-soft);color:var(--danger-ink)">{{ sc.err }}</span>
+                  </button>
+                </sc-for>
+              </section>
+              <section aria-label="Häufigste Fehler" style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+                <div style="display:flex;align-items:baseline;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)"><h2 style="margin:0;font-size:16px;font-weight:600;flex:1">Häufigste Fehler in dieser Lektion</h2><span style="font-size:13px;color:var(--ink-3)">letzte 7 Tage</span></div>
+                <sc-for list="{{ errs }}" as="e" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line)">
+                    <div style="flex:1;min-width:0"><p style="margin:0;font-size:14px;font-weight:500">{{ e.label }}</p><p style="margin:2px 0 0;font:12px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ e.example }}</p></div>
+                    <span style="width:90px;height:6px;border-radius:3px;background:var(--subtle);overflow:hidden;flex:none"><span style="display:block;height:100%;width:{{ e.w }};background:var(--danger)"></span></span>
+                    <span style="width:72px;text-align:right;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums;flex:none">{{ e.n }} Schüler</span>
+                  </div>
+                </sc-for>
+                <p style="margin:0;padding:10px 18px;font-size:13px;color:var(--ink-3)">Gut für eine kurze Besprechung mit der ganzen Klasse.</p>
+              </section>
+            </div>
+            <section aria-label="Wo die Klasse steht" style="padding:16px 18px;margin-bottom:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+              <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:12px"><h2 style="margin:0;font-size:16px;font-weight:600;flex:1">Wo die Klasse in der Lektion steht</h2><span style="font-size:13px;color:var(--ink-3)">Schüler pro Schritt · rot: dort hängt jemand fest</span></div>
+              <div style="display:flex;align-items:flex-end;gap:4px;height:96px" role="img" aria-label="{{ histAria }}">
+                <sc-for list="{{ hist }}" as="hb" hint-placeholder-count="17">
+                  <div title="{{ hb.title }}" style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%">
+                    <span style="font:600 11px 'IBM Plex Mono',monospace;color:var(--ink-2)">{{ hb.label }}</span>
+                    <span style="width:100%;height:{{ hb.h }};min-height:2px;border-radius:4px 4px 0 0;background:{{ hb.bg }}"></span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;gap:4px;margin-top:6px">
+                <sc-for list="{{ hist }}" as="hb" hint-placeholder-count="17"><span style="flex:1;text-align:center;font:11px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ hb.n }}</span></sc-for>
+              </div>
+            </section>
+            <div style="display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin-bottom:10px" aria-hidden="true">
+              <sc-for list="{{ counts }}" as="k" hint-placeholder-count="4"><span style="flex:{{ k.n }} 1 0;background:{{ k.color }}"></span></sc-for>
+            </div>
+            <div style="display:flex;gap:8px 24px;flex-wrap:wrap;margin-bottom:16px">
+              <sc-for list="{{ counts }}" as="k" hint-placeholder-count="4"><span style="display:inline-flex;align-items:baseline;gap:8px;font-size:14px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:{{ k.color }};align-self:center"></span><strong style="font-size:20px;font-weight:600;color:{{ k.ink }};font-variant-numeric:tabular-nums">{{ k.n }}</strong>{{ k.label }}</span></sc-for>
+            </div>
+            <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+              <table style="width:100%;min-width:720px;border-collapse:collapse;font-size:14px">
+                <thead><tr>
+                  <th style="text-align:left;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Name</th>
+                  <th style="text-align:left;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Status</th>
+                  <th style="text-align:right;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Schritt</th>
+                  <th style="text-align:right;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Fehlversuche</th>
+                  <th style="text-align:right;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Zuletzt aktiv</th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+                    <tr onClick="{{ r.open }}" style="cursor:{{ r.cursor }};background:{{ r.bg }}" style-hover="background:var(--subtle)">
+                      <td style="padding:11px 18px;border-bottom:1px solid var(--line);font-weight:500">{{ r.name }}</td>
+                      <td style="padding:11px 18px;border-bottom:1px solid var(--line)"><span style="display:inline-flex;align-items:center;gap:6px;color:{{ r.ink }};font-weight:{{ r.weight }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ r.dot }}"></span>{{ r.status }}</span></td>
+                      <td style="padding:11px 18px;border-bottom:1px solid var(--line);text-align:right;font-family:'IBM Plex Mono',monospace;font-size:13px">{{ r.step }}</td>
+                      <td style="padding:11px 18px;border-bottom:1px solid var(--line);text-align:right;font-family:'IBM Plex Mono',monospace;font-size:13px;color:{{ r.failInk }}">{{ r.fails }}</td>
+                      <td style="padding:11px 18px;border-bottom:1px solid var(--line);text-align:right;color:var(--ink-3)">{{ r.ago }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ matrixView }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:13px;color:var(--ink-2)">
+              <sc-for list="{{ legend }}" as="lg" hint-placeholder-count="4"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:14px;border-radius:3px;background:{{ lg.bg }};border:1px solid {{ lg.border }}"></span>{{ lg.label }}</span></sc-for>
+            </div>
+            <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+              <table style="border-collapse:collapse;font-size:13px;min-width:100%">
+                <thead><tr>
+                  <th style="position:sticky;left:0;background:var(--surface);text-align:left;padding:10px 16px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line);min-width:140px">Name</th>
+                  <sc-for list="{{ mHead }}" as="h" hint-placeholder-count="11"><th title="{{ h.title }}" style="padding:10px 4px;font:600 12px 'IBM Plex Mono',monospace;color:{{ h.ink }};border-bottom:1px solid var(--line);text-align:center;min-width:40px">{{ h.n }}</th></sc-for>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ mRows }}" as="mr" hint-placeholder-count="6">
+                    <tr>
+                      <td style="position:sticky;left:0;background:var(--surface);padding:6px 16px;border-bottom:1px solid var(--line);font-weight:500;white-space:nowrap">{{ mr.name }}</td>
+                      <sc-for list="{{ mr.cells }}" as="mc" hint-placeholder-count="11">
+                        <td style="padding:4px;border-bottom:1px solid var(--line);text-align:center"><button type="button" onClick="{{ mc.open }}" title="{{ mc.title }}" aria-label="{{ mc.title }}" style="width:30px;height:24px;border-radius:5px;border:1px solid {{ mc.border }};background:{{ mc.bg }};cursor:pointer;color:#fff;font-size:12px;font-weight:700;padding:0">{{ mc.mark }}</button></td>
+                      </sc-for>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </sc-if>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ tLessons }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px">
+          <input value="{{ lq }}" onChange="{{ setLq }}" placeholder="Lektion suchen" aria-label="Lektion suchen" style="height:38px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:14px;min-width:240px">
+          <span style="flex:1"></span>
+          <button type="button" onClick="{{ unlockAll }}" style="height:38px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:14px;cursor:pointer" style-hover="background:var(--subtle)">Alle freischalten</button>
+        </div>
+        <sc-for list="{{ lTracks }}" as="tr" hint-placeholder-count="3">
+          <section style="margin-bottom:24px">
+            <div style="display:flex;align-items:center;gap:12px;padding:0 0 8px;border-bottom:1px solid var(--line-strong)">
+              <h2 style="margin:0;font-size:17px;font-weight:600;flex:1">{{ tr.name }}</h2>
+              <button type="button" onClick="{{ tr.unlock }}" style="border:0;background:none;color:var(--accent-ink);font-size:13px;cursor:pointer">Track freischalten</button>
+            </div>
+            <sc-for list="{{ tr.items }}" as="l" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 4px;border-bottom:1px solid var(--line)">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <button type="button" onClick="{{ l.up }}" disabled="{{ l.first }}" aria-label="Nach oben" style="width:24px;height:18px;border:0;background:none;cursor:pointer;color:var(--ink-3);padding:0;font-size:11px">▲</button>
+                  <button type="button" onClick="{{ l.down }}" disabled="{{ l.last }}" aria-label="Nach unten" style="width:24px;height:18px;border:0;background:none;cursor:pointer;color:var(--ink-3);padding:0;font-size:11px">▼</button>
+                </div>
+                <span style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line-strong);font:600 12px 'IBM Plex Mono',monospace;color:var(--ink-2);flex:none">{{ l.n }}</span>
+                <span style="flex:1 1 220px;min-width:0;font-size:15px;font-weight:500;color:{{ l.ink }}">{{ l.title }}</span>
+                <span style="display:flex;align-items:center;gap:8px;width:150px;font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums"><span style="flex:1;height:5px;border-radius:3px;background:var(--subtle);overflow:hidden"><span style="display:block;height:100%;width:{{ l.pct }};background:var(--ok)"></span></span>{{ l.pctLabel }}</span>
+                <button type="button" onClick="{{ l.setFocus }}" aria-pressed="{{ l.isFocus }}" title="Als Fokus setzen" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid {{ l.focusBorder }};border-radius:7px;background:{{ l.focusBg }};color:{{ l.focusInk }};font-size:13px;cursor:pointer">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="{{ l.starFill }}" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"></path></svg>Fokus
+                </button>
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);cursor:pointer">
+                  <button type="button" role="switch" aria-checked="{{ l.on }}" onClick="{{ l.toggle }}" aria-label="Freigeschaltet" style="width:38px;height:22px;border-radius:11px;border:0;background:{{ l.track }};position:relative;cursor:pointer;padding:0;transition:background .2s"><span style="position:absolute;top:3px;left:{{ l.knob }};width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s"></span></button>
+                  {{ l.onLabel }}
+                </label>
+              </div>
+            </sc-for>
+          </section>
+        </sc-for>
+      </sc-if>
+
+      <sc-if value="{{ tStudents }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+          <p style="margin:0;flex:1 1 320px;font-size:14px;line-height:1.5;color:var(--ink-2)">Die Namen sind verschlüsselt gespeichert. Nur Ihr Browser kann sie lesen.</p>
+          <button type="button" onClick="{{ openBeamer }}" style="height:38px;padding:0 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Schüler einladen</button>
+        </div>
+        <div style="overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+          <table style="width:100%;min-width:640px;border-collapse:collapse;font-size:14px">
+            <thead><tr>
+              <th style="text-align:left;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Name</th>
+              <th style="text-align:left;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Beigetreten</th>
+              <th style="text-align:right;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Fortschritt</th>
+              <th style="text-align:right;padding:10px 18px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3);border-bottom:1px solid var(--line)">Zuletzt aktiv</th>
+              <th style="border-bottom:1px solid var(--line)"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ sRows }}" as="s" hint-placeholder-count="6">
+                <tr>
+                  <td style="padding:10px 18px;border-bottom:1px solid var(--line);font-weight:500">{{ s.name }}</td>
+                  <td style="padding:10px 18px;border-bottom:1px solid var(--line);color:var(--ink-2)">{{ s.joined }}</td>
+                  <td style="padding:10px 18px;border-bottom:1px solid var(--line);text-align:right;font-family:'IBM Plex Mono',monospace;font-size:13px">{{ s.prog }}</td>
+                  <td style="padding:10px 18px;border-bottom:1px solid var(--line);text-align:right;color:var(--ink-3)">{{ s.ago }}</td>
+                  <td style="padding:6px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap">
+                    <sc-if value="{{ s.asking }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--danger-ink);margin-right:8px">Wirklich entfernen?</span><button type="button" onClick="{{ s.cancel }}" style="height:30px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;cursor:pointer;margin-right:4px">Nein</button><button type="button" onClick="{{ s.confirm }}" style="height:30px;padding:0 10px;border:0;border-radius:6px;background:var(--danger);color:#fff;font-size:13px;cursor:pointer">Entfernen</button></sc-if>
+                    <sc-if value="{{ s.idle }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ s.ask }}" style="height:30px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;cursor:pointer;color:var(--ink-2)" style-hover="color:var(--danger-ink);border-color:var(--danger-line)">Aus Klasse entfernen</button></sc-if>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tSettings }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:720px;display:flex;flex-direction:column;gap:16px">
+          <section style="padding:22px 24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;gap:14px">
+            <h2 style="margin:0;font-size:16px;font-weight:600">Allgemein</h2>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Name<input value="{{ curName }}" onChange="{{ renameClass }}" style="height:42px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400"></label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Schuljahr<input value="{{ curYear }}" onChange="{{ setYear }}" style="height:42px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400;max-width:200px"></label>
+          </section>
+          <section style="padding:22px 24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-size:16px;font-weight:600">Beitreten</h2>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span style="font:600 18px 'IBM Plex Mono',monospace;color:var(--accent-ink);flex:1;overflow-wrap:anywhere">{{ curCode }}</span><button type="button" onClick="{{ askNewCode }}" style="height:36px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;cursor:pointer">Neuen Code erzeugen</button></div>
+            <sc-if value="{{ newCodeAsk }}" hint-placeholder-val="{{ false }}">
+              <div role="alertdialog" aria-label="Neuen Code erzeugen?" style="padding:12px 14px;border-radius:10px;background:var(--warn-soft);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px"><span style="flex:1 1 260px">Der alte Code und der QR-Code funktionieren danach nicht mehr. Schüler in der Klasse bleiben drin.</span><button type="button" onClick="{{ cancelNewCode }}" style="height:32px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;cursor:pointer">Abbrechen</button><button type="button" onClick="{{ doNewCode }}" style="height:32px;padding:0 10px;border:0;border-radius:6px;background:var(--accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Neuen Code erzeugen</button></div>
+            </sc-if>
+            <label style="display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer"><button type="button" role="switch" aria-checked="{{ joinOpen }}" onClick="{{ toggleJoin }}" style="width:38px;height:22px;border-radius:11px;border:0;background:{{ joinTrack }};position:relative;cursor:pointer;padding:0"><span style="position:absolute;top:3px;left:{{ joinKnob }};width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s"></span></button>Beitreten erlauben</label>
+          </section>
+          <section style="padding:22px 24px;background:var(--surface);border:1px solid var(--danger-line);border-radius:14px;display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-size:16px;font-weight:600;color:var(--danger-ink)">Archivieren oder löschen</h2>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink-2)">Archivierte Klassen bleiben lesbar, neue Schüler können nicht mehr beitreten. Löschen entfernt die Klasse und den Fortschritt aller Schüler endgültig. Geben Sie zum Löschen den Klassennamen ein.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" onClick="{{ archive }}" style="height:38px;padding:0 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;cursor:pointer">Klasse archivieren</button></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap"><input value="{{ delTxt }}" onChange="{{ setDelTxt }}" placeholder="{{ curName }}" aria-label="Klassenname zur Bestätigung" style="height:38px;padding:0 12px;border:1px solid var(--line-strong);border-radius:7px;background:var(--surface);font-size:14px;flex:1 1 220px"><button type="button" disabled="{{ delLocked }}" onClick="{{ delClass }}" style="height:38px;padding:0 14px;border:0;border-radius:7px;background:var(--danger);color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:{{ delOpacity }}">Klasse löschen</button></div>
+          </section>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tQuiz }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px 20px;margin-bottom:16px;border-radius:14px;background:var(--accent-soft);border:1px solid var(--accent-line)">
+          <span data-owl="quiz" style="width:64px;height:58px;flex:none"></span>
+          <div style="flex:1 1 260px"><p style="margin:0;font-size:13px;color:var(--accent-ink)">Passend zum Fokus</p><p style="margin:2px 0 0;font-size:17px;font-weight:600">{{ suggestTitle }} · 8 Fragen · ca. 6 min</p></div>
+          <a href="Tabula Quiz.dc.html" style="display:inline-flex;align-items:center;height:42px;padding:0 18px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-size:14px;font-weight:600" style-hover="background:#1d4ed8;color:#fff">Starten</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          <div role="tablist" aria-label="Fragensätze" style="display:flex;gap:2px;padding:3px;border-radius:8px;background:var(--subtle)">
+            <sc-for list="{{ qTabs }}" as="q" hint-placeholder-count="2"><button type="button" role="tab" aria-selected="{{ q.sel }}" onClick="{{ q.pick }}" style="height:32px;padding:0 12px;border:0;border-radius:6px;background:{{ q.bg }};font-size:14px;cursor:pointer;box-shadow:{{ q.shadow }}">{{ q.label }}</button></sc-for>
+          </div>
+          <span style="flex:1"></span>
+          <button type="button" onClick="{{ newSet }}" style="height:38px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:14px;cursor:pointer" style-hover="background:var(--subtle)">Neuer Fragensatz</button>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px">
+          <sc-for list="{{ sets }}" as="st" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--line)">
+              <div style="flex:1 1 260px;min-width:0"><p style="margin:0;font-size:15px;font-weight:600">{{ st.title }}</p><p style="margin:2px 0 0;font-size:13px;color:var(--ink-3)">{{ st.meta }}</p></div>
+              <button type="button" onClick="{{ st.edit }}" style="height:34px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:13px;cursor:pointer" style-hover="background:var(--subtle)">{{ st.editLabel }}</button>
+              <a href="Tabula Quiz.dc.html" style="display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:7px;background:var(--accent);color:#fff;text-decoration:none;font-size:13px;font-weight:600" style-hover="background:#1d4ed8;color:#fff">Starten</a>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ tEditor }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+          <button type="button" onClick="{{ backQuiz }}" style="border:0;background:none;color:var(--ink-2);font-size:14px;cursor:pointer;padding:0">← Fragensätze</button>
+          <span style="flex:1"></span>
+          <span aria-live="polite" style="font-size:13px;color:{{ valInk }}">{{ valMsg }}</span>
+        </div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+          <div style="flex:1 1 280px;max-width:360px;display:flex;flex-direction:column;gap:14px;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Titel<input value="{{ eTitle }}" onChange="{{ setETitle }}" style="height:40px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400"></label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Standard-Zeitlimit
+              <select onChange="{{ setETime }}" data-val="{{ eTime }}" style="height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:14px"><sc-for list="{{ eTimeOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.v }} s</option></sc-for></select>
+            </label>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <sc-for list="{{ eList }}" as="q" hint-placeholder-count="4">
+                <button type="button" onClick="{{ q.pick }}" style="display:flex;gap:10px;align-items:flex-start;text-align:left;padding:10px;border:1px solid {{ q.border }};border-radius:8px;background:{{ q.bg }};cursor:pointer;font-size:14px;line-height:1.4"><span style="font:600 12px 'IBM Plex Mono',monospace;color:var(--ink-3);margin-top:2px">{{ q.n }}</span><span style="flex:1">{{ q.text }}</span><sc-if value="{{ q.bad }}" hint-placeholder-val="{{ false }}"><span title="Unvollständig" style="width:8px;height:8px;border-radius:50%;background:var(--danger);margin-top:6px"></span></sc-if></button>
+              </sc-for>
+            </div>
+            <button type="button" onClick="{{ addQ }}" style="height:38px;border:1px dashed var(--line-strong);border-radius:8px;background:none;font-size:14px;cursor:pointer;color:var(--ink-2)">Frage hinzufügen</button>
+          </div>
+          <div style="flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:14px;padding:22px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500;flex:1 1 220px">Fragetyp
+                <select onChange="{{ setQType }}" data-val="{{ qType }}" style="height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:14px"><sc-for list="{{ qTypeOpts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.v }}</option></sc-for></select>
+              </label>
+              <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500;width:120px">Zeit
+                <select onChange="{{ setQTime }}" data-val="{{ qTime }}" style="height:40px;padding:0 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:14px"><sc-for list="{{ qTimeOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.v }} s</option></sc-for></select>
+              </label>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Frage<input value="{{ qText }}" onChange="{{ setQText }}" style="height:42px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400"></label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">SQL-Code <span style="font-weight:400;color:var(--ink-3)">(optional)</span>
+              <textarea value="{{ qSql }}" onChange="{{ setQSql }}" rows="3" spellcheck="false" style="padding:10px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--code-bg);font:14px/22px 'IBM Plex Mono',monospace;resize:vertical"></textarea>
+            </label>
+            <fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:8px">
+              <legend style="font-size:14px;font-weight:500;margin-bottom:8px">Antworten · richtige markieren</legend>
+              <sc-for list="{{ qAnswers }}" as="a" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <input type="radio" name="right" checked="{{ a.right }}" onChange="{{ a.mark }}" aria-label="{{ a.aria }}" style="width:18px;height:18px;margin:0;accent-color:#16a34a">
+                  <span aria-hidden="true" style="width:14px;height:14px;flex:none;background:{{ a.color }};border-radius:{{ a.radius }};transform:{{ a.rot }}"></span>
+                  <input value="{{ a.v }}" onChange="{{ a.set }}" aria-label="{{ a.aria }}" style="flex:1;height:40px;padding:0 12px;border:1px solid {{ a.border }};border-radius:8px;background:{{ a.bg }};font-size:14px">
+                </div>
+              </sc-for>
+            </fieldset>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--line)">
+              <button type="button" onClick="{{ dupQ }}" style="height:36px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:13px;cursor:pointer">Duplizieren</button>
+              <button type="button" onClick="{{ delQ }}" disabled="{{ oneQ }}" style="height:36px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:13px;cursor:pointer;color:var(--danger-ink)">Löschen</button>
+              <span style="flex:1"></span>
+              <a href="Tabula Quiz.dc.html" style="display:inline-flex;align-items:center;height:36px;padding:0 12px;border:1px solid var(--line);border-radius:7px;color:var(--ink);text-decoration:none;font-size:13px" style-hover="background:var(--subtle);color:var(--ink)">Vorschau wie am Beamer</a>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ drawer }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeDrawer }}" style="position:fixed;inset:0;z-index:50;background:rgb(15 23 42/.35)"></div>
+    <aside role="dialog" aria-label="Details zu {{ dName }}" style="position:fixed;top:0;right:0;bottom:0;z-index:51;width:min(520px,100vw);overflow-y:auto;background:var(--surface);border-left:1px solid var(--line);box-shadow:var(--shadow-pop);padding:24px;display:flex;flex-direction:column;gap:14px;animation:tbSlide .25s cubic-bezier(.16,1,.3,1)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span data-owl="{{ dOwl }}" style="width:56px;height:50px;flex:none"></span>
+        <div style="flex:1;min-width:0"><h2 style="margin:0;font-size:20px;font-weight:600">{{ dName }}</h2><p style="margin:2px 0 0;font-size:13px;color:{{ dInk }};font-weight:500">{{ dStatus }}</p></div>
+        <button type="button" onClick="{{ closeDrawer }}" aria-label="Schließen" style="width:34px;height:34px;border:0;border-radius:7px;background:var(--subtle);cursor:pointer;font-size:16px">×</button>
+      </div>
+      <p style="margin:0;font-size:13px;color:var(--ink-3)">{{ dLesson }}</p>
+      <sc-if value="{{ dHasDetail }}" hint-placeholder-val="{{ false }}">
+        <div><p style="margin:0 0 4px;font-size:13px;color:var(--ink-3)">Aufgabe</p><p style="margin:0;font-size:16px">{{ dTask }}</p></div>
+        <div><p style="margin:0 0 6px;font-size:13px;color:var(--ink-3)">Letzte Abfrage · {{ dWhen }}</p><pre data-keep="1" ref="{{ dSqlRef }}" style="margin:0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--code-bg);font:14px/22px 'IBM Plex Mono',monospace;white-space:pre-wrap"></pre></div>
+        <p style="margin:0;padding:10px 14px;border-radius:8px;background:var(--danger-soft);color:var(--danger-ink);font-size:14px">{{ dErr }}</p>
+        <button type="button" onClick="{{ markHelped }}" style="align-self:flex-start;height:40px;padding:0 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer">Als erledigt markieren</button>
+      </sc-if>
+      <sc-if value="{{ dNoDetail }}" hint-placeholder-val="{{ false }}">
+        <p style="margin:0;font-size:15px;line-height:1.55;color:var(--ink-2)">{{ dSummary }}</p>
+      </sc-if>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{ beamer }}" hint-placeholder-val="{{ false }}">
+    <div role="dialog" aria-label="Klassencode im Vollbild" style="position:fixed;inset:0;z-index:60;background:#0b1220;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4vh;padding:4vh 4vw;animation:tbIn .2s ease-out">
+      <button type="button" onClick="{{ closeBeamer }}" style="position:absolute;top:24px;right:24px;height:44px;padding:0 16px;border:1px solid rgb(255 255 255/.3);border-radius:8px;background:none;color:#fff;font-size:15px;cursor:pointer">Schließen (Esc)</button>
+      <p style="margin:0;font-size:clamp(20px,2.4vw,40px);font-weight:600">{{ curName }}</p>
+      <div style="display:flex;align-items:center;gap:5vw;flex-wrap:wrap;justify-content:center">
+        <div style="padding:2vh;border-radius:16px;background:#fff"><svg viewBox="0 0 25 25" shape-rendering="crispEdges" role="img" aria-label="QR-Code" style="width:min(42vh,40vw);height:min(42vh,40vw);display:block"><path stroke="#0f172a" d="{{ qr }}"></path></svg></div>
+        <div style="display:flex;flex-direction:column;gap:2vh;max-width:44vw">
+          <p style="margin:0;font-size:clamp(18px,1.8vw,30px);color:#a5b4c9">app.tabulasql.de/beitreten</p>
+          <p style="margin:0;font:600 clamp(32px,4.6vw,88px)/1.05 'IBM Plex Mono',monospace;color:#60a5fa;overflow-wrap:anywhere">{{ curCode }}</p>
+          <p style="margin:0;font-size:clamp(18px,1.8vw,30px)">{{ joinedLabel }}</p>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:70;padding:12px 18px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;box-shadow:var(--shadow-pop);animation:tbIn .2s ease-out">{{ toastText }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;dashboard-leer&quot;,&quot;klassen&quot;,&quot;klassen-leer&quot;,&quot;neue-klasse&quot;,&quot;lektionen&quot;,&quot;schueler&quot;,&quot;einstellungen&quot;,&quot;quiz&quot;,&quot;editor&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Bildschirm&quot;}}">
+const WORDS = ['sonne', 'apfel', 'kugel', 'wolke', 'birne', 'feder', 'stern', 'mond', 'tiger', 'insel', 'blatt', 'regen'];
+const STATUS = { 0: ['Nicht begonnen', 'var(--line-strong)', 'var(--ink-3)'], 1: ['In Arbeit', 'var(--accent)', 'var(--accent-ink)'], 2: ['Fertig', 'var(--ok)', 'var(--ok-ink)'], 3: ['Hängt fest', 'var(--danger)', 'var(--danger-ink)'] };
+class Component extends DCLogic {
+  state = { theme: 'light', D: null, view: null, cid: '10b', tab: 'uebersicht', filter: 'aktiv', menu: false, mode: 'fokus', drawer: null, beamer: false, ago: 4, nName: '', nYear: '2026/27', nTracks: [true, false, false], lq: '', asking: null, newCodeAsk: false, delTxt: '', qTab: 'auto', ei: 0, toast: '' };
+  rootRef = React.createRef(); dSqlRef = React.createRef();
+  async componentDidMount() {
+    this.C = await import(new URL('tabula-core.js', document.baseURI).href);
+    const T = await import(new URL('tabula-teacher-data.js', document.baseURI).href);
+    const theme = this.C.getTheme('light'); document.documentElement.dataset.tb = theme;
+    const clone = x => JSON.parse(JSON.stringify(x));
+    const classes = [
+      { id: '10b', name: 'Informatik 10b', year: '2026/27', code: 'sonne-apfel-kugel-33', focus: 'where-filters', archived: false, open: true, last: 'vor 2 min', students: clone(T.STUDENTS), unlocked: T.LESSONS.map(l => l.track === 1), order: T.LESSONS.map(l => l.id) },
+      { id: 'q1', name: 'Q1 Informatik', year: '2026/27', code: 'wolke-birne-feder-08', focus: 'joins', archived: false, open: true, last: 'gestern', students: clone(T.STUDENTS).slice(0, 14).map(s => ({ ...s, m: s.m.map((v, i) => i < 6 ? 2 : i === 6 ? (s.id === 4 ? 3 : 1) : 0) })), unlocked: T.LESSONS.map(l => l.track < 3), order: T.LESSONS.map(l => l.id) },
+      { id: '10a', name: 'Informatik 10a', year: '2025/26', code: 'stern-mond-tiger-51', focus: 'aggregates', archived: true, open: false, last: 'vor 4 Monaten', students: clone(T.STUDENTS).slice(0, 20).map(s => ({ ...s, m: s.m.map(() => 2) })), unlocked: T.LESSONS.map(() => true), order: T.LESSONS.map(l => l.id) }
+    ];
+    this.setState({ theme, D: { T, classes, editor: T.QUESTIONS.map(q => ({ ...q, answers: q.answers.slice() })), eTitle: 'Wiederholung vor der Klausur', eTime: '20' } });
+    this.tick = setInterval(() => this.setState(S => ({ ago: S.ago >= 10 ? 0 : S.ago + 1 })), 1000);
+    this.onKey = e => { if (e.key === 'Escape') this.setState({ beamer: false, drawer: null, menu: false }); };
+    addEventListener('keydown', this.onKey);
+    await this.C.loadOwl();
+    const G = (await import(new URL('owl-gen.js', document.baseURI).href)).default;
+    this.icons = { light: G.icon({}), dark: G.icon(G.DARK) };
+    this.paint();
+  }
+  componentWillUnmount() { clearInterval(this.tick); clearTimeout(this.tt); removeEventListener('keydown', this.onKey); }
+  componentDidUpdate(pp) { if (pp && pp.screen !== this.props.screen) this.setState({ view: null }); this.paint(); }
+  paint() {
+    const root = this.rootRef.current; if (!this.C || !root) return;
+    const dark = this.state.theme === 'dark';
+    this.C.paintOwls(root, dark);
+    if (this.icons) root.querySelectorAll('[data-owl-icon]').forEach(el => { const k = dark ? 'dark' : 'light'; if (el.dataset.k !== k) { el.innerHTML = this.icons[k].replace('<svg ', '<svg style="width:100%;height:100%;display:block" aria-hidden="true" '); el.dataset.k = k; } });
+    root.querySelectorAll('select[data-val]').forEach(s => { if (s.value !== s.dataset.val) s.value = s.dataset.val; });
+    const d = this.state.drawer, D = this.state.D;
+    if (this.dSqlRef.current && d && D && D.T.STUCK[d.sid]) this.dSqlRef.current.innerHTML = this.C.highlight(D.T.STUCK[d.sid].sql.replace(/\\n/g, '\n'));
+  }
+  say(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: '' }), 3000); }
+  upd(fn, msg) { this.setState(S => { const D = { ...S.D, classes: S.D.classes.map(c => c.id === S.cid ? fn({ ...c }) : c) }; return { D }; }); if (msg) this.say(msg); }
+  updEd(fn) { this.setState(S => { const ed = S.D.editor.map(q => ({ ...q, answers: q.answers.slice() })); fn(ed); return { D: { ...S.D, editor: ed } }; }); }
+  renderVals() {
+    const S = this.state;
+    if (!S.D) return { vClasses: true, classRows: [], filters: [], hasClasses: false, noClasses: false };
+    const T = S.D.T, propScreen = this.props.screen ?? 'dashboard';
+    const pv = { klassen: ['klassen'], 'klassen-leer': ['klassen'], 'neue-klasse': ['neu'], dashboard: ['class', 'uebersicht'], 'dashboard-leer': ['class', 'uebersicht'], lektionen: ['class', 'lektionen'], schueler: ['class', 'schueler'], einstellungen: ['class', 'einstellungen'], quiz: ['class', 'quiz'], editor: ['class', 'editor'] }[propScreen] || ['class', 'uebersicht'];
+    const view = S.view || pv[0], tab = S.view ? S.tab : (pv[1] || S.tab);
+    const emptyAll = propScreen === 'klassen-leer' && !S.view;
+    let classes = emptyAll ? [] : S.D.classes;
+    const cur = S.D.classes.find(c => c.id === S.cid) || S.D.classes[0];
+    const students = propScreen === 'dashboard-leer' && !S.view ? [] : cur.students;
+    const li = T.LESSONS.findIndex(l => l.id === cur.focus);
+    const focusL = T.LESSONS[li];
+    const goTab = t => () => this.setState({ view: 'class', tab: t, drawer: null });
+    const seg = (opts, curv, set) => opts.map(([k, l]) => ({ label: l, sel: curv === k ? 'true' : 'false', bg: curv === k ? 'var(--surface)' : 'transparent', shadow: curv === k ? '0 1px 2px rgb(15 23 42/.12)' : 'none', pick: () => set(k) }));
+    const shown = classes.filter(c => (S.filter === 'archiv') === c.archived);
+    const stuckOf = c => c.students.filter(s => s.m[T.LESSONS.findIndex(l => l.id === c.focus)] === 3).length;
+    // Fokus-Tabelle
+    const sorted = students.map(s => ({ s, st: s.m[li] })).sort((a, b) => ({ 3: 0, 1: 1, 0: 2, 2: 3 })[a.st] - ({ 3: 0, 1: 1, 0: 2, 2: 3 })[b.st]);
+    const cnt = k => students.filter(s => s.m[li] === k).length;
+    const openD = (s, i) => () => this.setState({ drawer: { sid: s.id, li: i } });
+    const d = S.drawer, ds = d && students.find(s => s.id === d.sid), dst = ds ? ds.m[d.li] : 0, dDetail = ds && dst === 3 && T.STUCK[ds.id] && d.li === li;
+    // Lektionen
+    const ordered = cur.order.map(id => T.LESSONS.find(l => l.id === id));
+    const pctDone = id => { const i = T.LESSONS.findIndex(l => l.id === id); return students.length ? Math.round(students.filter(s => s.m[i] === 2).length / students.length * 100) : 0; };
+    const lTracks = T.TRACKS.map((name, ti) => {
+      const items = ordered.filter(l => l.track === ti + 1 && (!S.lq || l.title.toLowerCase().includes(S.lq.toLowerCase())));
+      return { name, unlock: () => this.upd(c => ({ ...c, unlocked: c.unlocked.map((u, i) => T.LESSONS[i].track === ti + 1 ? true : u) }), 'Gespeichert'),
+        items: items.map((l, k) => { const gi = T.LESSONS.indexOf(l), on = cur.unlocked[gi], isF = cur.focus === l.id, oi = cur.order.indexOf(l.id);
+          const move = dir => () => this.upd(c => { const o = c.order.slice(); const j = oi + dir; let t = j; while (t >= 0 && t < o.length && T.LESSONS.find(x => x.id === o[t]).track !== l.track) t += dir; if (t < 0 || t >= o.length) return c; [o[oi], o[t]] = [o[t], o[oi]]; return { ...c, order: o }; }, 'Gespeichert');
+          return { n: l.n, title: l.title, ink: on ? 'var(--ink)' : 'var(--ink-3)', pct: pctDone(l.id) + '%', pctLabel: pctDone(l.id) + ' % fertig', on: on ? 'true' : 'false', onLabel: on ? 'Frei' : 'Gesperrt', track: on ? 'var(--ok)' : 'var(--line-strong)', knob: on ? '19px' : '3px',
+            toggle: () => { if (isF && on) return this.say('Die Fokus-Lektion kann nicht gesperrt werden.'); this.upd(c => ({ ...c, unlocked: c.unlocked.map((u, i) => i === gi ? !u : u) }), 'Gespeichert'); },
+            isFocus: isF ? 'true' : 'false', focusBg: isF ? 'var(--accent-soft)' : 'var(--surface)', focusBorder: isF ? 'var(--accent)' : 'var(--line)', focusInk: isF ? 'var(--accent-ink)' : 'var(--ink-2)', starFill: isF ? 'currentColor' : 'none',
+            setFocus: () => this.upd(c => ({ ...c, focus: l.id, unlocked: c.unlocked.map((u, i) => i === gi ? true : u) }), on ? 'Fokus gesetzt' : 'Fokus gesetzt und freigeschaltet'),
+            first: k === 0, last: k === items.length - 1, up: move(-1), down: move(1) }; }) };
+    });
+    // Editor
+    const ed = S.D.editor, eq = ed[Math.min(S.ei, ed.length - 1)];
+    const badQ = q => !q.text.trim() || q.answers.some(a => !a.trim());
+    const nBad = ed.filter(badQ).length;
+    const SHAPES = [['#ef4444', '0', 'none'], ['#3b82f6', '2px', 'rotate(45deg)'], ['#eab308', '50%', 'none'], ['#22c55e', '2px', 'none']];
+    const joinedN = students.length;
+    return {
+      rootRef: this.rootRef, dSqlRef: this.dSqlRef,
+      toggleTheme: () => { const th = S.theme === 'dark' ? 'light' : 'dark'; this.C.setTheme(th); this.setState({ theme: th }); },
+      menuOpen: S.menu, toggleMenu: () => this.setState({ menu: !S.menu }),
+      inClass: view === 'class', cid: cur.id, classOpts: S.D.classes.filter(c => !c.archived || c.id === cur.id).map(c => ({ id: c.id, name: c.name, sel: c.id === cur.id })), pickClass: e => this.setState({ cid: e.target.value, view: 'class', drawer: null }),
+      goClasses: () => this.setState({ view: 'klassen', drawer: null }), goNew: () => this.setState({ view: 'neu', nName: '' }),
+      vClasses: view === 'klassen', vNew: view === 'neu', vCreated: view === 'erstellt', vClass: view === 'class',
+      filters: seg([['aktiv', 'Aktiv'], ['archiv', 'Archiviert']], S.filter, k => this.setState({ filter: k })),
+      noClasses: !shown.length, hasClasses: !!shown.length, showEmptyCta: S.filter === 'aktiv',
+      emptyTitle: S.filter === 'aktiv' ? 'Noch keine Klasse.' : 'Keine archivierten Klassen.', emptyText: S.filter === 'aktiv' ? 'Legen Sie Ihre erste Klasse an. Ihre Schüler treten danach mit einem Klassencode oder dem QR-Code bei.' : 'Archivierte Klassen erscheinen hier, sobald Sie eine Klasse archivieren.',
+      classRows: shown.map(c => { const n = stuckOf(c); return { name: c.name, year: c.year, focus: (T.LESSONS.find(l => l.id === c.focus) || {}).title, count: c.students.length, stuck: n ? n + ' hängen fest' : 'Niemand', stuckInk: n ? 'var(--danger-ink)' : 'var(--ink-3)', stuckDot: n ? 'var(--danger)' : 'var(--line-strong)', stuckWeight: n ? 600 : 400, last: c.last, open: () => this.setState({ cid: c.id, view: 'class', tab: 'uebersicht' }) }; }),
+      nName: S.nName, nYear: S.nYear, setNName: e => this.setState({ nName: e.target.value }), setNYear: e => this.setState({ nYear: e.target.value }),
+      nTracks: T.TRACKS.map((t, i) => ({ label: 'Track ' + (i + 1) + ': ' + t, on: S.nTracks[i], toggle: () => this.setState(X => ({ nTracks: X.nTracks.map((v, j) => j === i ? !v : v) })) })),
+      nInvalid: !S.nName.trim(), nOpacity: S.nName.trim() ? 1 : .5,
+      createClass: e => { e.preventDefault(); if (!S.nName.trim()) return; const pick = () => WORDS[Math.floor(Math.random() * WORDS.length)]; const code = pick() + '-' + pick() + '-' + pick() + '-' + String(10 + Math.floor(Math.random() * 90));
+        const c = { id: 'c' + Date.now(), name: S.nName.trim(), year: S.nYear, code, focus: 'select-basics', archived: false, open: true, last: 'gerade eben', students: [], unlocked: T.LESSONS.map(l => S.nTracks[l.track - 1]), order: T.LESSONS.map(l => l.id) };
+        c.unlocked[0] = true; this.setState(X => ({ D: { ...X.D, classes: [c, ...X.D.classes] }, cid: c.id, view: 'erstellt' })); },
+      qr: T.QR_PATH, curName: cur.name, curCode: cur.code, curYear: cur.year,
+      openBeamer: () => this.setState({ beamer: true }), closeBeamer: () => this.setState({ beamer: false }), beamer: S.beamer, joinedLabel: joinedN + (joinedN === 1 ? ' Schüler beigetreten' : ' Schüler beigetreten'),
+      copyLink: () => { navigator.clipboard && navigator.clipboard.writeText('https://app.tabulasql.de/beitreten/' + cur.code).catch(() => {}); this.say('Link kopiert'); },
+      openOverview: goTab('uebersicht'),
+      tabs: [['uebersicht', 'Übersicht'], ['lektionen', 'Lektionen'], ['schueler', 'Schüler'], ['quiz', 'Quiz'], ['einstellungen', 'Einstellungen']].map(([k, l]) => { const on = tab === k || (k === 'quiz' && tab === 'editor'); return { label: l, cur: on ? 'page' : 'false', weight: on ? 600 : 400, ink: on ? 'var(--ink)' : 'var(--ink-2)', bar: on ? 'var(--accent)' : 'transparent', pick: goTab(k) }; }),
+      tOverview: tab === 'uebersicht', tLessons: tab === 'lektionen', tStudents: tab === 'schueler', tSettings: tab === 'einstellungen', tQuiz: tab === 'quiz', tEditor: tab === 'editor',
+      noStudents: !students.length, hasStudents: !!students.length,
+      focusId: cur.focus, focusOpts: T.LESSONS.filter((l, i) => cur.unlocked[i]).map(l => ({ id: l.id, label: 'Lektion ' + l.n + ' · ' + l.title, sel: l.id === cur.focus })),
+      setFocus: e => { const id = e.target.value; this.upd(c => ({ ...c, focus: id }), 'Fokus gesetzt'); },
+      views: seg([['fokus', 'Fokus'], ['matrix', 'Alle Lektionen']], S.mode, k => this.setState({ mode: k })),
+      ...(() => {
+        const stuckS = students.filter(s => s.m[li] === 3);
+        const N = focusL.steps, bins = Array.from({ length: N + 1 }, () => ({ n: 0, stuck: 0 }));
+        students.forEach(s => { const st = s.m[li]; if (st === 2) bins[N].n++; else if (st === 1 || st === 3) { const k = Math.min(N - 1, Math.max(0, s.step - 1)); bins[k].n++; if (st === 3) bins[k].stuck++; } });
+        const mx = Math.max(1, ...bins.map(b => b.n));
+        const ERRS = { 'where-filters': [['AND und OR verwechselt', "genre = 'Krimi' OR year > 2015", 6], ['Grenzen bei BETWEEN', 'price > 10 AND price < 15', 4], ['= NULL statt IS NULL', 'WHERE price = NULL', 3], ['Text ohne Anführungszeichen', 'WHERE genre = Comic', 2]] }[cur.focus] || [['Spalte falsch geschrieben', 'SELECT titel FROM books', 3], ['Komma vergessen', 'SELECT title year', 2]];
+        const emx = Math.max(...ERRS.map(e => e[2]));
+        const active = students.filter(s => /vor ([1-9]|1[0-5]) min/.test(s.ago)).length;
+        return {
+          helpTitle: stuckS.length ? stuckS.length + (stuckS.length === 1 ? ' braucht Hilfe' : ' brauchen Hilfe') : 'Braucht Hilfe', helpOwl: stuckS.length ? 'raisehand' : 'success', noneStuck: !stuckS.length,
+          activeNow: active + ' gerade aktiv',
+          stuckCards: stuckS.map(s => { const x = T.STUCK[s.id] || { task: focusL.title, err: 'Mehrere Fehlversuche hintereinander', when: s.ago }; return { name: s.name, step: s.step, fails: s.fails, when: x.when, task: x.task, err: x.err, open: openD(s, li) }; }),
+          errs: ERRS.map(e => ({ label: e[0], example: e[1], n: e[2], w: (e[2] / emx * 100) + '%' })),
+          hist: bins.map((b, i) => ({ n: i === N ? '✓' : i + 1, label: b.n || '', h: (b.n / mx * 72) + 'px', bg: i === N ? 'var(--ok)' : b.stuck ? 'var(--danger)' : 'var(--accent)', title: (i === N ? 'Fertig' : 'Schritt ' + (i + 1)) + ': ' + b.n + ' Schüler' + (b.stuck ? ', ' + b.stuck + ' hängen fest' : '') })),
+          histAria: bins.map((b, i) => (i === N ? 'Fertig' : 'Schritt ' + (i + 1)) + ' ' + b.n).join(', ')
+        };
+      })(),
+      focusView: S.mode === 'fokus', matrixView: S.mode === 'matrix', ago: S.ago,
+      counts: [[2, 'Fertig', 'var(--ok)', 'var(--ink)'], [1, 'In Arbeit', 'var(--accent)', 'var(--ink)'], [3, 'Hängt fest', 'var(--danger)', 'var(--danger-ink)'], [0, 'Nicht begonnen', 'var(--line-strong)', 'var(--ink)']].map(([k, l, c, ink]) => ({ n: cnt(k), label: l, color: c, ink })),
+      rows: sorted.map(({ s, st }) => { const m = STATUS[st]; return { name: s.name, status: m[0], dot: m[1], ink: m[2], weight: st === 3 ? 600 : 400, bg: st === 3 ? 'var(--danger-soft)' : 'transparent', step: st === 0 ? '–' : (st === 2 ? focusL.steps : s.step) + ' / ' + focusL.steps, fails: s.fails || '–', failInk: s.fails >= 3 ? 'var(--danger-ink)' : 'var(--ink-2)', ago: s.ago, cursor: 'pointer', open: openD(s, li) }; }),
+      legend: [2, 1, 3, 0].map(k => ({ label: STATUS[k][0], bg: k === 0 ? 'var(--surface)' : STATUS[k][1], border: k === 0 ? 'var(--line-strong)' : STATUS[k][1] })),
+      mHead: T.LESSONS.map((l, i) => ({ n: l.n, title: l.title, ink: i === li ? 'var(--accent-ink)' : 'var(--ink-3)' })),
+      mRows: students.map(s => ({ name: s.name, cells: s.m.map((v, i) => ({ title: s.name + ', Lektion ' + T.LESSONS[i].n + ': ' + STATUS[v][0], bg: v === 0 ? 'var(--surface)' : STATUS[v][1], border: v === 0 ? 'var(--line)' : STATUS[v][1], mark: v === 3 ? '!' : v === 2 ? '✓' : '', open: openD(s, i) })) })),
+      drawer: !!ds, closeDrawer: () => this.setState({ drawer: null }),
+      dName: ds ? ds.name : '', dStatus: ds ? STATUS[dst][0] : '', dInk: ds ? STATUS[dst][2] : 'var(--ink)', dOwl: dst === 3 ? 'raisehand' : dst === 2 ? 'success' : 'read',
+      dLesson: ds ? 'Lektion ' + T.LESSONS[d.li].n + ' · ' + T.LESSONS[d.li].title + (dst === 3 || dst === 1 ? ' · Schritt ' + ds.step + ' · ' + ds.fails + ' Fehlversuche' : '') : '',
+      dHasDetail: !!dDetail, dNoDetail: !dDetail, dTask: dDetail ? T.STUCK[ds.id].task : '', dWhen: dDetail ? T.STUCK[ds.id].when : '', dErr: dDetail ? T.STUCK[ds.id].err : '',
+      dSummary: !ds ? '' : dst === 2 ? 'Hat die Lektion abgeschlossen.' : dst === 1 ? 'Arbeitet gerade an dieser Lektion.' : dst === 0 ? 'Hat diese Lektion noch nicht begonnen.' : 'Hängt fest. Die letzte Abfrage ist für diese Lektion nicht gespeichert.',
+      markHelped: () => { const sid = d.sid, i = d.li; this.upd(c => ({ ...c, students: c.students.map(s => s.id === sid ? { ...s, m: s.m.map((v, j) => j === i ? 1 : v), fails: 0 } : s) }), 'Als erledigt markiert'); this.setState({ drawer: null }); },
+      lq: S.lq, setLq: e => this.setState({ lq: e.target.value }), lTracks, unlockAll: () => this.upd(c => ({ ...c, unlocked: c.unlocked.map(() => true) }), 'Alle Lektionen freigeschaltet'),
+      sRows: students.map(s => ({ name: s.name, joined: s.joined, prog: s.m.filter(v => v === 2).length + ' / 11', ago: s.ago, asking: S.asking === s.id, idle: S.asking !== s.id, ask: () => this.setState({ asking: s.id }), cancel: () => this.setState({ asking: null }), confirm: () => { this.upd(c => ({ ...c, students: c.students.filter(x => x.id !== s.id) }), s.name + ' wurde entfernt'); this.setState({ asking: null }); } })),
+      renameClass: e => { const v = e.target.value; this.upd(c => ({ ...c, name: v })); }, setYear: e => { const v = e.target.value; this.upd(c => ({ ...c, year: v })); },
+      newCodeAsk: S.newCodeAsk, askNewCode: () => this.setState({ newCodeAsk: true }), cancelNewCode: () => this.setState({ newCodeAsk: false }),
+      doNewCode: () => { const pick = () => WORDS[Math.floor(Math.random() * WORDS.length)]; const code = pick() + '-' + pick() + '-' + pick() + '-' + String(10 + Math.floor(Math.random() * 90)); this.upd(c => ({ ...c, code }), 'Neuer Code erzeugt'); this.setState({ newCodeAsk: false }); },
+      joinOpen: cur.open ? 'true' : 'false', joinTrack: cur.open ? 'var(--ok)' : 'var(--line-strong)', joinKnob: cur.open ? '19px' : '3px', toggleJoin: () => this.upd(c => ({ ...c, open: !c.open }), 'Gespeichert'),
+      archive: () => { this.upd(c => ({ ...c, archived: true, open: false }), 'Klasse archiviert'); this.setState({ view: 'klassen', filter: 'archiv' }); },
+      delTxt: S.delTxt, setDelTxt: e => this.setState({ delTxt: e.target.value }), delLocked: S.delTxt !== cur.name, delOpacity: S.delTxt === cur.name ? 1 : .5,
+      delClass: () => { const id = cur.id; this.setState(X => ({ D: { ...X.D, classes: X.D.classes.filter(c => c.id !== id) }, cid: X.D.classes.find(c => c.id !== id).id, view: 'klassen', delTxt: '' })); this.say('Klasse gelöscht'); },
+      suggestTitle: focusL.title,
+      qTabs: seg([['auto', 'Automatisch'], ['eigene', 'Meine Fragensätze']], S.qTab, k => this.setState({ qTab: k })),
+      sets: T.QUIZ_SETS.filter(s => S.qTab === 'auto' ? s.auto : !s.auto).map(s => ({ title: s.title, meta: s.q + ' Fragen · ca. ' + s.min + ' min' + (s.auto ? ' · automatisch aus der Lektion' : ''), editLabel: s.auto ? 'Kopieren und bearbeiten' : 'Bearbeiten', edit: goTab('editor') })),
+      newSet: () => { this.setState(X => ({ D: { ...X.D, eTitle: 'Neuer Fragensatz', editor: [{ type: 'Welche Abfrage?', text: '', sql: '', answers: ['', '', '', ''], right: 0, time: 20 }] }, ei: 0, view: 'class', tab: 'editor' })); },
+      backQuiz: goTab('quiz'),
+      valMsg: nBad ? nBad + (nBad === 1 ? ' Frage ist unvollständig' : ' Fragen sind unvollständig') : 'Alle Änderungen gespeichert', valInk: nBad ? 'var(--danger-ink)' : 'var(--ok-ink)',
+      eTitle: S.D.eTitle, setETitle: e => { const v = e.target.value; this.setState(X => ({ D: { ...X.D, eTitle: v } })); }, eTime: S.D.eTime, setETime: e => { const v = e.target.value; this.setState(X => ({ D: { ...X.D, eTime: v } })); },
+      eList: ed.map((q, i) => ({ n: String(i + 1).padStart(2, '0'), text: q.text || 'Ohne Fragetext', bad: badQ(q), bg: i === S.ei ? 'var(--accent-soft)' : 'var(--surface)', border: i === S.ei ? 'var(--accent)' : 'var(--line)', pick: () => this.setState({ ei: i }) })),
+      addQ: () => { this.updEd(e => e.push({ type: 'Welche Abfrage?', text: '', sql: '', answers: ['', '', '', ''], right: 0, time: +S.D.eTime })); this.setState({ ei: ed.length }); },
+      qType: eq.type, qTypeOpts: ['Was gibt die Abfrage zurück?', 'Welche Abfrage?', 'Wo ist der Fehler?'].map(v => ({ v, sel: v === eq.type })), qTimeOpts: [10, 20, 30, 60].map(v => ({ v, sel: v === eq.time })), eTimeOpts: [10, 20, 30, 60].map(v => ({ v, sel: String(v) === S.D.eTime })), setQType: e => { const v = e.target.value; this.updEd(x => { x[S.ei].type = v; }); },
+      qTime: String(eq.time), setQTime: e => { const v = +e.target.value; this.updEd(x => { x[S.ei].time = v; }); },
+      qText: eq.text, setQText: e => { const v = e.target.value; this.updEd(x => { x[S.ei].text = v; }); },
+      qSql: eq.sql.replace(/\\n/g, '\n'), setQSql: e => { const v = e.target.value; this.updEd(x => { x[S.ei].sql = v; }); },
+      qAnswers: eq.answers.map((a, i) => ({ v: a, right: eq.right === i, aria: 'Antwort ' + (i + 1), color: SHAPES[i][0], radius: SHAPES[i][1], rot: SHAPES[i][2], bg: eq.right === i ? 'var(--ok-soft)' : 'var(--surface)', border: !a.trim() ? 'var(--danger)' : eq.right === i ? 'var(--ok)' : 'var(--line-strong)',
+        set: e => { const v = e.target.value; this.updEd(x => { x[S.ei].answers[i] = v; }); }, mark: () => this.updEd(x => { x[S.ei].right = i; }) })),
+      dupQ: () => { this.updEd(x => x.splice(S.ei + 1, 0, { ...x[S.ei], answers: x[S.ei].answers.slice() })); this.setState({ ei: S.ei + 1 }); this.say('Frage dupliziert'); },
+      delQ: () => { if (ed.length < 2) return; this.updEd(x => x.splice(S.ei, 1)); this.setState({ ei: Math.max(0, S.ei - 1) }); this.say('Frage gelöscht'); }, oneQ: ed.length < 2,
+      toast: !!S.toast, toastText: S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

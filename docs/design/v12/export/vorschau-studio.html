@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mit WHERE filtern · Tabula</title>
+<meta name="description" content="Lektion 3 · Mit WHERE filtern. SQL-Übungen direkt im Browser.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/studio.css">
+<script type="module" src="js/studio.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<noscript><p style="font-family:'IBM Plex Sans',sans-serif;padding:24px">Tabula braucht JavaScript, damit die SQL-Datenbank im Browser laufen kann.</p></noscript>
+<script type="text/template" id="tb-tpl">
+<div ref="{{ rootRef }}" style="min-height:100vh;display:flex;flex-direction:column;background:var(--bg)">
+
+  <header style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:10px 20px;min-height:56px;background:var(--surface);border-bottom:1px solid var(--line)">
+    <a href="/learn" style="display:flex;align-items:center;gap:6px;color:var(--ink-2);text-decoration:none;font-size:14px;font-weight:500;padding:6px 8px;margin-left:-8px;border-radius:6px" data-hv="1">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"></path></svg>Lektionen
+    </a>
+    <div style="width:1px;height:22px;background:var(--line)"></div>
+    <div style="display:flex;flex-direction:column;min-width:0;line-height:1.25">
+      <span style="font-size:12px;color:var(--ink-3)">SQL-Grundlagen · Lektion 3</span>
+      <span style="font-size:15px;font-weight:600;letter-spacing:-.01em">Mit WHERE filtern</span>
+    </div>
+    <nav aria-label="Schritte der Lektion" style="flex:1 1 280px;display:flex;align-items:center;gap:12px;min-width:220px;justify-content:center">
+      <div style="display:flex;gap:4px;flex:1;max-width:420px">
+        <sc-for list="{{ segs }}" as="sg" hint-placeholder-count="9">
+          <button type="button" title="{{ sg.title }}" aria-label="{{ sg.title }}" aria-current="{{ sg.current }}" disabled="{{ sg.locked }}" onClick="{{ sg.go }}" style="flex:1;height:24px;padding:0;border:0;background:transparent;display:flex;align-items:center;cursor:{{ sg.cursor }}">
+            <span style="display:block;width:100%;height:{{ sg.h }};border-radius:3px;background:{{ sg.bg }};transition:background .2s,height .2s"></span>
+          </button>
+        </sc-for>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums">{{ stepLabel }}</span>
+    </nav>
+    <div style="display:flex;align-items:center;gap:6px">
+      <button type="button" onClick="{{ download }}" disabled="{{ noDb }}" title="Datenbank herunterladen (.db)" aria-label="Datenbank herunterladen" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" data-hv="2">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"></path></svg>
+      </button>
+      <button type="button" onClick="{{ toggleTheme }}" aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" data-hv="3">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+      </button>
+      <span title="Gast" style="width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--subtle);color:var(--ink-2);font-size:13px;font-weight:600;margin-left:4px">G</span>
+    </div>
+  </header>
+
+  <sc-if value="{{ showWork }}" hint-placeholder-val="{{ true }}">
+  <main style="flex:1;display:flex;flex-wrap:wrap;gap:16px;padding:16px clamp(16px,2vw,32px);align-items:flex-start;max-width:2200px;width:100%;margin:0 auto">
+
+    <section aria-label="Aufgabe" style="flex:1 1 340px;max-width:520px;min-width:0;display:flex;flex-direction:column;gap:16px">
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 22px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);padding:2px 8px;border-radius:5px">{{ stepType }}</span>
+          <span style="font-size:13px;color:var(--ink-3)">{{ stepName }}</span>
+        </div>
+
+        <sc-if value="{{ isExplain }}" hint-placeholder-val="{{ false }}">
+          <h1 style="margin:0 0 12px;font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.015em;text-wrap:balance">{{ explainTitle }}</h1>
+          <div style="display:flex;flex-direction:column;gap:12px;font-size:15px;line-height:1.65;color:var(--ink-2);text-wrap:pretty">
+            <sc-for list="{{ paras }}" as="p" hint-placeholder-count="3"><p style="margin:0">{{ p }}</p></sc-for>
+          </div>
+          <div style="margin-top:18px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--code-bg)">
+            <pre data-keep="1" ref="{{ exHlRef }}" style="margin:0;padding:12px 14px;font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;overflow-x:auto"></pre>
+            <div style="display:flex;justify-content:flex-end;padding:8px;border-top:1px solid var(--line);background:var(--surface)">
+              <button type="button" onClick="{{ tryExample }}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;font-weight:500;cursor:pointer" data-hv="4">Im Editor ausprobieren
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+              </button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isTask }}" hint-placeholder-val="{{ true }}">
+          <h1 style="margin:0 0 8px;font-size:22px;line-height:1.3;font-weight:600;letter-spacing:-.015em;text-wrap:balance">{{ task }}</h1>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink-2);text-wrap:pretty">{{ taskSub }}</p>
+          <sc-if value="{{ hasCols }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:14px">
+              <span style="font-size:13px;color:var(--ink-3);margin-right:2px">Erwartete Spalten</span>
+              <sc-for list="{{ cols }}" as="c" hint-placeholder-count="2">
+                <code style="font:500 12px 'IBM Plex Mono',monospace;padding:3px 7px;border-radius:5px;background:var(--subtle);border:1px solid var(--line)">{{ c }}</code>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+
+      <div style="background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)">
+          <h2 style="margin:0;font-size:14px;font-weight:600">Schema</h2>
+          <span style="font-size:12px;color:var(--ink-3)">Klick fügt den Namen ein</span>
+        </div>
+        <sc-if value="{{ dbLoading }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
+            <div style="height:14px;width:40%;border-radius:4px;background:var(--subtle)"></div>
+            <div style="height:12px;width:70%;border-radius:4px;background:var(--subtle)"></div>
+            <div style="height:12px;width:55%;border-radius:4px;background:var(--subtle)"></div>
+          </div>
+        </sc-if>
+        <sc-for list="{{ tables }}" as="t" hint-placeholder-count="0">
+          <div style="border-bottom:1px solid var(--line)">
+            <div style="display:flex;align-items:center">
+              <button type="button" onClick="{{ t.toggle }}" aria-expanded="{{ t.open }}" aria-label="Tabelle {{ t.table }} auf- oder zuklappen" style="width:36px;height:40px;display:grid;place-items:center;border:0;background:transparent;cursor:pointer;color:var(--ink-3)">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:{{ t.rot }};transition:transform .15s"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+              </button>
+              <button type="button" onClick="{{ t.insert }}" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:8px;height:40px;padding:0 16px 0 0;border:0;background:transparent;cursor:pointer;text-align:left" data-hv="5">
+                <span style="font:600 13px 'IBM Plex Mono',monospace">{{ t.table }}</span>
+                <span style="font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ t.countLabel }}</span>
+              </button>
+            </div>
+            <sc-if value="{{ t.open }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 8px 8px 28px;display:flex;flex-direction:column">
+                <sc-for list="{{ t.cols }}" as="col" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ col.insert }}" style="display:flex;align-items:center;gap:8px;min-height:30px;padding:0 8px;border:0;border-radius:5px;background:transparent;cursor:pointer;text-align:left" data-hv="6">
+                    <span style="font:13px 'IBM Plex Mono',monospace;flex:1">{{ col.name }}</span>
+                    <span style="font:11px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ col.type }}</span>
+                    <span style="font:600 10px 'IBM Plex Mono',monospace;color:{{ col.keyColor }};min-width:18px;text-align:right">{{ col.key }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ dbFail }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:20px 16px;display:flex;gap:14px;align-items:center">
+            <span data-owl="sleep" style="width:64px;height:58px;flex:none"></span>
+            <div>
+              <p style="margin:0 0 8px;font-size:14px;font-weight:500">Datenbank konnte nicht geladen werden.</p>
+              <button type="button" onClick="{{ retryDb }}" style="height:32px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;cursor:pointer">Erneut versuchen</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ showGuest }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:14px;line-height:1.5;color:var(--ink-2)">
+          <p style="margin:0;flex:1">Fortschritt wird nur in diesem Browser gespeichert. Mit dem Klassencode deiner Lehrkraft kannst du einer <a href="/beitreten">Klasse beitreten</a>.</p>
+          <button type="button" onClick="{{ hideGuest }}" aria-label="Hinweis schließen" style="width:28px;height:28px;display:grid;place-items:center;border:0;background:transparent;border-radius:5px;cursor:pointer;color:var(--ink-3)" data-hv="7">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg>
+          </button>
+        </div>
+      </sc-if>
+    </section>
+
+    <section aria-label="Editor und Ergebnis" style="flex:999 1 520px;min-width:0;display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px">
+      <div style="flex:1 1 560px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 8px 8px 16px;border-bottom:1px solid var(--line)">
+          <label for="tb-query" style="font:500 13px 'IBM Plex Mono',monospace;color:var(--ink-2);flex:1">query.sql</label>
+          <div style="position:relative;display:flex;gap:6px;flex-wrap:wrap">
+            <sc-if value="{{ isExercise }}" hint-placeholder-val="{{ true }}">
+              <button type="button" onClick="{{ openTip }}" disabled="{{ tipLocked }}" title="{{ tipTitle }}" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid {{ tipBorder }};border-radius:6px;background:{{ tipBg }};color:{{ tipInk }};font-size:13px;font-weight:500;cursor:pointer" data-hv="8">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5h4M6.5 14.5h3M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.1V11h4v-.2c0-.4.2-.8.6-1.1A4.5 4.5 0 0 0 8 1.5Z"></path></svg>{{ tipLabel }}
+              </button>
+              <sc-if value="{{ canSolution }}" hint-placeholder-val="{{ false }}">
+                <button type="button" onClick="{{ askSolution }}" style="height:32px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;color:var(--ink-2)" data-hv="9">Lösung zeigen</button>
+              </sc-if>
+            </sc-if>
+            <button type="button" onClick="{{ askReset }}" title="Startcode wiederherstellen" style="display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;font-weight:500;cursor:pointer;color:var(--ink-2)" data-hv="10">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3v3.5H6"></path><path d="M3 9.5A5 5 0 1 0 4 4.4L2.5 6.5"></path></svg>Zurücksetzen
+            </button>
+            <sc-if value="{{ confirmOpen }}" hint-placeholder-val="{{ false }}">
+              <div role="alertdialog" aria-label="{{ confirmTitle }}" style="position:absolute;right:0;top:40px;z-index:10;width:280px;padding:16px;background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow-pop);animation:tbIn .16s ease-out">
+                <p style="margin:0 0 4px;font-size:14px;font-weight:600">{{ confirmTitle }}</p>
+                <p style="margin:0 0 14px;font-size:13px;line-height:1.5;color:var(--ink-2)">{{ confirmText }}</p>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                  <button type="button" onClick="{{ closeConfirm }}" style="height:32px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;cursor:pointer">Abbrechen</button>
+                  <button type="button" onClick="{{ doConfirm }}" style="height:32px;padding:0 12px;border:1px solid var(--accent);border-radius:6px;background:var(--accent);color:#fff;font-size:13px;font-weight:500;cursor:pointer">{{ confirmCta }}</button>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div style="max-height:max(260px,calc(100vh - 340px));overflow:auto;background:var(--code-bg)">
+          <div style="display:flex;min-width:100%;width:max-content">
+            <div aria-hidden="true" style="flex:none;padding:14px 0;width:44px;text-align:right;border-right:1px solid var(--line);font:13px/22px 'IBM Plex Mono',monospace;color:var(--ink-3);user-select:none;position:sticky;left:0;background:var(--code-bg);z-index:2">
+              <sc-for list="{{ lines }}" as="ln" hint-placeholder-count="6">
+                <div style="padding-right:10px;color:{{ ln.color }};background:{{ ln.bg }};font-weight:{{ ln.weight }}">{{ ln.n }}</div>
+              </sc-for>
+            </div>
+            <div style="position:relative;flex:1;min-width:300px">
+              <sc-if value="{{ hasErrLine }}" hint-placeholder-val="{{ false }}">
+                <div style="position:absolute;left:0;right:0;top:{{ errTop }};height:22px;background:var(--danger-soft);border-bottom:1px dashed var(--danger)"></div>
+              </sc-if>
+              <pre data-keep="1" ref="{{ hlRef }}" aria-hidden="true" style="position:absolute;inset:0;margin:0;padding:14px 16px;font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;color:var(--ink);pointer-events:none"></pre>
+              <textarea id="tb-query" ref="{{ taRef }}" value="{{ code }}" onChange="{{ onCode }}" onKeyDown="{{ onKey }}" spellcheck="false" autocomplete="off" autocapitalize="off" aria-invalid="{{ invalid }}" aria-describedby="tb-feedback" placeholder="SELECT …" style="position:relative;display:block;width:{{ taWidth }};min-width:100%;height:{{ taHeight }};margin:0;padding:14px 16px;border:0;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:var(--accent);font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;outline:none;tab-size:2"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)">
+          <button type="button" onClick="{{ exec }}" disabled="{{ runDisabled }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:{{ runOpacity }}" data-hv="11">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"></path></svg>{{ runLabel }}
+          </button>
+          <span style="font-size:13px;color:var(--ink-3)"><kbd style="font:12px 'IBM Plex Mono',monospace;padding:2px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;background:var(--surface)">{{ modKey }}</kbd> + <kbd style="font:12px 'IBM Plex Mono',monospace;padding:2px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;background:var(--surface)">Enter</kbd></span>
+          <span style="flex:1"></span>
+          <span style="font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ attemptsLabel }}</span>
+        </div>
+      </div>
+
+      <div style="flex:1 1 480px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden">
+        <div id="tb-feedback" aria-live="polite" style="display:flex;gap:14px;align-items:center;padding:12px 16px;min-height:76px;background:{{ fbBg }};border-bottom:1px solid {{ fbLine }};transition:background .2s">
+          <span data-owl="{{ owl }}" style="width:62px;height:56px;flex:none"></span>
+          <div style="flex:1;min-width:0">
+            <p style="margin:0;font-size:15px;font-weight:600;color:{{ fbInk }}">{{ fbTitle }}</p>
+            <p style="margin:2px 0 0;font-size:14px;line-height:1.5;color:{{ fbSubInk }};text-wrap:pretty">{{ fbSub }}</p>
+            <sc-if value="{{ hasOrig }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:4px 0 0;font:12px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ errOrig }}</p>
+            </sc-if>
+          </div>
+          <sc-if value="{{ canNext }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ next }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:1px solid var(--accent);border-radius:7px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;animation:tbIn .2s ease-out" data-hv="12">Weiter
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+            </button>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ tipShown }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--warn-soft);color:var(--warn-ink);font-size:14px;line-height:1.55;animation:tbIn .2s ease-out">
+            <strong style="font-weight:600;flex:none">Tipp von Edgar</strong><span style="color:var(--ink)">{{ tip }}</span>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--line)">
+          <h2 style="margin:0;font-size:14px;font-weight:600">Ergebnis</h2>
+          <span style="font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ resultMeta }}</span>
+        </div>
+        <sc-if value="{{ running }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:10px;padding:24px 16px;color:var(--ink-2);font-size:14px">
+            <span style="width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:tbSpin .7s linear infinite"></span>Abfrage läuft …
+          </div>
+        </sc-if>
+        <sc-if value="{{ resultEmpty }}" hint-placeholder-val="{{ true }}">
+          <p style="margin:0;padding:28px 16px;font-size:14px;color:var(--ink-3);text-align:center">{{ emptyText }}</p>
+        </sc-if>
+        <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ false }}">
+          <div style="max-height:max(280px,calc(100vh - 380px));overflow:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">
+              <thead><tr>
+                <sc-for list="{{ resCols }}" as="h" hint-placeholder-count="2">
+                  <th style="position:sticky;top:0;text-align:left;padding:8px 16px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-2);background:var(--subtle);border-bottom:1px solid var(--line);white-space:nowrap">{{ h }}</th>
+                </sc-for>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ resRows }}" as="row" hint-placeholder-count="4">
+                  <tr style="border-bottom:1px solid var(--line)" data-hv="13">
+                    <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="2">
+                      <td style="padding:8px 16px;border-bottom:1px solid var(--line);white-space:nowrap;color:{{ cell.color }};font-style:{{ cell.fs }}">{{ cell.v }}</td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <sc-if value="{{ truncated }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:0;padding:8px 16px;font-size:13px;color:var(--ink-3);border-top:1px solid var(--line)">{{ truncLabel }}</p>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}">
+          <p style="margin:0;padding:24px 16px;font-size:14px;color:var(--ink-2);text-align:center">Keine Zeile erfüllt die Bedingung.</p>
+        </sc-if>
+      </div>
+    </section>
+  </main>
+  </sc-if>
+
+  <sc-if value="{{ showSummary }}" hint-placeholder-val="{{ false }}">
+    <main style="flex:1;display:flex;justify-content:center;padding:48px 20px">
+      <div style="width:100%;max-width:680px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;align-items:center;gap:18px">
+          <span data-owl="read" style="width:96px;height:86px;flex:none"></span>
+          <div>
+            <p style="margin:0 0 4px;font-size:13px;color:var(--ink-3)">Zusammenfassung · Lektion 3</p>
+            <h1 style="margin:0;font-size:30px;font-weight:600;letter-spacing:-.02em">Das hast du gelernt</h1>
+          </div>
+        </div>
+        <ul style="margin:0;padding:0;list-style:none;border-top:1px solid var(--line)">
+          <sc-for list="{{ sumPoints }}" as="pt" hint-placeholder-count="4">
+            <li style="display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-size:16px;line-height:1.55">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M3 8.5 6.5 12 13 4.5"></path></svg>{{ pt }}
+            </li>
+          </sc-for>
+        </ul>
+        <div style="padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px">
+          <h2 style="margin:0 0 6px;font-size:15px;font-weight:600">Wozu braucht man das in echt?</h2>
+          <p style="margin:0;font-size:15px;line-height:1.6;color:var(--ink-2);text-wrap:pretty">{{ sumReal }}</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button type="button" onClick="{{ finish }}" style="display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border:1px solid var(--accent);border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer" data-hv="14">Lektion abschließen</button>
+          <button type="button" onClick="{{ prev }}" style="height:44px;padding:0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:15px;cursor:pointer" data-hv="15">Zurück zur letzten Übung</button>
+        </div>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ finished }}" hint-placeholder-val="{{ false }}">
+    <main style="flex:1;display:grid;place-items:center;padding:48px 20px">
+      <div style="width:100%;max-width:560px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;animation:tbIn .3s ease-out">
+        <span data-owl="celebrate" style="width:180px;height:162px"></span>
+        <h1 style="margin:0;font-size:34px;font-weight:600;letter-spacing:-.02em">Lektion geschafft</h1>
+        <p style="margin:0;font-size:16px;line-height:1.6;color:var(--ink-2)">{{ doneSub }}</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+          <a href="/learn/beginner/order-limit" style="display:flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;text-decoration:none" data-hv="16">Nächste Lektion: Ergebnisse sortieren</a>
+          <a href="/learn" style="display:flex;align-items:center;height:44px;padding:0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:15px;text-decoration:none" data-hv="17">Zur Übersicht</a>
+        </div>
+        <button type="button" onClick="{{ restart }}" style="margin-top:8px;border:0;background:none;color:var(--ink-3);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Lektion von vorn beginnen</button>
+      </div>
+    </main>
+  </sc-if>
+
+  <sc-if value="{{ showWork }}" hint-placeholder-val="{{ true }}">
+    <footer style="position:sticky;bottom:0;z-index:15;display:flex;align-items:center;gap:12px;padding:10px 20px;background:var(--surface);border-top:1px solid var(--line)">
+      <button type="button" onClick="{{ prev }}" disabled="{{ isFirst }}" style="display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;cursor:pointer;opacity:{{ prevOpacity }}" data-hv="18">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8H3M7.5 3.5 3 8l4.5 4.5"></path></svg>Zurück
+      </button>
+      <span style="flex:1;text-align:center;font-size:13px;color:var(--ink-3)">{{ nextHint }}</span>
+      <sc-if value="{{ showSkip }}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{ skip }}" style="border:0;background:none;color:var(--ink-2);font-size:14px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:8px">Überspringen</button>
+      </sc-if>
+      <button type="button" onClick="{{ next }}" disabled="{{ nextLocked }}" style="display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border:1px solid {{ nextBorder }};border-radius:7px;background:{{ nextBg }};color:{{ nextInk }};font-size:14px;font-weight:500;cursor:pointer">Weiter
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+      </button>
+    </footer>
+  </sc-if>
+</div>
+</script>
+</body>
+</html>

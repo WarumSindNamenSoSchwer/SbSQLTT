@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Datensätze · Tabula</title>
+<meta name="description" content="Die Datenbanken aus den Tabula-Lektionen zum Herunterladen, als SQLite-Datei oder CSV.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/fonts.css">
+<link rel="stylesheet" href="/css/datasets.css">
+<script type="module" src="/js/datasets.js"></script>
+</head>
+<body>
+<div id="app"></div>
+<noscript><p style="font-family:'IBM Plex Sans',sans-serif;padding:24px">Tabula braucht JavaScript, damit die SQL-Datenbank im Browser laufen kann.</p></noscript>
+<script type="text/template" id="tb-tpl">
+<div ref="{{ rootRef }}" style="min-height:100vh;background:var(--bg)">
+  <header style="position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)">
+    <div style="max-width:1680px;margin:0 auto;padding:0 clamp(16px,3vw,48px);min-height:60px;display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+      <a href="/" style="display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:18px;letter-spacing:-.02em"><span data-owl-icon="1" style="width:28px;height:25px;display:block"></span>Tabula</a>
+      <nav aria-label="Hauptnavigation" style="display:flex;gap:4px;flex:1;font-size:14px">
+        <a href="https://app.tabulasql.de/learn" style="padding:6px 10px;border-radius:6px;color:var(--ink-2);text-decoration:none" data-hv="1">Lernen</a>
+        <a href="/datasets" aria-current="page" style="padding:6px 10px;border-radius:6px;color:var(--ink);background:var(--subtle);text-decoration:none;font-weight:500">Datensätze</a>
+        <a href="/#lehrkraefte" style="padding:6px 10px;border-radius:6px;color:var(--ink-2);text-decoration:none" data-hv="2">Für Lehrkräfte</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" onClick="{{ toggleTheme }}" aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" data-hv="3">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+        </button>
+        <a href="https://app.tabulasql.de/login" style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:7px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:500" data-hv="4">Anmelden</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1680px;margin:0 auto;padding:28px clamp(16px,3vw,48px) 80px">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:24px">
+      <span data-owl="{{ headOwl }}" style="width:84px;height:76px;flex:none"></span>
+      <div style="flex:1 1 320px">
+        <h1 style="margin:0;font-size:clamp(28px,2.4vw,40px);font-weight:600;letter-spacing:-.025em;line-height:1.1">Datensätze</h1>
+        <p style="margin:6px 0 0;font-size:16px;line-height:1.55;color:var(--ink-2);max-width:62ch">Die Datenbanken aus den Lektionen zum Herunterladen. Für Python, den DB Browser for SQLite oder eigene Projekte.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+      <nav aria-label="Datensatz wählen" style="flex:1 1 300px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:8px">
+        <sc-for list="{{ list }}" as="d" hint-placeholder-count="3">
+          <button type="button" onClick="{{ d.pick }}" aria-current="{{ d.current }}" style="display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;padding:16px 16px 14px;border:1px solid {{ d.border }};border-radius:12px;background:{{ d.bg }};cursor:pointer;transition:border-color .2s,background .2s" data-hv="5">
+            <span style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <span style="font-size:16px;font-weight:600">{{ d.name }}</span>
+              <span style="font:12px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ d.file }}</span>
+            </span>
+            <span style="font-size:14px;line-height:1.5;color:var(--ink-2)">{{ d.desc }}</span>
+            <span style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+              <sc-for list="{{ d.tags }}" as="tg" hint-placeholder-count="2"><span style="font-size:12px;font-weight:500;padding:2px 8px;border-radius:5px;background:var(--subtle);color:var(--ink-2)">{{ tg }}</span></sc-for>
+              <span style="font-size:12px;color:var(--ink-3);margin-left:auto;font-variant-numeric:tabular-nums">{{ d.meta }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </nav>
+
+      <section aria-label="Datensatz-Details" style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:20px">
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(20px,2vw,28px);display:flex;flex-wrap:wrap;gap:20px 40px;align-items:flex-start">
+          <div style="flex:1 1 420px;min-width:0">
+            <p style="margin:0 0 4px;font:13px 'IBM Plex Mono',monospace;color:var(--accent-ink)">{{ file }}</p>
+            <h2 style="margin:0;font-size:clamp(24px,2vw,32px);font-weight:600;letter-spacing:-.02em">{{ name }}</h2>
+            <p style="margin:10px 0 0;font-size:16px;line-height:1.6;color:var(--ink-2);max-width:68ch;text-wrap:pretty">{{ story }}</p>
+            <p style="margin:10px 0 0;font-size:14px;color:var(--ink-3)">Verwendet in: {{ usedIn }} · <span style="font-variant-numeric:tabular-nums">{{ metaLine }}</span></p>
+          </div>
+          <div style="flex:0 1 280px;display:flex;flex-direction:column;gap:8px">
+            <button type="button" onClick="{{ dlDb }}" disabled="{{ noDb }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer;opacity:{{ dbOpacity }}" data-hv="6">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"></path></svg>{{ dbLabel }}
+            </button>
+            <button type="button" onClick="{{ dlCsv }}" disabled="{{ noDb }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:40px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:14px;font-weight:500;cursor:pointer" data-hv="7">Alle Tabellen als CSV (ZIP)</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:center;gap:12px;padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink-2);font-size:14px">
+            <span style="width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:tbSpin .7s linear infinite"></span>Datenbank wird geladen …
+          </div>
+        </sc-if>
+        <sc-if value="{{ failed }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:16px;padding:20px 24px;border:1px solid var(--danger-line);border-radius:14px;background:var(--danger-soft)">
+            <span data-owl="sleep" style="width:64px;height:58px;flex:none"></span>
+            <p style="margin:0;flex:1;font-size:15px;color:var(--danger-ink)">Datenbank konnte nicht geladen werden.</p>
+            <button type="button" onClick="{{ retry }}" style="height:36px;padding:0 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;cursor:pointer">Erneut versuchen</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ ready }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+            <div style="flex:1 1 460px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line)">
+                <h3 style="margin:0;font-size:15px;font-weight:600">Schema</h3>
+                <span style="font-size:13px;color:var(--ink-3)">{{ tableCount }}</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:16px">
+                <sc-for list="{{ schema }}" as="t" hint-placeholder-count="3">
+                  <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:9px 12px;background:var(--subtle);border-bottom:1px solid var(--line)">
+                      <span style="font:600 13px 'IBM Plex Mono',monospace">{{ t.table }}</span>
+                      <span style="font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums">{{ t.countLabel }}</span>
+                    </div>
+                    <sc-for list="{{ t.cols }}" as="c" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-top:1px solid var(--line);font:13px 'IBM Plex Mono',monospace">
+                        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</span>
+                        <span style="font-size:11px;color:var(--ink-3)">{{ c.type }}</span>
+                        <span style="font-size:10px;font-weight:600;min-width:18px;text-align:right;color:{{ c.keyInk }}">{{ c.key }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ hasRels }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-wrap:wrap;gap:8px 20px;padding:12px 18px;border-top:1px solid var(--line);font:13px 'IBM Plex Mono',monospace;color:var(--ink-2)">
+                  <span style="font-family:'IBM Plex Sans',sans-serif;color:var(--ink-3)">Verbindungen</span>
+                  <sc-for list="{{ rels }}" as="r" hint-placeholder-count="2"><span>{{ r.from }} <span style="color:var(--accent-ink)">→</span> {{ r.to }}</span></sc-for>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="flex:1 1 380px;min-width:0;border-radius:14px;overflow:hidden;background:#0f172a;color:#e2e8f0">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 10px 18px;border-bottom:1px solid #1e293b">
+                <h3 style="margin:0;font-size:14px;font-weight:600;color:#e2e8f0">In Python öffnen</h3>
+                <button type="button" onClick="{{ copyPy }}" style="height:30px;padding:0 12px;border:0;border-radius:6px;background:#1e293b;color:#e2e8f0;font-size:13px;font-weight:500;cursor:pointer" data-hv="8">{{ copyLabel }}</button>
+              </div>
+              <pre data-keep="1" ref="{{ pyRef }}" style="margin:0;padding:14px 18px;font:13px/22px 'IBM Plex Mono',monospace;white-space:pre;overflow-x:auto;color:#e2e8f0"></pre>
+              <p style="margin:0;padding:10px 18px 14px;font-size:13px;line-height:1.5;color:#94a3b8">Lade die .db-Datei herunter und lege sie in denselben Ordner wie dein Skript.</p>
+            </div>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px 10px 18px;border-bottom:1px solid var(--line)">
+              <h3 style="margin:0;font-size:15px;font-weight:600;margin-right:auto">Vorschau</h3>
+              <div role="tablist" aria-label="Tabelle wählen" style="display:flex;gap:2px;padding:3px;border-radius:8px;background:var(--subtle)">
+                <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3">
+                  <button type="button" role="tab" aria-selected="{{ tb.sel }}" onClick="{{ tb.pick }}" style="height:30px;padding:0 12px;border:0;border-radius:6px;background:{{ tb.bg }};color:{{ tb.ink }};font:500 13px 'IBM Plex Mono',monospace;cursor:pointer;box-shadow:{{ tb.shadow }}">{{ tb.name }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="overflow:auto;max-height:440px">
+              <table style="width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">
+                <thead><tr><sc-for list="{{ pvCols }}" as="h" hint-placeholder-count="4"><th style="position:sticky;top:0;text-align:left;padding:8px 16px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-2);background:var(--subtle);border-bottom:1px solid var(--line);white-space:nowrap">{{ h }}</th></sc-for></tr></thead>
+                <tbody>
+                  <sc-for list="{{ pvRows }}" as="row" hint-placeholder-count="5">
+                    <tr data-hv="9"><sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="4"><td style="padding:8px 16px;border-bottom:1px solid var(--line);white-space:nowrap;color:{{ cell.color }};font-style:{{ cell.fs }}">{{ cell.v }}</td></sc-for></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <p style="margin:0;padding:10px 18px;font-size:13px;color:var(--ink-3)">{{ pvFoot }}</p>
+          </div>
+
+          <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+            <div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line)">
+              <span data-owl="{{ qOwl }}" style="width:48px;height:43px;flex:none"></span>
+              <div style="flex:1;min-width:0">
+                <h3 style="margin:0;font-size:15px;font-weight:600">Selbst abfragen</h3>
+                <p style="margin:2px 0 0;font-size:13px;color:var(--ink-3)">Freies SQL auf diesem Datensatz. Änderungen werden nach jeder Abfrage zurückgesetzt.</p>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap">
+              <div style="flex:1 1 420px;min-width:0;border-right:1px solid var(--line);display:flex;flex-direction:column">
+                <div style="position:relative;flex:1;min-height:150px;background:var(--code-bg);overflow:auto">
+                  <pre data-keep="1" ref="{{ qHl }}" aria-hidden="true" style="position:absolute;inset:0;margin:0;padding:14px 16px;font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;color:var(--ink);pointer-events:none"></pre>
+                  <textarea aria-label="SQL-Abfrage" value="{{ q }}" onChange="{{ onQ }}" onKeyDown="{{ onQKey }}" spellcheck="false" autocomplete="off" autocapitalize="off" style="position:relative;display:block;width:100%;height:{{ qH }};margin:0;padding:14px 16px;border:0;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:var(--accent);font:14px/22px 'IBM Plex Mono',monospace;white-space:pre;outline:none"></textarea>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--line)">
+                  <button type="button" onClick="{{ runQ }}" disabled="{{ noDb }}" style="display:flex;align-items:center;gap:8px;height:38px;padding:0 16px;border:0;border-radius:7px;background:var(--accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer" data-hv="10">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"></path></svg>Ausführen
+                  </button>
+                  <span style="font-size:13px;color:var(--ink-3)">Strg / ⌘ + Enter</span>
+                </div>
+              </div>
+              <div style="flex:1 1 420px;min-width:0;display:flex;flex-direction:column">
+                <sc-if value="{{ qErr }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:14px 18px;background:var(--danger-soft);border-bottom:1px solid var(--danger-line)">
+                    <p style="margin:0;font-size:15px;font-weight:600;color:var(--danger-ink)">{{ qErrMsg }}</p>
+                    <p style="margin:4px 0 0;font:12px 'IBM Plex Mono',monospace;color:var(--ink-3)">{{ qErrOrig }}</p>
+                  </div>
+                </sc-if>
+                <div style="display:flex;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--line);font-size:13px"><span style="font-weight:600">Ergebnis</span><span style="color:var(--ink-3);font-variant-numeric:tabular-nums">{{ qMeta }}</span></div>
+                <div style="flex:1;overflow:auto;max-height:300px">
+                  <sc-if value="{{ qEmpty }}" hint-placeholder-val="{{ true }}"><p style="margin:0;padding:32px 18px;text-align:center;font-size:14px;color:var(--ink-3)">{{ qEmptyText }}</p></sc-if>
+                  <sc-if value="{{ qHasRows }}" hint-placeholder-val="{{ false }}">
+                    <table style="width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums">
+                      <thead><tr><sc-for list="{{ qCols }}" as="h" hint-placeholder-count="2"><th style="position:sticky;top:0;text-align:left;padding:8px 16px;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-2);background:var(--subtle);white-space:nowrap">{{ h }}</th></sc-for></tr></thead>
+                      <tbody><sc-for list="{{ qRows }}" as="row" hint-placeholder-count="3"><tr><sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="2"><td style="padding:8px 16px;border-top:1px solid var(--line);white-space:nowrap;color:{{ cell.color }};font-style:{{ cell.fs }}">{{ cell.v }}</td></sc-for></tr></sc-for></tbody>
+                    </table>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </section>
+    </div>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:40;padding:12px 18px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;box-shadow:var(--shadow-pop);animation:tbIn .2s ease-out">{{ toastText }}</div>
+    </sc-if>
+  </main>
+</div>
+</script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Live-Quiz · Tabula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{color-scheme:light;--bg:#f8fafc;--surface:#fff;--subtle:#f1f5f9;--line:#e2e8f0;--line-strong:#cbd5e1;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#2563eb;--accent-soft:#eff6ff;--accent-ink:#1d4ed8;--ok:#16a34a;--ok-soft:#f0fdf4;--ok-ink:#166534;--danger:#dc2626;--danger-soft:#fef2f2;--danger-ink:#991b1b;--tok-kw:#93c5fd;--tok-str:#86efac;--tok-num:#fdba74;--tok-com:#94a3b8;--shadow-pop:0 12px 32px -12px rgb(15 23 42/.28)}
+:root[data-tb="dark"]{color-scheme:dark;--bg:#060b16;--surface:#111a2e;--subtle:#1e293b;--line:#334155;--line-strong:#475569;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#94a3b8;--accent-soft:#172554;--accent-ink:#93c5fd;--ok:#4ade80;--ok-soft:#052e16;--ok-ink:#86efac;--danger:#f87171;--danger-soft:#450a0a;--danger-ink:#fca5a5}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+::selection{background:#2563eb;color:#fff}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid #60a5fa;outline-offset:2px}
+@keyframes tbIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes tbSpin{to{transform:rotate(360deg)}}
+@keyframes tbPop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.06);opacity:1}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="min-height:100vh;background:var(--bg);padding:20px clamp(12px,2.5vw,40px) 40px;display:flex;flex-direction:column;gap:16px">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <a href="Tabula Lehrerbereich.dc.html" style="color:var(--ink-2);font-size:14px;text-decoration:none">← Lehrerbereich</a>
+    <span style="flex:1"></span>
+    <span style="font-size:13px;color:var(--ink-3)">Links der Beamer, rechts das Handy einer Schülerin. Beide reagieren auf dieselben Aktionen.</span>
+    <button type="button" onClick="{{ restart }}" style="height:34px;padding:0 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:13px;cursor:pointer">Von vorn</button>
+  </div>
+  <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;justify-content:center">
+
+    <section aria-label="Beamer" style="flex:1 1 640px;min-width:0;max-width:1500px">
+      <div style="container-type:inline-size;aspect-ratio:16/9;position:relative;border-radius:14px;overflow:hidden;background:#0b1220;color:#e8eef7;box-shadow:0 30px 70px -30px rgb(0 0 0/.6)">
+        <div style="position:absolute;inset:0;padding:3.2cqw 4cqw;display:flex;flex-direction:column">
+          <div style="display:flex;align-items:center;gap:1.2cqw;font-size:1.3cqw;color:#a5b4c9">
+            <span data-owl-icon="1" style="width:2.4cqw;aspect-ratio:124/108;display:block"></span><strong style="color:#e8eef7;font-weight:600">Tabula Live-Quiz</strong><span>Informatik 10b · Mit WHERE filtern</span><span style="flex:1"></span><span style="font-family:'IBM Plex Mono',monospace">{{ bTop }}</span>
+          </div>
+
+          <sc-if value="{{ pLobby }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;align-items:center;gap:4cqw;animation:tbIn .4s ease-out">
+              <div style="padding:1.2cqw;border-radius:1.2cqw;background:#fff;flex:none"><svg viewBox="0 0 25 25" shape-rendering="crispEdges" role="img" aria-label="QR-Code zum Quiz" style="width:22cqw;height:22cqw;display:block"><path stroke="#0f172a" d="{{ qr }}"></path></svg></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1.4cqw">
+                <p style="margin:0;font-size:1.6cqw;color:#a5b4c9">app.tabulasql.de/beitreten</p>
+                <p style="margin:0;font:600 3.6cqw/1.05 'IBM Plex Mono',monospace;color:#60a5fa">sonne-apfel-kugel-33</p>
+                <p style="margin:1cqw 0 0;font-size:2.4cqw;font-weight:600"><span style="color:#60a5fa;font-variant-numeric:tabular-nums">{{ joinedN }}</span> von 24 sind da</p>
+                <div style="display:flex;flex-wrap:wrap;gap:.7cqw;max-height:12cqw;overflow:hidden">
+                  <sc-for list="{{ lobbyNames }}" as="n" hint-placeholder-count="10"><span style="font-size:1.4cqw;padding:.4cqw 1cqw;border-radius:2cqw;background:#162237;border:1px solid #2a3850;animation:tbPop .35s ease-out">{{ n }}</span></sc-for>
+                </div>
+              </div>
+              <span data-owl="wave" style="position:absolute;right:4cqw;bottom:9cqw;width:11cqw;aspect-ratio:200/180"></span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pQuestion }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;gap:1.6cqw;padding-top:2cqw;animation:tbIn .35s ease-out">
+              <div style="display:flex;align-items:flex-start;gap:3cqw">
+                <div style="flex:1;min-width:0">
+                  <p style="margin:0 0 .8cqw;font:500 1.3cqw 'IBM Plex Mono',monospace;color:#a5b4c9">{{ qType }}</p>
+                  <p style="margin:0;font-size:3.2cqw;line-height:1.15;font-weight:700;letter-spacing:-.03em">{{ qText }}</p>
+                </div>
+                <div style="flex:none;width:9cqw;height:9cqw;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#60a5fa {{ timeDeg }},#1e293b 0);transition:background .9s linear">
+                  <span style="width:7.2cqw;height:7.2cqw;border-radius:50%;background:#0b1220;display:grid;place-items:center;font:700 3.2cqw 'IBM Plex Mono',monospace;color:{{ timeInk }}">{{ timeLeft }}</span>
+                </div>
+              </div>
+              <sc-if value="{{ hasSql }}" hint-placeholder-val="{{ false }}">
+                <pre data-keep="1" ref="{{ sqlRef }}" style="margin:0;padding:1.4cqw 1.8cqw;border-radius:1cqw;background:#0d1526;border:1px solid #2a3850;font:1.9cqw/1.5 'IBM Plex Mono',monospace;color:#e8eef7;white-space:pre-wrap"></pre>
+              </sc-if>
+              <div style="flex:1"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2cqw">
+                <sc-for list="{{ bAnswers }}" as="a" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:1.4cqw;min-height:6.4cqw;padding:1cqw 1.8cqw;border-radius:1cqw;background:{{ a.bg }};color:#fff;font:600 2.1cqw 'IBM Plex Mono',monospace;opacity:{{ a.op }};transition:opacity .3s">
+                    <span aria-hidden="true" style="width:2cqw;height:2cqw;flex:none;background:#fff;border-radius:{{ a.radius }};transform:{{ a.rot }}"></span><span style="flex:1">{{ a.label }}</span>
+                    <sc-if value="{{ a.showBar }}" hint-placeholder-val="{{ false }}"><span style="font-size:1.6cqw;font-variant-numeric:tabular-nums">{{ a.count }}</span></sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;align-items:center;gap:1.4cqw;font-size:1.5cqw;color:#a5b4c9">
+                <span style="font-variant-numeric:tabular-nums"><strong style="color:#e8eef7">{{ answeredN }}</strong> / {{ playersN }} haben geantwortet</span><span style="flex:1"></span>
+                <button type="button" onClick="{{ skip }}" style="height:3.6cqw;padding:0 1.8cqw;border:1px solid #475569;border-radius:.8cqw;background:none;color:#e8eef7;font-size:1.4cqw;cursor:pointer">Zeit beenden</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pReveal }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;gap:1.6cqw;padding-top:2cqw;animation:tbIn .35s ease-out">
+              <p style="margin:0;font-size:2.6cqw;line-height:1.15;font-weight:700;letter-spacing:-.03em">{{ qText }}</p>
+              <div style="flex:1;display:flex;align-items:flex-end;gap:2cqw;padding:0 2cqw">
+                <sc-for list="{{ bars }}" as="b" hint-placeholder-count="4">
+                  <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:.8cqw;height:100%;justify-content:flex-end">
+                    <span style="font:700 2cqw 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums">{{ b.n }}</span>
+                    <div style="width:100%;height:{{ b.h }};min-height:.6cqw;border-radius:.8cqw .8cqw 0 0;background:{{ b.bg }};opacity:{{ b.op }};transition:height .8s cubic-bezier(.16,1,.3,1)"></div>
+                    <span style="display:flex;align-items:center;gap:.8cqw;font:600 1.6cqw 'IBM Plex Mono',monospace;opacity:{{ b.op }}"><span aria-hidden="true" style="width:1.4cqw;height:1.4cqw;background:{{ b.bg }};border-radius:{{ b.radius }};transform:{{ b.rot }}"></span>{{ b.label }}<sc-if value="{{ b.right }}" hint-placeholder-val="{{ false }}"><span style="color:#4ade80">✓</span></sc-if></span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;align-items:center;gap:2cqw;padding:1.4cqw 1.8cqw;border-radius:1cqw;background:#162237">
+                <span data-owl="hint" style="width:6cqw;aspect-ratio:200/180;flex:none"></span>
+                <p style="margin:0;flex:1;font-size:1.8cqw;line-height:1.4">{{ why }}</p>
+                <button type="button" onClick="{{ toBoard }}" style="height:4.4cqw;padding:0 2.4cqw;border:0;border-radius:.8cqw;background:#2563eb;color:#fff;font-size:1.6cqw;font-weight:600;cursor:pointer">Weiter</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pBoard }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;gap:4cqw;align-items:center;animation:tbIn .35s ease-out">
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1cqw">
+                <p style="margin:0 0 1cqw;font-size:2.8cqw;font-weight:700;letter-spacing:-.03em">Zwischenstand</p>
+                <sc-for list="{{ top5 }}" as="t" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:1.6cqw;padding:1.1cqw 1.8cqw;border-radius:1cqw;background:{{ t.bg }};animation:tbIn .4s ease-out both;animation-delay:{{ t.delay }}">
+                    <span style="font:700 1.8cqw 'IBM Plex Mono',monospace;width:2.4cqw;color:#a5b4c9">{{ t.rank }}</span>
+                    <span style="flex:1;font-size:2cqw;font-weight:600">{{ t.name }}</span>
+                    <span style="font:600 1.5cqw 'IBM Plex Mono',monospace;color:{{ t.moveInk }}">{{ t.move }}</span>
+                    <span style="font:700 2cqw 'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;min-width:8cqw;text-align:right">{{ t.score }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="flex:0 0 26cqw;display:flex;flex-direction:column;align-items:center;gap:2cqw">
+                <span data-owl="levelup" style="width:18cqw;aspect-ratio:200/180"></span>
+                <button type="button" onClick="{{ nextQ }}" style="height:4.6cqw;padding:0 2.6cqw;border:0;border-radius:.8cqw;background:#2563eb;color:#fff;font-size:1.7cqw;font-weight:600;cursor:pointer">{{ nextLabel }}</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pEnd }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1.6cqw;animation:tbIn .4s ease-out">
+              <span data-owl="trophy" style="width:12cqw;aspect-ratio:200/180"></span>
+              <div style="display:flex;align-items:flex-end;gap:1.2cqw">
+                <sc-for list="{{ podium }}" as="p" hint-placeholder-count="3">
+                  <div style="width:18cqw;display:flex;flex-direction:column;align-items:center;gap:.8cqw">
+                    <span style="font-size:2.2cqw;font-weight:700">{{ p.name }}</span>
+                    <span style="font:600 1.5cqw 'IBM Plex Mono',monospace;color:#a5b4c9">{{ p.score }}</span>
+                    <div style="width:100%;height:{{ p.h }};border-radius:1cqw 1cqw 0 0;background:{{ p.bg }};display:grid;place-items:center;font:700 4cqw 'IBM Plex Mono',monospace;color:#fff;animation:tbPop .6s ease-out both;animation-delay:{{ p.delay }}">{{ p.rank }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <button type="button" onClick="{{ toReport }}" style="position:absolute;right:4cqw;bottom:3.2cqw;height:4.4cqw;padding:0 2.4cqw;border:0;border-radius:.8cqw;background:#2563eb;color:#fff;font-size:1.6cqw;font-weight:600;cursor:pointer">Auswertung</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ pReport }}" hint-placeholder-val="{{ false }}">
+            <div style="flex:1;display:flex;flex-direction:column;gap:1cqw;padding-top:2cqw;animation:tbIn .35s ease-out">
+              <p style="margin:0 0 .6cqw;font-size:2.6cqw;font-weight:700;letter-spacing:-.03em">Auswertung · schwächste Fragen zuerst</p>
+              <sc-for list="{{ report }}" as="r" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:1.6cqw;padding:1cqw 1.6cqw;border-radius:1cqw;background:#162237">
+                  <span style="flex:1;min-width:0;font-size:1.6cqw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.text }}</span>
+                  <span style="width:18cqw;height:1cqw;border-radius:.5cqw;background:#1e293b;overflow:hidden"><span style="display:block;height:100%;width:{{ r.pct }};background:{{ r.color }}"></span></span>
+                  <span style="width:6cqw;text-align:right;font:700 1.6cqw 'IBM Plex Mono',monospace;color:{{ r.color }}">{{ r.pct }}</span>
+                  <button type="button" onClick="{{ r.focus }}" style="height:3.4cqw;padding:0 1.4cqw;border:1px solid #475569;border-radius:.7cqw;background:none;color:#e8eef7;font-size:1.25cqw;cursor:pointer;white-space:nowrap">Lektion als Fokus setzen</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ bPaused }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;background:rgb(11 18 32/.88);display:grid;place-items:center;text-align:center"><div><span data-owl="sleep" style="display:block;margin:0 auto;width:14cqw;aspect-ratio:200/180"></span><p style="margin:1.4cqw 0 0;font-size:3cqw;font-weight:700">Pausiert</p><p style="margin:.6cqw 0 0;font-size:1.6cqw;color:#a5b4c9">Der Beamer-Tab wurde geschlossen. Das Quiz geht weiter, sobald er wieder offen ist.</p></div></div>
+          </sc-if>
+
+          <sc-if value="{{ pLobby }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:1.2cqw;justify-content:flex-end">
+              <button type="button" onClick="{{ restart }}" style="height:4.4cqw;padding:0 2cqw;border:1px solid #475569;border-radius:.8cqw;background:none;color:#e8eef7;font-size:1.5cqw;cursor:pointer">Quiz beenden</button>
+              <button type="button" onClick="{{ start }}" disabled="{{ noPlayers }}" style="height:4.4cqw;padding:0 3cqw;border:0;border-radius:.8cqw;background:#2563eb;color:#fff;font-size:1.7cqw;font-weight:700;cursor:pointer">Los</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Handy" style="flex:0 0 340px;max-width:100%">
+      <div style="width:340px;max-width:100%;height:700px;border-radius:44px;padding:12px;background:#0f172a;box-shadow:0 30px 70px -30px rgb(0 0 0/.6)">
+        <div style="height:100%;border-radius:34px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column;position:relative">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 22px 8px;font-size:13px;font-weight:600"><span>9:41</span><span style="width:90px;height:24px;border-radius:12px;background:#0f172a"></span><span style="font-family:'IBM Plex Mono',monospace;font-size:12px">{{ hScore }}</span></div>
+          <div style="flex:1;display:flex;flex-direction:column;padding:12px 18px 22px;gap:12px;min-height:0">
+
+            <sc-if value="{{ hWait }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;animation:tbIn .3s ease-out">
+                <span data-owl="{{ hWaitOwl }}" style="width:150px;height:135px"></span>
+                <p style="margin:0;font-size:22px;font-weight:700;letter-spacing:-.02em">{{ hWaitTitle }}</p>
+                <p style="margin:0;font-size:15px;line-height:1.5;color:var(--ink-2)">{{ hWaitText }}</p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ hAsk }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;justify-content:space-between;font:500 12px 'IBM Plex Mono',monospace;color:var(--ink-3)"><span>{{ bTop }}</span><span>{{ timeLeft }} s</span></div>
+              <p style="margin:0;font-size:17px;line-height:1.35;font-weight:600">{{ qText }}</p>
+              <div style="flex:1;display:grid;grid-template-rows:repeat(4,1fr);gap:10px;min-height:0">
+                <sc-for list="{{ hAnswers }}" as="a" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ a.pick }}" disabled="{{ a.locked }}" style="display:flex;align-items:center;gap:12px;padding:0 16px;border:0;border-radius:14px;background:{{ a.bg }};color:#fff;font:600 16px 'IBM Plex Mono',monospace;text-align:left;cursor:pointer;opacity:{{ a.op }};transform:{{ a.scale }};transition:opacity .2s,transform .2s">
+                    <span aria-hidden="true" style="width:18px;height:18px;flex:none;background:#fff;border-radius:{{ a.radius }};transform:{{ a.rot }}"></span>{{ a.label }}
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ hResult }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;border-radius:20px;background:{{ hResBg }};padding:20px;animation:tbIn .3s ease-out">
+                <span data-owl="{{ hResOwl }}" style="width:150px;height:135px"></span>
+                <p style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.02em;color:{{ hResInk }}">{{ hResTitle }}</p>
+                <p style="margin:0;font-size:15px;line-height:1.5;color:var(--ink)">{{ hResText }}</p>
+                <p style="margin:6px 0 0;font:600 14px 'IBM Plex Mono',monospace;color:var(--ink-2)">{{ hRank }}</p>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ hEnd }}" hint-placeholder-val="{{ false }}">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;animation:tbIn .3s ease-out">
+                <span data-owl="graduate" style="width:150px;height:135px"></span>
+                <p style="margin:0;font-size:24px;font-weight:700">{{ hRank }}</p>
+                <p style="margin:0;font-size:15px;color:var(--ink-2)">{{ hEndText }}</p>
+                <a href="Tabula Studio.dc.html" style="margin-top:10px;display:inline-flex;align-items:center;height:46px;padding:0 20px;border-radius:12px;background:#2563eb;color:#fff;text-decoration:none;font-size:15px;font-weight:600">Zur Lektion</a>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ hConn }}" hint-placeholder-val="{{ false }}">
+              <div role="status" style="position:absolute;left:12px;right:12px;bottom:20px;padding:12px 14px;border-radius:12px;background:#0f172a;color:#fff;font-size:14px;display:flex;align-items:center;gap:10px"><span style="width:14px;height:14px;border:2px solid #475569;border-top-color:#60a5fa;border-radius:50%;animation:tbSpin .8s linear infinite;flex:none"></span>Verbindung unterbrochen, verbinde neu …</div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:40;padding:12px 18px;border-radius:10px;background:#0f172a;color:#fff;font-size:14px;animation:tbIn .2s ease-out">{{ toastText }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;special&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;verbindung&quot;,&quot;pausiert&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Sonderzustand&quot;}}">
+const COLORS = [['#dc2626', '0', 'none'], ['#2563eb', '2px', 'rotate(45deg)'], ['#ca8a04', '50%', 'none'], ['#16a34a', '2px', 'none']];
+const LESSON_OF = ['where-filters', 'where-filters', 'where-filters', 'group-by'];
+class Component extends DCLogic {
+  state = { theme: 'dark', T: null, phase: 'lobby', qi: 0, t: 0, joined: 3, answered: 0, mine: null, scores: null, prev: null, myScore: 0, myGain: 0, toast: '' };
+  rootRef = React.createRef(); sqlRef = React.createRef();
+  async componentDidMount() {
+    this.C = await import(new URL('tabula-core.js', document.baseURI).href);
+    const T = await import(new URL('tabula-teacher-data.js', document.baseURI).href);
+    document.documentElement.dataset.tb = 'dark';
+    const scores = Object.fromEntries(T.PLAYERS.map(p => [p, 0]));
+    this.setState({ T, scores });
+    this.timer = setInterval(() => this.tick(), 1000);
+    await this.C.loadOwl();
+    const G = (await import(new URL('owl-gen.js', document.baseURI).href)).default;
+    this.icon = G.icon(G.DARK);
+    this.paint();
+  }
+  componentWillUnmount() { clearInterval(this.timer); clearTimeout(this.tt); }
+  componentDidUpdate() { this.paint(); }
+  paint() {
+    const root = this.rootRef.current; if (!this.C || !root) return;
+    this.C.paintOwls(root, document.documentElement.dataset.tb === 'dark');
+    if (this.icon) root.querySelectorAll('[data-owl-icon]').forEach(el => { if (!el.dataset.k) { el.innerHTML = this.icon.replace('<svg ', '<svg style="width:100%;height:100%;display:block" aria-hidden="true" '); el.dataset.k = 'd'; } });
+    const T = this.state.T; if (this.sqlRef.current && T) { const q = T.QUESTIONS[this.state.qi]; this.sqlRef.current.innerHTML = this.C.highlight(q.sql.replace(/\\n/g, '\n')); }
+  }
+  tick() {
+    const S = this.state; if (!S.T) return;
+    const N = S.T.PLAYERS.length;
+    if (S.phase === 'lobby' && S.joined < N) this.setState({ joined: S.joined + 1 });
+    if (S.phase === 'frage') {
+      const answered = Math.min(N, S.answered + 1 + Math.floor(Math.random() * 3));
+      if (S.t <= 1) this.reveal(); else this.setState({ t: S.t - 1, answered });
+    }
+  }
+  reveal() {
+    const S = this.state, q = S.T.QUESTIONS[S.qi];
+    const prev = { ...S.scores }, scores = { ...S.scores };
+    this.dist = [0, 0, 0, 0];
+    S.T.PLAYERS.forEach((p, i) => { const r = ((i * 7 + S.qi * 3) % 10); const pick = p === 'Mia' && S.mine !== null ? S.mine : r < 6 ? q.right : (q.right + 1 + (r % 3)) % 4; this.dist[pick]++; if (pick === q.right) scores[p] += 500 + Math.round((10 - r) * 45); });
+    const gain = scores.Mia - prev.Mia;
+    this.setState({ phase: 'aufloesung', prev, scores, myGain: gain, answered: S.T.PLAYERS.length });
+  }
+  ranked(sc) { return Object.entries(sc).sort((a, b) => b[1] - a[1]); }
+  say(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: '' }), 2600); }
+  renderVals() {
+    const S = this.state, T = S.T;
+    if (!T) return { pLobby: true, lobbyNames: [], hWait: true, hAnswers: [], bAnswers: [] };
+    const special = this.props.special ?? 'normal';
+    const Q = T.QUESTIONS, q = Q[S.qi], N = T.PLAYERS.length, last = S.qi === Q.length - 1;
+    const rank = this.ranked(S.scores), prevRank = S.prev ? this.ranked(S.prev).map(r => r[0]) : rank.map(r => r[0]);
+    const myPos = rank.findIndex(r => r[0] === 'Mia') + 1;
+    const ph = S.phase, showDist = ph === 'aufloesung';
+    const total = this.dist ? this.dist.reduce((a, b) => a + b, 0) : 1, maxD = this.dist ? Math.max(...this.dist) : 1;
+    const correctN = Q.map((_, i) => 45 + ((i * 23) % 50));
+    return {
+      rootRef: this.rootRef, sqlRef: this.sqlRef, qr: T.QR_PATH,
+      restart: () => this.setState({ phase: 'lobby', qi: 0, joined: 3, mine: null, scores: Object.fromEntries(T.PLAYERS.map(p => [p, 0])), prev: null }),
+      bTop: ph === 'lobby' ? 'Lobby' : ['ende', 'auswertung'].includes(ph) ? 'Ende' : 'Frage ' + (S.qi + 1) + ' von ' + Q.length,
+      pLobby: ph === 'lobby', pQuestion: ph === 'frage', pReveal: ph === 'aufloesung', pBoard: ph === 'stand', pEnd: ph === 'ende', pReport: ph === 'auswertung',
+      joinedN: S.joined, lobbyNames: T.PLAYERS.slice(0, S.joined), noPlayers: S.joined < 1,
+      start: () => this.setState({ phase: 'frage', t: q.time, answered: 0, mine: null }),
+      qType: q.type, qText: q.text, hasSql: !!q.sql, timeLeft: S.t, timeDeg: (S.t / q.time * 360) + 'deg', timeInk: S.t <= 5 ? '#f87171' : '#e8eef7',
+      bAnswers: q.answers.map((a, i) => ({ label: a, bg: COLORS[i][0], radius: COLORS[i][1], rot: COLORS[i][2], op: 1, showBar: false, count: '' })),
+      answeredN: S.answered, playersN: N, skip: () => this.reveal(),
+      bars: q.answers.map((a, i) => ({ label: a, n: this.dist ? this.dist[i] : 0, h: (this.dist ? this.dist[i] / maxD * 100 : 0) + '%', bg: COLORS[i][0], radius: COLORS[i][1], rot: COLORS[i][2], op: i === q.right ? 1 : .45, right: i === q.right })),
+      why: q.why, toBoard: () => this.setState({ phase: last ? 'ende' : 'stand' }),
+      top5: rank.slice(0, 5).map(([n, s], i) => { const was = prevRank.indexOf(n), d = was - i; return { rank: i + 1, name: n, score: s.toLocaleString('de-DE'), move: d > 0 ? '▲ ' + d : d < 0 ? '▼ ' + (-d) : '', moveInk: d > 0 ? '#4ade80' : '#f87171', bg: n === 'Mia' ? '#172a54' : '#162237', delay: (i * 80) + 'ms' }; }),
+      nextLabel: 'Nächste Frage', nextQ: () => this.setState({ phase: 'frage', qi: S.qi + 1, t: Q[S.qi + 1].time, answered: 0, mine: null }),
+      podium: [1, 0, 2].map(i => ({ name: rank[i][0], score: rank[i][1].toLocaleString('de-DE'), rank: i + 1, h: ['16cqw', '11cqw', '8cqw'][i], bg: ['#2563eb', '#475569', '#334155'][i], delay: ([1, 0, 2].indexOf(i) * 150) + 'ms' })),
+      toReport: () => this.setState({ phase: 'auswertung' }),
+      report: Q.map((x, i) => ({ text: (i + 1) + '. ' + x.text, p: correctN[i], i })).sort((a, b) => a.p - b.p).map(r => ({ text: r.text, pct: r.p + '%', color: r.p < 60 ? '#f87171' : r.p < 80 ? '#fbbf24' : '#4ade80', focus: () => this.say('Fokus für die Klasse gesetzt: ' + (LESSON_OF[r.i] === 'group-by' ? 'Gruppieren mit GROUP BY' : 'Mit WHERE filtern')) })),
+      bPaused: special === 'pausiert',
+      hScore: S.scores.Mia.toLocaleString('de-DE') + ' P',
+      hWait: special === 'pausiert' || ph === 'lobby' || ph === 'stand' || ph === 'auswertung' || (ph === 'frage' && S.mine !== null && special !== 'pausiert'),
+      hWaitOwl: special === 'pausiert' ? 'sleep' : ph === 'frage' ? 'thinking' : ph === 'stand' ? 'lookaround' : 'wave',
+      hWaitTitle: special === 'pausiert' ? 'Pausiert' : ph === 'frage' ? 'Antwort gespeichert' : ph === 'stand' ? 'Platz ' + myPos : ph === 'auswertung' ? 'Danke fürs Mitmachen' : 'Du bist drin!',
+      hWaitText: special === 'pausiert' ? 'Deine Lehrkraft setzt das Quiz gleich fort.' : ph === 'frage' ? 'Warte, bis die Zeit abgelaufen ist.' : ph === 'stand' ? S.scores.Mia.toLocaleString('de-DE') + ' Punkte. Gleich kommt die nächste Frage.' : ph === 'auswertung' ? 'Deine Lehrkraft schaut sich gerade die Ergebnisse an.' : 'Hallo Mia. Warte auf den Start.',
+      hAsk: ph === 'frage' && S.mine === null && special !== 'pausiert',
+      hAnswers: q.answers.map((a, i) => ({ label: a, bg: COLORS[i][0], radius: COLORS[i][1], rot: COLORS[i][2], op: 1, scale: 'none', locked: S.mine !== null, pick: () => this.setState({ mine: i }) })),
+      hResult: ph === 'aufloesung' && special !== 'pausiert',
+      hResBg: S.myGain > 0 ? 'var(--ok-soft)' : 'var(--danger-soft)', hResInk: S.myGain > 0 ? 'var(--ok-ink)' : 'var(--danger-ink)', hResOwl: S.myGain > 0 ? 'success' : 'sad',
+      hResTitle: S.myGain > 0 ? 'Richtig! +' + S.myGain : S.mine === null ? 'Zeit abgelaufen' : 'Leider falsch',
+      hResText: S.myGain > 0 ? q.why : 'Richtig war: ' + q.answers[q.right],
+      hRank: 'Platz ' + myPos + ' von ' + N,
+      hEnd: ph === 'ende' && special !== 'pausiert', hEndText: Q.filter((_, i) => i <= S.qi).length + ' Fragen, ' + S.scores.Mia.toLocaleString('de-DE') + ' Punkte',
+      hConn: special === 'verbindung',
+      toast: !!S.toast, toastText: S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

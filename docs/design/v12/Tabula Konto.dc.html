@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Konto · Tabula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{color-scheme:light;--bg:#f8fafc;--surface:#fff;--subtle:#f1f5f9;--line:#e2e8f0;--line-strong:#cbd5e1;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#2563eb;--accent-strong:#1d4ed8;--accent-soft:#eff6ff;--accent-line:#bfdbfe;--accent-ink:#1d4ed8;--ok:#16a34a;--ok-soft:#f0fdf4;--ok-line:#bbf7d0;--ok-ink:#166534;--danger:#dc2626;--danger-soft:#fef2f2;--danger-line:#fecaca;--danger-ink:#991b1b;--shadow-pop:0 12px 32px -12px rgb(15 23 42/.28)}
+:root[data-tb="dark"]{color-scheme:dark;--bg:#0b1220;--surface:#111a2e;--subtle:#1e293b;--line:#334155;--line-strong:#475569;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#94a3b8;--accent-strong:#60a5fa;--accent-soft:#172554;--accent-line:#1e3a8a;--accent-ink:#93c5fd;--ok:#4ade80;--ok-soft:#052e16;--ok-line:#14532d;--ok-ink:#86efac;--danger:#f87171;--danger-soft:#450a0a;--danger-line:#7f1d1d;--danger-ink:#fca5a5;--shadow-pop:0 12px 32px -12px rgb(0 0 0/.6)}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+::selection{background:var(--accent-line);color:var(--ink)}
+a{color:var(--accent-ink);text-underline-offset:3px}a:hover{color:var(--accent-strong)}
+button,input{font:inherit;color:inherit}
+input::placeholder{color:var(--ink-3)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes tbIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="min-height:100vh;display:flex;flex-direction:column;background:var(--bg)">
+  <header style="background:var(--surface);border-bottom:1px solid var(--line)">
+    <div style="max-width:1680px;margin:0 auto;padding:0 clamp(16px,3vw,48px);min-height:60px;display:flex;align-items:center;gap:16px">
+      <a href="Tabula Landing.dc.html" style="display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:18px;letter-spacing:-.02em;margin-right:auto"><span data-owl-icon="1" style="width:28px;height:25px;display:block"></span>Tabula</a>
+      <button type="button" onClick="{{ toggleTheme }}" aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--subtle);color:var(--ink)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <main style="flex:1;display:flex;justify-content:center;align-items:flex-start;padding:clamp(32px,7vh,96px) 20px 64px">
+    <div style="width:100%;max-width:{{ maxW }};display:flex;flex-direction:column;gap:20px;animation:tbIn .3s ease-out">
+      <div style="display:flex;align-items:flex-end;gap:16px">
+        <span data-owl="{{ owl }}" style="width:96px;height:86px;flex:none"></span>
+        <div style="padding-bottom:6px">
+          <p style="margin:0 0 4px;font-size:14px;color:var(--ink-3)">{{ kicker }}</p>
+          <h1 style="margin:0;font-size:clamp(26px,2.2vw,34px);line-height:1.1;font-weight:600;letter-spacing:-.025em;text-wrap:balance">{{ title }}</h1>
+        </div>
+      </div>
+
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+        <form onSubmit="{{ submitLogin }}" novalidate="novalidate" style="display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+          <sc-if value="{{ loginErr }}" hint-placeholder-val="{{ false }}">
+            <p role="alert" style="margin:0;padding:12px 14px;border-radius:8px;background:var(--danger-soft);border:1px solid var(--danger-line);color:var(--danger-ink);font-size:14px">E-Mail oder Passwort falsch. Prüfe beides und versuche es erneut.</p>
+          </sc-if>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">E-Mail-Adresse
+            <input type="email" autocomplete="email" value="{{ email }}" onChange="{{ setEmail }}" placeholder="name@schule.de" style="height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400">
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">
+            <span style="display:flex;justify-content:space-between">Passwort<a href="#" onClick="{{ goForgot }}" style="font-weight:400">Passwort vergessen?</a></span>
+            <input type="password" autocomplete="current-password" value="{{ pw }}" onChange="{{ setPw }}" style="height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px">
+          </label>
+          <button type="submit" style="height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#1d4ed8">Anmelden</button>
+          <p style="margin:0;font-size:14px;color:var(--ink-2)">Noch kein Konto? <a href="#" onClick="{{ goRegister }}">Lehrer-Konto erstellen</a></p>
+        </form>
+        <div style="display:flex;gap:14px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface)">
+          <span data-owl="raisehand" data-owl-static="1" style="width:48px;height:43px;flex:none"></span>
+          <p style="margin:0;flex:1;font-size:14px;line-height:1.5;color:var(--ink-2)"><strong style="color:var(--ink);font-weight:600">Du bist Schüler oder Schülerin?</strong> Du brauchst kein Konto. Tritt mit dem Klassencode deiner Lehrkraft bei.</p>
+          <a href="#" onClick="{{ goJoin }}" style="font-size:14px;font-weight:600;white-space:nowrap">Klasse beitreten</a>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ regDone }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:24px;background:var(--surface);border:1px solid var(--ok-line);border-radius:14px;display:flex;flex-direction:column;gap:12px">
+            <p style="margin:0;font-size:16px;line-height:1.55">Ihr Konto ist angelegt. Als Nächstes legen Sie Ihre erste Klasse an. Ihre Schüler treten danach mit dem Klassencode bei.</p>
+            <a href="Tabula Lehrerbereich.dc.html" style="align-self:flex-start;display:inline-flex;align-items:center;height:44px;padding:0 18px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-size:15px;font-weight:600" style-hover="background:#1d4ed8;color:#fff">Zur Klassenübersicht</a>
+          </div>
+        </sc-if>
+        <sc-if value="{{ regForm }}" hint-placeholder-val="{{ true }}">
+          <form onSubmit="{{ submitReg }}" novalidate="novalidate" style="display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Name
+              <input autocomplete="name" value="{{ rName }}" onChange="{{ setRName }}" placeholder="Anna Müller" style="height:44px;padding:0 12px;border:1px solid {{ rNameBorder }};border-radius:8px;background:var(--surface);font-size:15px;font-weight:400">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">E-Mail-Adresse
+              <input type="email" autocomplete="email" value="{{ rEmail }}" onChange="{{ setREmail }}" placeholder="name@schule.de" style="height:44px;padding:0 12px;border:1px solid {{ rEmailBorder }};border-radius:8px;background:var(--surface);font-size:15px;font-weight:400">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Passwort
+              <input type="password" autocomplete="new-password" value="{{ rPw }}" onChange="{{ setRPw }}" style="height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px">
+            </label>
+            <ul aria-label="Passwort-Regeln" style="margin:-6px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13px">
+              <sc-for list="{{ rules }}" as="r" hint-placeholder-count="2">
+                <li style="display:flex;align-items:center;gap:8px;color:{{ r.ink }}"><span style="width:14px;height:14px;border-radius:50%;flex:none;display:grid;place-items:center;background:{{ r.dot }};color:#fff;font-size:10px">{{ r.mark }}</span>{{ r.label }}</li>
+              </sc-for>
+            </ul>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Passwort wiederholen
+              <input type="password" autocomplete="new-password" value="{{ rPw2 }}" onChange="{{ setRPw2 }}" style="height:44px;padding:0 12px;border:1px solid {{ rPw2Border }};border-radius:8px;background:var(--surface);font-size:15px">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Schule <span style="font-weight:400;color:var(--ink-3)">(optional)</span>
+              <input value="{{ rSchool }}" onChange="{{ setRSchool }}" placeholder="Gymnasium am See" style="height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400">
+            </label>
+            <label style="display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;color:var(--ink-2);cursor:pointer">
+              <input type="checkbox" onChange="{{ toggleConsent }}" style="width:18px;height:18px;margin:2px 0 0;accent-color:#2563eb;flex:none">
+              <span>Ich habe die <a href="#">Datenschutzerklärung</a> gelesen. Gespeichert werden Name, E-Mail-Adresse, das Passwort nur als Hash und optional die Schule.</span>
+            </label>
+            <sc-if value="{{ regErr }}" hint-placeholder-val="{{ false }}">
+              <p role="alert" style="margin:0;padding:10px 12px;border-radius:8px;background:var(--danger-soft);color:var(--danger-ink);font-size:14px">{{ regErr }}</p>
+            </sc-if>
+            <button type="submit" style="height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#1d4ed8">Lehrer-Konto erstellen</button>
+            <p style="margin:0;font-size:14px;color:var(--ink-2)">Schon ein Konto? <a href="#" onClick="{{ goLogin }}">Anmelden</a></p>
+          </form>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isJoin }}" hint-placeholder-val="{{ false }}">
+        <ol aria-label="Schritte" style="margin:0;padding:0;list-style:none;display:flex;gap:6px">
+          <sc-for list="{{ jSteps }}" as="s" hint-placeholder-count="3">
+            <li style="flex:1;display:flex;flex-direction:column;gap:6px;font-size:13px;color:{{ s.ink }}"><span style="height:4px;border-radius:2px;background:{{ s.bar }}"></span>{{ s.label }}</li>
+          </sc-for>
+        </ol>
+        <sc-if value="{{ j0 }}" hint-placeholder-val="{{ true }}">
+          <form onSubmit="{{ submitCode }}" novalidate="novalidate" style="display:flex;flex-direction:column;gap:14px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Klassencode
+              <input value="{{ code }}" onChange="{{ setCode }}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sonne-apfel-kugel-33" aria-invalid="{{ codeInvalid }}" aria-describedby="code-help" style="height:52px;padding:0 14px;border:1px solid {{ codeBorder }};border-radius:8px;background:var(--surface);font:500 18px 'IBM Plex Mono',monospace">
+            </label>
+            <p id="code-help" style="margin:-6px 0 0;font-size:13px;line-height:1.5;color:{{ codeHelpInk }}">{{ codeHelp }}</p>
+            <button type="submit" style="height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#1d4ed8">Weiter</button>
+          </form>
+          <div style="display:flex;gap:14px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface)">
+            <svg width="28" height="28" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="1.4" style="flex:none"><rect x="2" y="2" width="4.5" height="4.5" rx=".8"></rect><rect x="9.5" y="2" width="4.5" height="4.5" rx=".8"></rect><rect x="2" y="9.5" width="4.5" height="4.5" rx=".8"></rect><path d="M9.5 9.5h2v2h-2zM12 12h2v2h-2z"></path></svg>
+            <p style="margin:0;font-size:14px;line-height:1.5;color:var(--ink-2)"><strong style="color:var(--ink);font-weight:600">QR-Code am Beamer?</strong> Öffne die Kamera deines Handys und richte sie auf den Code. Du landest direkt im nächsten Schritt.</p>
+          </div>
+        </sc-if>
+        <sc-if value="{{ j1 }}" hint-placeholder-val="{{ false }}">
+          <form onSubmit="{{ submitJoin }}" novalidate="novalidate" style="display:flex;flex-direction:column;gap:14px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:var(--accent-soft)">
+              <div style="flex:1;min-width:0"><p style="margin:0;font-size:16px;font-weight:600">Informatik 10b</p><p style="margin:2px 0 0;font-size:13px;color:var(--ink-2)">bei Fr. Müller · <span style="font-family:'IBM Plex Mono',monospace">{{ code }}</span></p></div>
+              <button type="button" onClick="{{ backCode }}" style="border:0;background:none;color:var(--accent-ink);font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Ändern</button>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Dein Name
+              <input value="{{ jName }}" onChange="{{ setJName }}" autocomplete="nickname" placeholder="Mia K." style="height:44px;padding:0 12px;border:1px solid {{ jNameBorder }};border-radius:8px;background:var(--surface);font-size:15px;font-weight:400">
+              <span style="font-weight:400;font-size:13px;color:var(--ink-3)">So sieht dich deine Lehrkraft. Ein Vorname reicht.</span>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Passwort
+              <input type="password" autocomplete="new-password" value="{{ jPw }}" onChange="{{ setJPw }}" style="height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px">
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">Passwort wiederholen
+              <input type="password" autocomplete="new-password" value="{{ jPw2 }}" onChange="{{ setJPw2 }}" style="height:44px;padding:0 12px;border:1px solid {{ jPw2Border }};border-radius:8px;background:var(--surface);font-size:15px">
+            </label>
+            <div style="display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:13px;line-height:1.55;color:var(--ink-2)">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.6" stroke-linecap="round" style="flex:none;margin-top:1px"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+              <span>Name und Passwort bleiben auf diesem Gerät. Der Server bekommt nur eine Nummer und deinen Lernfortschritt. Deinen Namen kann nur deine Lehrkraft lesen.</span>
+            </div>
+            <sc-if value="{{ joinErr }}" hint-placeholder-val="{{ false }}">
+              <p role="alert" style="margin:0;padding:10px 12px;border-radius:8px;background:var(--danger-soft);color:var(--danger-ink);font-size:14px">{{ joinErr }}</p>
+            </sc-if>
+            <button type="submit" style="height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#1d4ed8">Klasse beitreten</button>
+          </form>
+        </sc-if>
+        <sc-if value="{{ j2 }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:24px;background:var(--surface);border:1px solid var(--ok-line);border-radius:14px;display:flex;flex-direction:column;gap:14px">
+            <p style="margin:0;font-size:16px;line-height:1.55">Du bist jetzt in <strong>Informatik 10b</strong>. Deine Lehrkraft sieht ab sofort deinen Fortschritt.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <a href="Tabula Lernen.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 18px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-size:15px;font-weight:600" style-hover="background:#1d4ed8;color:#fff">Weiter zu den Lektionen</a>
+              <a href="Tabula Quiz.dc.html" style="display:inline-flex;align-items:center;height:44px;padding:0 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font-size:15px" style-hover="background:var(--subtle);color:var(--ink)">Zum laufenden Quiz</a>
+            </div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ forgotSent }}" hint-placeholder-val="{{ false }}">
+          <div role="status" style="padding:20px 22px;background:var(--surface);border:1px solid var(--line);border-radius:14px;font-size:15px;line-height:1.55">Falls ein Konto mit dieser Adresse existiert, haben wir Ihnen eine E-Mail mit einem Link geschickt. Der Link ist eine Stunde gültig.</div>
+        </sc-if>
+        <sc-if value="{{ forgotForm }}" hint-placeholder-val="{{ true }}">
+          <form onSubmit="{{ submitForgot }}" novalidate="novalidate" style="display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px">
+            <label style="display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500">E-Mail-Adresse
+              <input type="email" autocomplete="email" value="{{ fEmail }}" onChange="{{ setFEmail }}" placeholder="name@schule.de" style="height:44px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:15px;font-weight:400">
+            </label>
+            <button type="submit" style="height:46px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:#1d4ed8">Link zum Zurücksetzen senden</button>
+          </form>
+        </sc-if>
+        <div style="padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--surface);font-size:14px;line-height:1.55;color:var(--ink-2)"><strong style="color:var(--ink);font-weight:600">Als Schüler oder Schülerin</strong> hast du kein Konto mit E-Mail. Hast du dein Passwort vergessen, sag deiner Lehrkraft Bescheid. Sie entfernt dich aus der Klasse, danach trittst du mit dem Klassencode neu bei.</div>
+        <a href="#" onClick="{{ goLogin }}" style="font-size:14px">Zurück zum Anmelden</a>
+      </sc-if>
+
+      <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ teacherView }}" hint-placeholder-val="{{ true }}">
+          <section style="padding:22px 24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;gap:14px">
+            <h2 style="margin:0;font-size:16px;font-weight:600">Konto</h2>
+            <dl style="margin:0;display:grid;grid-template-columns:max-content 1fr;gap:10px 24px;font-size:15px">
+              <dt style="color:var(--ink-3)">Name</dt><dd style="margin:0">Anna Müller</dd>
+              <dt style="color:var(--ink-3)">E-Mail</dt><dd style="margin:0">a.mueller@gymnasium-am-see.de</dd>
+              <dt style="color:var(--ink-3)">Schule</dt><dd style="margin:0">Gymnasium am See</dd>
+            </dl>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button type="button" onClick="{{ fakeSave }}" style="height:38px;padding:0 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;cursor:pointer" style-hover="background:var(--subtle)">Angaben ändern</button>
+              <button type="button" onClick="{{ fakeSave }}" style="height:38px;padding:0 14px;border:1px solid var(--line);border-radius:7px;background:var(--surface);font-size:14px;cursor:pointer" style-hover="background:var(--subtle)">Passwort ändern</button>
+            </div>
+          </section>
+          <section style="padding:22px 24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-size:16px;font-weight:600">Darstellung</h2>
+            <div role="radiogroup" aria-label="Darstellung" style="display:flex;gap:4px;padding:3px;border-radius:9px;background:var(--subtle);align-self:flex-start">
+              <sc-for list="{{ themeOpts }}" as="t" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{ t.sel }}" onClick="{{ t.pick }}" style="height:32px;padding:0 14px;border:0;border-radius:7px;background:{{ t.bg }};font-size:14px;cursor:pointer;box-shadow:{{ t.shadow }}">{{ t.label }}</button></sc-for>
+            </div>
+          </section>
+          <section style="padding:22px 24px;background:var(--surface);border:1px solid var(--danger-line);border-radius:14px;display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-size:16px;font-weight:600;color:var(--danger-ink)">Konto löschen</h2>
+            <p style="margin:0;font-size:14px;line-height:1.55;color:var(--ink-2)">Ihr Konto, alle Klassen und der Lernfortschritt Ihrer Schüler werden endgültig gelöscht. Geben Sie zur Bestätigung Ihre E-Mail-Adresse ein.</p>
+            <input value="{{ delTxt }}" onChange="{{ setDelTxt }}" placeholder="a.mueller@gymnasium-am-see.de" aria-label="E-Mail-Adresse zur Bestätigung" style="height:42px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:14px">
+            <button type="button" disabled="{{ delLocked }}" onClick="{{ fakeDelete }}" style="align-self:flex-start;height:40px;padding:0 16px;border:0;border-radius:7px;background:var(--danger);color:#fff;font-size:14px;font-weight:600;cursor:pointer;opacity:{{ delOpacity }}">Konto endgültig löschen</button>
+          </section>
+        </sc-if>
+        <sc-if value="{{ studentView }}" hint-placeholder-val="{{ false }}">
+          <section style="padding:22px 24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;gap:14px">
+            <h2 style="margin:0;font-size:16px;font-weight:600">Meine Klasse</h2>
+            <sc-if value="{{ inClassS }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <div style="flex:1;min-width:200px"><p style="margin:0;font-weight:600">Informatik 10b</p><p style="margin:2px 0 0;font-size:13px;color:var(--ink-3)">bei Fr. Müller · beigetreten am 14.10.2026</p></div>
+                <button type="button" onClick="{{ askLeave }}" style="height:38px;padding:0 14px;border:1px solid var(--danger-line);border-radius:7px;background:var(--surface);color:var(--danger-ink);font-size:14px;cursor:pointer" style-hover="background:var(--danger-soft)">Klasse verlassen</button>
+              </div>
+              <sc-if value="{{ leaveAsk }}" hint-placeholder-val="{{ false }}">
+                <div role="alertdialog" aria-label="Klasse verlassen?" style="padding:14px 16px;border-radius:10px;background:var(--danger-soft);display:flex;flex-direction:column;gap:10px;animation:tbIn .2s ease-out">
+                  <p style="margin:0;font-size:14px;line-height:1.5;color:var(--danger-ink)">Wirklich verlassen? Deine Lehrkraft sieht deinen Fortschritt danach nicht mehr. Dein Fortschritt bleibt in diesem Browser.</p>
+                  <div style="display:flex;gap:8px"><button type="button" onClick="{{ cancelLeave }}" style="height:34px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font-size:13px;cursor:pointer">Abbrechen</button><button type="button" onClick="{{ doLeave }}" style="height:34px;padding:0 12px;border:0;border-radius:6px;background:var(--danger);color:#fff;font-size:13px;font-weight:600;cursor:pointer">Verlassen</button></div>
+                </div>
+              </sc-if>
+            </sc-if>
+            <sc-if value="{{ leftClass }}" hint-placeholder-val="{{ false }}">
+              <p style="margin:0;font-size:14px;color:var(--ink-2)">Du bist in keiner Klasse. <a href="#" onClick="{{ goJoin }}">Klasse beitreten</a></p>
+            </sc-if>
+          </section>
+          <section style="padding:22px 24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;gap:12px">
+            <h2 style="margin:0;font-size:16px;font-weight:600">Darstellung</h2>
+            <div role="radiogroup" aria-label="Darstellung" style="display:flex;gap:4px;padding:3px;border-radius:9px;background:var(--subtle);align-self:flex-start">
+              <sc-for list="{{ themeOpts }}" as="t" hint-placeholder-count="2"><button type="button" role="radio" aria-checked="{{ t.sel }}" onClick="{{ t.pick }}" style="height:32px;padding:0 14px;border:0;border-radius:7px;background:{{ t.bg }};font-size:14px;cursor:pointer;box-shadow:{{ t.shadow }}">{{ t.label }}</button></sc-for>
+            </div>
+          </section>
+        </sc-if>
+      </sc-if>
+    </div>
+  </main>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:40;padding:12px 18px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;box-shadow:var(--shadow-pop);animation:tbIn .2s ease-out">{{ toastText }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;beitreten&quot;,&quot;anmelden&quot;,&quot;registrieren&quot;,&quot;passwort&quot;,&quot;profil&quot;],&quot;default&quot;:&quot;beitreten&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Bildschirm&quot;},&quot;role&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;lehrkraft&quot;,&quot;schueler&quot;],&quot;default&quot;:&quot;lehrkraft&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Bildschirm&quot;}}">
+const CODE_RE = /^[a-zäöüß]+-[a-zäöüß]+-[a-zäöüß]+-\d{2}$/;
+class Component extends DCLogic {
+  state = { theme: 'light', screen: null, email: '', pw: '', loginErr: false, rName: '', rEmail: '', rPw: '', rPw2: '', rSchool: '', consent: false, regTried: false, regDone: false, code: '', codeTried: false, jStep: 0, jName: '', jPw: '', jPw2: '', jTried: false, fEmail: '', forgotSent: false, delTxt: '', leaveAsk: false, left: false, toast: '' };
+  rootRef = React.createRef();
+  async componentDidMount() {
+    this.C = await import(new URL('tabula-core.js', document.baseURI).href);
+    const theme = this.C.getTheme('light'); document.documentElement.dataset.tb = theme;
+    const h = location.hash.slice(1); this.setState({ theme, screen: ['anmelden', 'registrieren', 'beitreten', 'passwort', 'profil'].includes(h) ? h : null });
+    await this.C.loadOwl();
+    const G = (await import(new URL('owl-gen.js', document.baseURI).href)).default;
+    this.icons = { light: G.icon({}), dark: G.icon(G.DARK) };
+    this.paint();
+  }
+  componentDidUpdate(pp) { if (pp && pp.screen !== this.props.screen) this.setState({ screen: null }); this.paint(); }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  paint() {
+    const root = this.rootRef.current; if (!this.C || !root) return;
+    const dark = this.state.theme === 'dark';
+    this.C.paintOwls(root, dark);
+    if (this.icons) root.querySelectorAll('[data-owl-icon]').forEach(el => { const k = dark ? 'dark' : 'light'; if (el.dataset.k !== k) { el.innerHTML = this.icons[k].replace('<svg ', '<svg style="width:100%;height:100%;display:block" aria-hidden="true" '); el.dataset.k = k; } });
+  }
+  say(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: '' }), 3000); }
+  go(s) { return e => { e && e.preventDefault && e.preventDefault(); this.setState({ screen: s }); window.scrollTo(0, 0); }; }
+  renderVals() {
+    const S = this.state, scr = S.screen || this.props.screen || 'beitreten';
+    const v = k => e => this.setState({ [k]: e.target.value });
+    const pwRules = [['Mindestens 10 Zeichen', S.rPw.length >= 10], ['Buchstaben und mindestens eine Zahl', /[a-zA-ZäöüÄÖÜ]/.test(S.rPw) && /\d/.test(S.rPw)]];
+    const okMail = m => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m);
+    const code = S.code.trim().toLowerCase();
+    const codeValid = CODE_RE.test(code), codeKnown = code === 'sonne-apfel-kugel-33';
+    let codeHelp = 'Drei Wörter und eine Zahl, getrennt mit Bindestrichen. Deine Lehrkraft zeigt den Code am Beamer.', codeBad = false;
+    if (S.codeTried && !codeValid) { codeHelp = 'So sieht ein Klassencode nicht aus. Beispiel: sonne-apfel-kugel-33'; codeBad = true; }
+    else if (S.codeTried && !codeKnown) { codeHelp = 'Diesen Code gibt es nicht oder er ist abgelaufen. Frag deine Lehrkraft nach dem aktuellen Code.'; codeBad = true; }
+    let joinErr = '';
+    if (S.jTried) { if (!S.jName.trim()) joinErr = 'Gib einen Namen ein.'; else if (S.jPw.length < 6) joinErr = 'Das Passwort braucht mindestens 6 Zeichen.'; else if (S.jPw !== S.jPw2) joinErr = 'Die Passwörter stimmen nicht überein.'; }
+    let regErr = '';
+    if (S.regTried) { if (!S.rName.trim()) regErr = 'Bitte geben Sie Ihren Namen ein.'; else if (!okMail(S.rEmail)) regErr = 'Bitte prüfen Sie die E-Mail-Adresse.'; else if (!pwRules.every(r => r[1])) regErr = 'Das Passwort erfüllt noch nicht alle Regeln.'; else if (S.rPw !== S.rPw2) regErr = 'Die Passwörter stimmen nicht überein.'; else if (!S.consent) regErr = 'Bitte bestätigen Sie die Datenschutzerklärung.'; }
+    const role = this.props.role ?? 'lehrkraft';
+    const meta = {
+      anmelden: ['Für Lehrkräfte', 'Anmelden', S.loginErr ? 'thinking' : 'wave', '440px'],
+      registrieren: ['Für Lehrkräfte', S.regDone ? 'Willkommen bei Tabula' : 'Lehrer-Konto erstellen', S.regDone ? 'celebrate' : 'wave', '480px'],
+      beitreten: ['Für Schüler', S.jStep === 2 ? 'Geschafft!' : 'Klasse beitreten', S.jStep === 2 ? 'celebrate' : codeBad ? 'thinking' : S.jStep === 1 ? 'point' : 'wave', '480px'],
+      passwort: ['Für Lehrkräfte', 'Passwort vergessen', S.forgotSent ? 'success' : 'curious', '460px'],
+      profil: [role === 'schueler' ? 'Mia K.' : 'Anna Müller', 'Profil', 'idle', '600px']
+    }[scr];
+    return {
+      rootRef: this.rootRef,
+      toggleTheme: () => { const th = S.theme === 'dark' ? 'light' : 'dark'; this.C.setTheme(th); this.setState({ theme: th }); },
+      kicker: meta[0], title: meta[1], owl: meta[2], maxW: meta[3],
+      isLogin: scr === 'anmelden', isRegister: scr === 'registrieren', isJoin: scr === 'beitreten', isForgot: scr === 'passwort', isProfile: scr === 'profil',
+      goLogin: this.go('anmelden'), goRegister: this.go('registrieren'), goForgot: this.go('passwort'), goJoin: this.go('beitreten'),
+      email: S.email, pw: S.pw, setEmail: v('email'), setPw: v('pw'), loginErr: S.loginErr,
+      submitLogin: e => { e.preventDefault(); if (S.email === 'a.mueller@gymnasium-am-see.de' && S.pw) { window.location.href = 'Tabula Lehrerbereich.dc.html'; } else this.setState({ loginErr: true }); },
+      rName: S.rName, rEmail: S.rEmail, rPw: S.rPw, rPw2: S.rPw2, rSchool: S.rSchool,
+      setRName: v('rName'), setREmail: v('rEmail'), setRPw: v('rPw'), setRPw2: v('rPw2'), setRSchool: v('rSchool'), toggleConsent: e => this.setState({ consent: e.target.checked }),
+      rNameBorder: S.regTried && !S.rName.trim() ? 'var(--danger)' : 'var(--line-strong)', rEmailBorder: S.regTried && !okMail(S.rEmail) ? 'var(--danger)' : 'var(--line-strong)', rPw2Border: S.rPw2 && S.rPw !== S.rPw2 ? 'var(--danger)' : 'var(--line-strong)',
+      rules: pwRules.map(r => ({ label: r[0], ink: r[1] ? 'var(--ok-ink)' : 'var(--ink-3)', dot: r[1] ? 'var(--ok)' : 'var(--line-strong)', mark: r[1] ? '✓' : '' })),
+      regErr, regDone: S.regDone, regForm: !S.regDone,
+      submitReg: e => { e.preventDefault(); this.setState({ regTried: true }, () => { const ok = S.rName.trim() && okMail(this.state.rEmail) && pwRules.every(r => r[1]) && this.state.rPw === this.state.rPw2 && this.state.consent; if (ok) this.setState({ regDone: true }); }); },
+      jSteps: ['Code', 'Name und Passwort', 'Fertig'].map((l, i) => ({ label: l, bar: i <= S.jStep ? 'var(--accent)' : 'var(--line)', ink: i <= S.jStep ? 'var(--ink)' : 'var(--ink-3)' })),
+      j0: S.jStep === 0, j1: S.jStep === 1, j2: S.jStep === 2,
+      code: S.code, setCode: e => this.setState({ code: e.target.value.toLowerCase().replace(/\s+/g, '-'), codeTried: false }),
+      codeInvalid: codeBad ? 'true' : 'false', codeBorder: codeBad ? 'var(--danger)' : 'var(--line-strong)', codeHelp, codeHelpInk: codeBad ? 'var(--danger-ink)' : 'var(--ink-3)',
+      submitCode: e => { e.preventDefault(); if (codeValid && codeKnown) this.setState({ jStep: 1, codeTried: false }); else this.setState({ codeTried: true }); },
+      backCode: () => this.setState({ jStep: 0 }),
+      jName: S.jName, jPw: S.jPw, jPw2: S.jPw2, setJName: v('jName'), setJPw: v('jPw'), setJPw2: v('jPw2'),
+      jNameBorder: S.jTried && !S.jName.trim() ? 'var(--danger)' : 'var(--line-strong)', jPw2Border: S.jPw2 && S.jPw !== S.jPw2 ? 'var(--danger)' : 'var(--line-strong)',
+      joinErr, submitJoin: e => { e.preventDefault(); const ok = S.jName.trim() && S.jPw.length >= 6 && S.jPw === S.jPw2; this.setState(ok ? { jStep: 2 } : { jTried: true }); },
+      fEmail: S.fEmail, setFEmail: v('fEmail'), forgotSent: S.forgotSent, forgotForm: !S.forgotSent, submitForgot: e => { e.preventDefault(); this.setState({ forgotSent: true }); },
+      teacherView: role !== 'schueler', studentView: role === 'schueler',
+      themeOpts: [['light', 'Hell'], ['dark', 'Dunkel']].map(([k, l]) => ({ label: l, sel: S.theme === k ? 'true' : 'false', bg: S.theme === k ? 'var(--surface)' : 'transparent', shadow: S.theme === k ? '0 1px 2px rgb(15 23 42/.12)' : 'none', pick: () => { this.C.setTheme(k); this.setState({ theme: k }); } })),
+      fakeSave: () => this.say('Im Prototyp nicht verfügbar.'),
+      delTxt: S.delTxt, setDelTxt: v('delTxt'), delLocked: S.delTxt !== 'a.mueller@gymnasium-am-see.de', delOpacity: S.delTxt === 'a.mueller@gymnasium-am-see.de' ? 1 : .5, fakeDelete: () => this.say('Konto gelöscht (Prototyp).'),
+      inClassS: !S.left, leftClass: S.left, leaveAsk: S.leaveAsk, askLeave: () => this.setState({ leaveAsk: true }), cancelLeave: () => this.setState({ leaveAsk: false }), doLeave: () => { this.setState({ left: true, leaveAsk: false }); this.say('Du hast die Klasse verlassen.'); },
+      toast: !!S.toast, toastText: S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

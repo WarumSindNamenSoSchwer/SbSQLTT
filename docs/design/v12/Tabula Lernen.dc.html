@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Lernen · Tabula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{color-scheme:light;--bg:#f8fafc;--surface:#fff;--subtle:#f1f5f9;--line:#e2e8f0;--line-strong:#cbd5e1;--ink:#0f172a;--ink-2:#475569;--ink-3:#64748b;--accent:#2563eb;--accent-strong:#1d4ed8;--accent-soft:#eff6ff;--accent-line:#bfdbfe;--accent-ink:#1d4ed8;--ok:#16a34a;--ok-soft:#f0fdf4;--ok-ink:#166534;--shadow-pop:0 12px 32px -12px rgb(15 23 42/.28)}
+:root[data-tb="dark"]{color-scheme:dark;--bg:#0b1220;--surface:#111a2e;--subtle:#1e293b;--line:#334155;--line-strong:#475569;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#94a3b8;--accent-strong:#60a5fa;--accent-soft:#172554;--accent-line:#1e3a8a;--accent-ink:#93c5fd;--ok:#4ade80;--ok-soft:#052e16;--ok-ink:#86efac;--shadow-pop:0 12px 32px -12px rgb(0 0 0/.6)}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+::selection{background:var(--accent-line);color:var(--ink)}
+*::-webkit-scrollbar{width:10px}*::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:8px;border:2px solid transparent;background-clip:padding-box}
+a{color:var(--accent-ink);text-underline-offset:3px}a:hover{color:var(--accent-strong)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes tbIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="min-height:100vh;background:var(--bg)">
+  <header style="position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)">
+    <div style="max-width:1680px;margin:0 auto;padding:0 clamp(16px,3vw,48px);min-height:60px;display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+      <a href="Tabula Landing.dc.html" style="display:flex;align-items:center;gap:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:18px;letter-spacing:-.02em"><span data-owl-icon="1" style="width:28px;height:25px;display:block"></span>Tabula</a>
+      <nav aria-label="Hauptnavigation" style="display:flex;gap:4px;flex:1;font-size:14px">
+        <a href="Tabula Lernen.dc.html" aria-current="page" style="padding:6px 10px;border-radius:6px;color:var(--ink);background:var(--subtle);text-decoration:none;font-weight:500">Lernen</a>
+        <a href="Tabula Datensätze.dc.html" style="padding:6px 10px;border-radius:6px;color:var(--ink-2);text-decoration:none" style-hover="background:var(--subtle);color:var(--ink)">Datensätze</a>
+        <a href="Tabula Landing.dc.html#lehrkraefte" style="padding:6px 10px;border-radius:6px;color:var(--ink-2);text-decoration:none" style-hover="background:var(--subtle);color:var(--ink)">Für Lehrkräfte</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" onClick="{{ toggleTheme }}" aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);background:var(--surface);border-radius:7px;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--subtle);color:var(--ink)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+        </button>
+        <a href="Tabula Konto.dc.html#anmelden" style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:7px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:500" style-hover="background:var(--subtle);color:var(--ink)">Anmelden</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="max-width:1680px;margin:0 auto;padding:32px clamp(16px,3vw,48px) 80px;display:flex;flex-direction:column;gap:24px">
+    <sc-if value="{{ inClass }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;border-radius:12px;background:var(--accent);color:#fff">
+        <span data-owl="raisehand" data-owl-static="1" style="width:44px;height:40px;flex:none"></span>
+        <p style="margin:0;flex:1 1 260px;font-size:15px">Deine Klasse <strong>Informatik 10b</strong> arbeitet gerade an: <strong>Mit WHERE filtern</strong></p>
+        <a href="Tabula Studio.dc.html" style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:7px;background:#fff;color:#0f172a;text-decoration:none;font-size:14px;font-weight:600" style-hover="background:#eff6ff;color:#0f172a">Öffnen</a>
+      </div>
+    </sc-if>
+
+    <section aria-label="Weiterlernen" style="display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:24px;border:1px solid var(--line);border-radius:14px;background:var(--surface)">
+      <span data-owl="{{ heroOwl }}" style="width:120px;height:108px;flex:none"></span>
+      <div style="flex:1 1 300px;min-width:0">
+        <p style="margin:0 0 4px;font-size:14px;color:var(--ink-3)">{{ heroKicker }}</p>
+        <h1 style="margin:0;font-size:28px;line-height:1.2;font-weight:600;letter-spacing:-.02em;text-wrap:balance">{{ heroTitle }}</h1>
+        <sc-if value="{{ showHeroBar }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;max-width:360px">
+            <div role="progressbar" aria-valuemin="0" aria-valuemax="{{ stepsTotal }}" aria-valuenow="{{ stepsDone }}" aria-label="Fortschritt in Lektion 3" style="flex:1;height:6px;border-radius:3px;background:var(--subtle);overflow:hidden"><div style="height:100%;width:{{ heroPct }};background:var(--accent);border-radius:3px"></div></div>
+            <span style="font:12px 'IBM Plex Mono',monospace;color:var(--ink-2);font-variant-numeric:tabular-nums">{{ heroSteps }}</span>
+          </div>
+        </sc-if>
+      </div>
+      <a href="Tabula Studio.dc.html" style="display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 20px;border-radius:9px;background:var(--accent);color:#fff;text-decoration:none;font-size:15px;font-weight:600;white-space:nowrap" style-hover="background:#1d4ed8;color:#fff">{{ heroCta }}
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+      </a>
+    </section>
+
+    <sc-if value="{{ guestNote }}" hint-placeholder-val="{{ true }}">
+      <p style="margin:-8px 0 0;font-size:14px;color:var(--ink-2)">Fortschritt wird nur in diesem Browser gespeichert. Mit dem Klassencode deiner Lehrkraft kannst du einer <a href="Tabula Konto.dc.html">Klasse beitreten</a>.</p>
+    </sc-if>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px clamp(24px,3vw,56px);align-items:start;margin-top:8px">
+    <sc-for list="{{ tracks }}" as="tr" hint-placeholder-count="3">
+      <section aria-label="{{ tr.name }}" style="margin-top:16px;grid-row:{{ tr.row }};grid-column:{{ tr.col }}">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line-strong)">
+          <h2 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-.01em">{{ tr.name }}</h2>
+          <span style="font-size:14px;color:var(--ink-3);flex:1">{{ tr.desc }}</span>
+          <span style="font:13px 'IBM Plex Mono',monospace;color:var(--ink-2);font-variant-numeric:tabular-nums">{{ tr.progress }}</span>
+        </div>
+        <ol style="list-style:none;margin:0;padding:0">
+          <sc-for list="{{ tr.lessons }}" as="l" hint-placeholder-count="4">
+            <li style="border-bottom:1px solid var(--line)">
+              <button type="button" onClick="{{ l.open }}" title="{{ l.tooltip }}" aria-disabled="{{ l.lockedAria }}" style="width:100%;display:flex;align-items:center;gap:16px;min-height:60px;padding:10px 12px;border:0;background:{{ l.rowBg }};text-align:left;cursor:{{ l.cursor }};border-radius:8px;margin:2px 0" style-hover="background:var(--subtle)">
+                <span style="width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:50%;font:600 13px 'IBM Plex Mono',monospace;background:{{ l.numBg }};color:{{ l.numInk }};border:1.5px solid {{ l.numBorder }}">{{ l.n }}</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:16px;font-weight:500;color:{{ l.titleInk }}">{{ l.title }}</span>
+                  <span style="font-size:13px;color:var(--ink-3)">{{ l.dur }}</span>
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:{{ l.statusInk }};white-space:nowrap">
+                  <sc-if value="{{ l.locked }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg></sc-if>
+                  <sc-if value="{{ l.done }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5 6.5 12 13 4.5"></path></svg></sc-if>
+                  {{ l.status }}
+                </span>
+              </button>
+            </li>
+          </sc-for>
+        </ol>
+      </section>
+    </sc-for>
+    </div>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div role="status" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:40;padding:12px 18px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:14px;box-shadow:var(--shadow-pop);animation:tbIn .2s ease-out;max-width:calc(100vw - 32px)">{{ toastText }}</div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;inClass&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Zustand&quot;},&quot;progress&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;gespeichert&quot;,&quot;erstbesuch&quot;,&quot;fortgeschritten&quot;],&quot;default&quot;:&quot;gespeichert&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Zustand&quot;}}">
+class Component extends DCLogic {
+  state = { theme: 'light', prog: { cur: 0, reached: 0 }, toast: '' };
+  rootRef = React.createRef();
+  async componentDidMount() {
+    this.C = await import(new URL('tabula-core.js', document.baseURI).href);
+    const theme = this.C.getTheme('light'); document.documentElement.dataset.tb = theme;
+    let prog = { cur: 0, reached: 0 }; try { prog = JSON.parse(localStorage.getItem('tabula-l3') || '{}'); } catch (e) {}
+    this.setState({ theme, prog: { cur: prog.cur || 0, reached: prog.reached || 0 } });
+    await this.C.loadOwl();
+    const G = (await import(new URL('owl-gen.js', document.baseURI).href)).default;
+    this.icons = { light: G.icon({}), dark: G.icon(G.DARK) };
+    this.paint();
+  }
+  componentDidUpdate() { this.paint(); }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  paint() {
+    const root = this.rootRef.current; if (!this.C || !root) return;
+    const dark = this.state.theme === 'dark';
+    this.C.paintOwls(root, dark);
+    if (this.icons) root.querySelectorAll('[data-owl-icon]').forEach(el => { const k = dark ? 'dark' : 'light'; if (el.dataset.k !== k) { el.innerHTML = this.icons[k].replace('<svg ', '<svg style="width:100%;height:100%;display:block" aria-hidden="true" '); el.dataset.k = k; } });
+  }
+  say(t) { clearTimeout(this.tt); this.setState({ toast: t }); this.tt = setTimeout(() => this.setState({ toast: '' }), 3000); }
+  renderVals() {
+    const C = this.C, S = this.state;
+    const inClass = this.props.inClass ?? false;
+    const mode = this.props.progress ?? 'gespeichert';
+    if (!C) return { inClass, tracks: [], heroOwl: 'loading', heroTitle: '', heroKicker: '', heroCta: 'Starten' };
+    const total = C.LESSON.steps.length;
+    let reached = S.prog.reached;
+    if (mode === 'erstbesuch') reached = 0; else if (mode === 'fortgeschritten') reached = Math.max(reached, 4);
+    const first = mode === 'erstbesuch' || (mode === 'gespeichert' && reached === 0 && !localStorage.getItem('tabula-l3'));
+    const doneSet = first ? [] : ['1', '2'];
+    const l3Started = reached > 0;
+    const lockFrom = inClass ? 6 : 99;
+    const tracks = C.TRACKS.map(t => {
+      const ls = C.CATALOG.filter(c => c.track === t.num);
+      const lessons = ls.map(c => {
+        const idx = C.CATALOG.indexOf(c), locked = idx >= lockFrom, done = doneSet.includes(c.n), cur = c.id === 'where-filters';
+        const begun = cur && l3Started && !done;
+        const status = locked ? 'Gesperrt' : done ? 'Fertig' : begun ? 'Begonnen · Schritt ' + (reached + 1) + '/' + total : cur && !first ? 'Als Nächstes' : 'Offen';
+        return { n: c.n, title: c.title, dur: c.dur, locked, done, status, lockedAria: locked ? 'true' : 'false', cursor: locked ? 'not-allowed' : 'pointer',
+          tooltip: locked ? 'Von deiner Lehrkraft noch nicht freigeschaltet' : '',
+          rowBg: cur && !first && !locked ? 'var(--accent-soft)' : 'transparent',
+          numBg: done ? 'var(--ok-soft)' : cur && !first ? 'var(--accent)' : 'var(--surface)', numInk: done ? 'var(--ok-ink)' : cur && !first ? '#fff' : locked ? 'var(--ink-3)' : 'var(--ink-2)', numBorder: done ? 'var(--ok)' : cur && !first ? 'var(--accent)' : 'var(--line-strong)',
+          titleInk: locked ? 'var(--ink-3)' : 'var(--ink)', statusInk: locked ? 'var(--ink-3)' : done ? 'var(--ok-ink)' : begun || (cur && !first) ? 'var(--accent-ink)' : 'var(--ink-3)',
+          open: () => { if (locked) return this.say('Von deiner Lehrkraft noch nicht freigeschaltet.'); if (cur || c.n === '1') { window.location.href = 'Tabula Studio.dc.html'; return; } if (c.id === 'python') { window.location.href = 'Tabula Python-Lektion.dc.html'; return; } this.say('Im Prototyp ist Lektion 3 spielbar.'); } };
+      });
+      const d = lessons.filter(l => l.done).length;
+      return { name: t.name, desc: t.desc, progress: d + ' / ' + ls.length, lessons, row: t.num === 1 ? 'span 2' : 'auto', col: 'auto' };
+    });
+    return {
+      rootRef: this.rootRef, inClass,
+      toggleTheme: () => { const th = S.theme === 'dark' ? 'light' : 'dark'; C.setTheme(th); this.setState({ theme: th }); },
+      heroOwl: first ? 'wave' : 'point',
+      heroKicker: first ? 'Willkommen bei Tabula' : 'Weiter, wo du aufgehört hast',
+      heroTitle: first ? 'Starte mit Lektion 1: Erste Abfrage mit SELECT' : 'Lektion 3 · Mit WHERE filtern',
+      showHeroBar: !first, heroPct: Math.round(reached / (total - 1) * 100) + '%', heroSteps: 'Schritt ' + (reached + 1) + ' / ' + total, stepsTotal: total, stepsDone: reached + 1,
+      heroCta: first ? 'Jetzt lernen' : l3Started ? 'Weitermachen' : 'Lektion starten',
+      guestNote: true, tracks, toast: !!S.toast, toastText: S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
