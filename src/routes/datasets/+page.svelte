@@ -5,6 +5,7 @@
 	import G from '$lib/edgar/owl-gen.js';
 	import { BOOKS_SEED } from '$lib/tabula/course/data';
 	import { SCHOOL_SEED } from '$lib/tabula/course/l9-ddl';
+	import { TRAFFIC_SEED } from '$lib/tabula/course/traffic-data';
 	import { openDb, readSchema, exportDb, run, runIsolated, explainError, type Schema } from '$lib/tabula/sql';
 	import type { Database } from 'sql.js';
 
@@ -30,20 +31,21 @@
 	let copyTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	// DB per dataset
-	let dbMap = $state<Record<string, Database | null>>({ books: null, schule: null });
-	let schemasMap = $state<Record<string, Schema>>({ books: [], schule: [] });
-	let rowCountsMap = $state<Record<string, Record<string, number>>>({ books: {}, schule: {} });
-	let sizeMap = $state<Record<string, number>>({ books: 0, schule: 0 });
+	let dbMap = $state<Record<string, Database | null>>({ books: null, schule: null, traffic: null });
+	let schemasMap = $state<Record<string, Schema>>({ books: [], schule: [], traffic: [] });
+	let rowCountsMap = $state<Record<string, Record<string, number>>>({ books: {}, schule: {}, traffic: {} });
+	let sizeMap = $state<Record<string, number>>({ books: 0, schule: 0, traffic: 0 });
 	let loading = $state(true);
 	let failed = $state(false);
 
 	// Preview
-	let previewTableMap = $state<Record<string, string>>({ books: 'books', schule: 'klassen' });
+	let previewTableMap = $state<Record<string, string>>({ books: 'books', schule: 'klassen', traffic: 'traffic' });
 
 	// SQL query section
 	let queryMap = $state<Record<string, string>>({
 		books: 'SELECT * FROM books LIMIT 10',
-		schule: 'SELECT * FROM klassen LIMIT 10'
+		schule: 'SELECT * FROM klassen LIMIT 10',
+		traffic: 'SELECT * FROM traffic LIMIT 10'
 	});
 	let qResultMap = $state<Record<string, { columns: string[]; rows: (string | number | null)[][] } | null>>({});
 	let qErrMap = $state<Record<string, string | null>>({});
@@ -86,6 +88,24 @@ import pandas as pd
 con = sqlite3.connect("schule.db")
 df = pd.read_sql(
     "SELECT * FROM klassen", con)
+print(df.head())`
+		},
+		{
+			id: 'traffic',
+			filename: 'app-traffic.db',
+			name: 'App-Traffic',
+			desc: 'Stündliche Server-Messdaten über 6 Wochen. Nutzerwachstum, Antwortzeiten und eine kritische Version v2.4.',
+			story: 'Zwei Server, 2016 stündliche Messungen. Ein Software-Update (v2.4) verschlechtert die Antwortzeit drastisch. Typischer Analysedatensatz für Python und SQL.',
+			tags: ['Zeitreihe', 'JOIN', 'Aggregation', 'Python'],
+			lektionen: 'Python-Lektion 11',
+			mainTable: 'traffic',
+			seed: TRAFFIC_SEED,
+			python: `import sqlite3
+import pandas as pd
+
+con = sqlite3.connect("app-traffic.db")
+df = pd.read_sql(
+    "SELECT * FROM traffic", con)
 print(df.head())`
 		}
 	] as const;
@@ -138,12 +158,13 @@ print(df.head())`
 
 		(async () => {
 			try {
-				const [db1, db2] = await Promise.all([openDb(BOOKS_SEED), openDb(SCHOOL_SEED)]);
-				dbMap = { books: db1, schule: db2 };
+				const [db1, db2, db3] = await Promise.all([openDb(BOOKS_SEED), openDb(SCHOOL_SEED), openDb(TRAFFIC_SEED)]);
+				dbMap = { books: db1, schule: db2, traffic: db3 };
 
 				const sc1 = readSchema(db1);
 				const sc2 = readSchema(db2);
-				schemasMap = { books: sc1, schule: sc2 };
+				const sc3 = readSchema(db3);
+				schemasMap = { books: sc1, schule: sc2, traffic: sc3 };
 
 				const rc1: Record<string, number> = {};
 				for (const t of sc1) {
@@ -153,8 +174,12 @@ print(df.head())`
 				for (const t of sc2) {
 					rc2[t.table] = Number(run(db2, `SELECT COUNT(*) FROM "${t.table}"`).rows[0]?.[0] ?? 0);
 				}
-				rowCountsMap = { books: rc1, schule: rc2 };
-				sizeMap = { books: db1.export().byteLength, schule: db2.export().byteLength };
+				const rc3: Record<string, number> = {};
+				for (const t of sc3) {
+					rc3[t.table] = Number(run(db3, `SELECT COUNT(*) FROM "${t.table}"`).rows[0]?.[0] ?? 0);
+				}
+				rowCountsMap = { books: rc1, schule: rc2, traffic: rc3 };
+				sizeMap = { books: db1.export().byteLength, schule: db2.export().byteLength, traffic: db3.export().byteLength };
 			} catch (e) {
 				console.error('DB load error', e);
 				failed = true;
@@ -239,7 +264,7 @@ print(df.head())`
 
 <svelte:head><title>Datensätze · Tabula</title></svelte:head>
 
-<div class="tb page">
+<div class="tb page datasets-page">
 	<TopNav {dark} />
 
 	<main style="max-width:1680px;margin:0 auto;padding:28px clamp(16px,3vw,48px) 80px">
@@ -301,7 +326,7 @@ print(df.head())`
 							class="dl-btn"
 						>
 							<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"></path></svg>
-							{selected.filename} herunterladen
+							{selected.filename} · {fmtSize(size)}
 						</button>
 						<button
 							type="button"
@@ -486,6 +511,9 @@ print(df.head())`
 <style>
 	@keyframes tbSpin { to { transform: rotate(360deg); } }
 	@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+	/* Reset content-box from .tb global rule so flex/grid calcs are correct */
+	:global(.page.datasets-page), :global(.page.datasets-page *), :global(.page.datasets-page *::before), :global(.page.datasets-page *::after) { box-sizing: border-box; }
 
 	.page { min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: var(--sans); }
 
