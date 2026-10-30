@@ -315,6 +315,7 @@
 
 <style>
 	/* ---------- Grundgeruest (Werte 1:1 aus B3 Design) ---------- */
+	*, *::before, *::after { box-sizing: border-box; }
 	.page { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 	.h1 { margin: 0; font-size: 32px; line-height: 40px; font-weight: 600; letter-spacing: -0.015em; }
 	.lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); }
@@ -346,8 +347,8 @@
 	.arr.back { transform: scaleX(-1); }
 
 	/* Hauptinhalt */
-	.main { flex: 1; min-height: 0; overflow-y: auto; display: flex; justify-content: center; padding: 40px 40px 20px; }
-	.col { width: 760px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; }
+	.main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; justify-content: center; align-items: flex-start; padding: 40px 40px 20px; }
+	.col { width: 760px; max-width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
 
 	/* Schritt-Kopf */
 	.step-head { display: flex; align-items: flex-end; gap: 16px; }

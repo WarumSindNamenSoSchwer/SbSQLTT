@@ -808,7 +808,7 @@
 	.hide-sm { /* shown by default */ }
 
 	/* Leseansicht */
-	.read-main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; justify-content: center; padding: 48px clamp(16px, 3vw, 48px) 40px; }
+	.read-main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; justify-content: center; align-items: flex-start; padding: 48px clamp(16px, 3vw, 48px) 40px; }
 	.col { width: 680px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; }
 	.h1 { margin: 0; font-size: 30px; line-height: 38px; font-weight: 600; letter-spacing: -0.015em; }
 	.lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); }
