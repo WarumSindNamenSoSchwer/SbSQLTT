@@ -47,4 +47,14 @@ describe('HTML-Systemmails', () => {
     const sizes = (['wave', 'hint', 'sad'] as const).map((pose) => buildSystemMail({ ...base, pose }).attachments![0]!.content.length)
     expect(new Set(sizes).size).toBe(3)
   })
+
+  it('Button zeigt auf die App, Fußzeile (Impressum, Datenschutz) auf die Website', () => {
+    const url = 'https://app.tabulasql.de/passwort-zuruecksetzen?token=abc'
+    const m = buildSystemMail({ ...base, siteUrl: 'https://app.tabulasql.de', button: { label: 'Los', url } })
+    expect(m.html).toContain(`href="${url}"`)
+    expect(m.html).toContain('href="https://www.tabulasql.de/impressum"')
+    expect(m.html).toContain('href="https://www.tabulasql.de/datenschutz"')
+    expect(m.html).not.toContain('app.tabulasql.de/impressum')
+    expect(m.text).toContain('Impressum: https://www.tabulasql.de/impressum')
+  })
 })
