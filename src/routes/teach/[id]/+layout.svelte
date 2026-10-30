@@ -76,6 +76,7 @@
 		{ id: 'uebersicht', label: 'Übersicht', href: () => `/teach/${classId}` },
 		{ id: 'lektionen', label: 'Lektionen', href: () => `/teach/${classId}/lektionen` },
 		{ id: 'schueler', label: 'Schüler', href: () => `/teach/${classId}/schueler` },
+		{ id: 'quiz', label: 'Quiz', href: () => `/teach/quiz?klasse=${classId}` },
 		{ id: 'einstellungen', label: 'Einstellungen', href: () => `/teach/${classId}/einstellungen` },
 	];
 
@@ -231,17 +232,14 @@
 	{:else if cls}
 		<div class="class-header">
 			<div class="class-header-top">
-				<div class="class-header-title">
-					<h1 class="class-name">{cls.name}</h1>
-					<span class="class-meta">{cls.student_count ?? 0} Schüler</span>
-				</div>
-				<div class="class-header-actions">
-					<button class="code-btn" onclick={openQr} title="QR-Code anzeigen">
-						<span class="mono code-text">{cls.join_code}</span>
-						<span class="code-qr-hint">QR</span>
-					</button>
-					<a href="/teach/quiz" class="btn-quiz">▶ Quiz</a>
-				</div>
+				<h1 class="class-name">{cls.name}</h1>
+				<button class="code-btn" onclick={openQr} title="QR-Code anzeigen">
+					<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="4.5" height="4.5" rx=".8"/><rect x="9.5" y="2" width="4.5" height="4.5" rx=".8"/><rect x="2" y="9.5" width="4.5" height="4.5" rx=".8"/><path d="M9.5 9.5h2v2h-2zM12 12h2v2h-2z"/></svg>
+					<span class="code-text">{cls.join_code}</span>
+					<span class="code-qr-hint">QR</span>
+				</button>
+				<span class="ch-grow"></span>
+				<a href="/teach/quiz?klasse={cls.id}" class="btn-quiz">Quiz starten</a>
 			</div>
 			<nav class="class-tabs" aria-label="Klassen-Navigation">
 				{#each tabs as t}
@@ -443,26 +441,22 @@
 	.av-logout { color: var(--ink-2); border-top: 1px solid var(--line); margin-top: 4px; border-radius: 0 0 6px 6px; }
 
 	/* Klassen-Header */
-	.class-header { flex: none; background: var(--surface); border-bottom: 1px solid var(--line); padding: 24px 40px 0; display: flex; flex-direction: column; gap: 16px; }
-	@media (max-width: 767px) { .class-header { padding: 16px 16px 0; } }
-	.class-header-top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-	.class-header-title { flex: 1; display: flex; flex-direction: column; }
-	.class-name { font-size: 28px; line-height: 36px; font-weight: 600; letter-spacing: -0.01em; }
-	.class-meta { font-size: 14px; color: var(--ink-3); }
-	.class-header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+	.class-header { flex: none; background: var(--surface); border-bottom: 1px solid var(--line); padding: 20px clamp(16px, 3vw, 40px) 0; display: flex; flex-direction: column; gap: 12px; }
+	.class-header-top { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; }
+	.class-name { font-size: clamp(22px, 2vw, 30px); font-weight: 600; letter-spacing: -0.02em; margin: 0; }
+	.ch-grow { flex: 1; }
 
-	.code-btn { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line-strong); font-size: 15px; font-weight: 500; cursor: pointer; background: var(--surface); }
-	.code-btn:hover { background: var(--subtle); }
-	.code-text { letter-spacing: 2px; font-family: var(--mono); }
-	.code-qr-hint { font-size: 13px; color: var(--ink-3); font-family: var(--mono); letter-spacing: 0; }
-	.btn-quiz { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }
-	.btn-quiz:hover { background: var(--accent-strong); }
+	.code-btn { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); font: 500 13px/1 var(--mono); cursor: pointer; background: var(--surface); color: var(--ink); }
+	.code-btn:hover { border-color: var(--accent); }
+	.code-text { letter-spacing: 1px; }
+	.code-qr-hint { font-size: 12px; color: var(--ink-3); border-left: 1px solid var(--line); padding-left: 8px; margin-left: 2px; }
+	.btn-quiz { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+	.btn-quiz:hover { background: var(--accent-strong); color: #fff; }
 
-	.class-tabs { display: flex; gap: 28px; font-size: 14px; color: var(--ink-2); overflow-x: auto; }
-	@media (max-width: 767px) { .class-tabs { gap: 20px; } }
-	.tab { padding-bottom: 12px; white-space: nowrap; color: inherit; text-decoration: none; }
+	.class-tabs { display: flex; gap: 4px; font-size: 14px; overflow-x: auto; border-top: 1px solid var(--line); margin-top: 4px; }
+	.tab { height: 42px; padding: 0 14px; white-space: nowrap; color: var(--ink-2); text-decoration: none; display: inline-flex; align-items: center; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 	.tab:hover { color: var(--ink); }
-	.tab.active { color: var(--ink); font-weight: 500; box-shadow: 0 2px 0 var(--accent); }
+	.tab.active { color: var(--ink); border-bottom-color: var(--accent); }
 
 	.class-main { flex: 1; display: flex; flex-direction: column; }
 	.mono { font-family: var(--mono); }
