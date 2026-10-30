@@ -102,7 +102,7 @@
 				<Edgar pose={step === 'success' ? 'success' : step === 'details' ? 'wave' : (serverError ? 'thinking' : 'idle')} {dark} class="hero-owl" />
 				<div class="hero-text">
 					<p class="kicker">Für Schüler</p>
-					<h1>{step === 'success' ? 'Geschafft!' : 'Klasse beitreten'}</h1>
+					<h1>{step === 'success' ? 'Willkommen!' : 'Klasse beitreten'}</h1>
 				</div>
 			</div>
 
@@ -194,7 +194,7 @@
 
 			{:else if step === 'success'}
 				<div class="card">
-					<p style="margin:0;font-size:16px;line-height:1.55">Du bist jetzt in <strong>{info?.class_name}</strong>. Deine Lehrkraft sieht ab sofort deinen Fortschritt.</p>
+					<p style="margin:0;font-size:16px;line-height:1.55">Willkommen in <strong>{info?.class_name}</strong>! Deine Lehrkraft sieht ab sofort deinen Fortschritt.</p>
 					<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
 						<button type="button" class="btn-primary" style="flex:1;min-width:160px" onclick={() => goto('/learn')}>Los geht's</button>
 					</div>
