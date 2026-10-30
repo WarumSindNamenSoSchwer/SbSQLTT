@@ -850,7 +850,6 @@
 			.lp .t-compact .t-owl { width: 72px !important; height: 65px !important; top: -26px !important; }
 			.lp .t-compact .t-tab { padding: 8px 10px !important; }
 			.lp .t-compact { gap: 10px !important; }
-			.lp .t-compact .t-s1 tbody tr:last-child { display: none; }
 			.lp .t-compact .t-desc-m { font-size: 13px !important; min-height: calc(3 * 1.45em); line-height: 1.45 !important; }
 		}
 		.lp .t-compact .t-s0 { padding: 16px !important; gap: 12px !important; }
@@ -863,6 +862,8 @@
 		.lp .t-compact .t-s1 > div > div { padding: 10px 14px !important; }
 		.lp .t-compact .t-s1 strong { font-size: 24px !important; }
 		.lp .t-compact .t-s1 th, .lp .t-compact .t-s1 td { padding: 7px 14px !important; }
+		/* Feste Kartenhöhe: nur die beiden Schüler, die Hilfe brauchen, damit keine Zeile abgeschnitten wird */
+		.lp .t-compact .t-s1 tbody tr:nth-child(n+3) { display: none; }
 		.lp .t-compact .t-s2 { padding: 16px !important; gap: 10px !important; }
 		.lp .t-compact .t-s3 { padding: 14px 16px !important; }
 		.lp .t-compact .t-s3 > p { margin-bottom: 10px !important; }
