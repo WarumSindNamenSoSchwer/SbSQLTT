@@ -281,7 +281,7 @@ print(df.head())`
 		<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
 
 			<!-- Left: dataset list -->
-			<nav aria-label="Datensatz wählen" style="flex:1 1 300px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:8px">
+			<nav aria-label="Datensatz wählen" class="ds-nav" style="flex:1 1 300px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:8px">
 				{#each DATASETS as ds}
 					{@const isSel = selectedId === ds.id}
 					<button
@@ -525,6 +525,12 @@ print(df.head())`
 	.copy-py-btn:hover { background: #334155 !important; }
 	.run-btn:not(:disabled):hover { background: var(--accent-strong) !important; }
 	.pvrow:hover td { background: var(--subtle); }
+
+	/* Mobile: stack list above detail */
+	@media (max-width: 899px) {
+		:global(.datasets-page .ds-nav) { max-width: 100% !important; flex: 1 1 100% !important; }
+		:global(.datasets-page .ds-detail) { flex: 1 1 100% !important; }
+	}
 
 	:global(.py-kw) { color: #60a5fa; }
 	:global(.py-str) { color: #86efac; }

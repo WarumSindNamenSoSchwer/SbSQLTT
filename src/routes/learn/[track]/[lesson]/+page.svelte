@@ -1030,12 +1030,13 @@
 
 	/* Mobil */
 	@media (max-width: 767px) {
-		.top { padding: 0 12px; gap: 8px; }
+		.top { padding: 0 12px; gap: 6px; }
 		.hide-sm { display: none !important; }
-		.sm-steps { display: block; }
-		.segs-nav { flex: 1; min-width: 120px; }
-		.segs { max-width: 100%; }
-		.top-actions { gap: 4px; }
+		/* Segmentleiste auf Mobil ausblenden, stattdessen nur Dropdown */
+		.segs-nav { display: none; }
+		.sm-steps { display: flex; flex: 1; align-items: center; min-width: 0; }
+		.chip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+		.top-actions { gap: 4px; flex: none; }
 		.icon-btn { width: 32px; height: 32px; }
 		.avatar { width: 28px; height: 28px; font-size: 11px; }
 
