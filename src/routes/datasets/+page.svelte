@@ -267,7 +267,7 @@ print(df.head())`
 <div class="tb page datasets-page">
 	<TopNav {dark} />
 
-	<main style="max-width:1680px;margin:0 auto;padding:28px clamp(16px,3vw,48px) 80px">
+	<main style="max-width:1680px;width:100%;margin:0 auto;padding:28px clamp(16px,3vw,48px) 80px;overflow-x:hidden">
 
 		<!-- Header -->
 		<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:24px">
@@ -278,10 +278,10 @@ print(df.head())`
 			</div>
 		</div>
 
-		<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+		<div class="ds-layout" style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
 
 			<!-- Left: dataset list -->
-			<nav aria-label="Datensatz wählen" class="ds-nav" style="flex:1 1 300px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:8px">
+			<nav aria-label="Datensatz wählen" class="ds-nav" style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px">
 				{#each DATASETS as ds}
 					{@const isSel = selectedId === ds.id}
 					<button
@@ -307,7 +307,7 @@ print(df.head())`
 			</nav>
 
 			<!-- Right: detail -->
-			<section aria-label="Datensatz-Details" style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:20px">
+			<section aria-label="Datensatz-Details" class="ds-detail" style="flex:999 1 640px;min-width:0;display:flex;flex-direction:column;gap:20px">
 
 				<!-- Detail header card -->
 				<div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(20px,2vw,28px);display:flex;flex-wrap:wrap;gap:20px 40px;align-items:flex-start">
@@ -528,8 +528,9 @@ print(df.head())`
 
 	/* Mobile: stack list above detail */
 	@media (max-width: 899px) {
-		:global(.datasets-page .ds-nav) { max-width: 100% !important; flex: 1 1 100% !important; }
-		:global(.datasets-page .ds-detail) { flex: 1 1 100% !important; }
+		:global(.datasets-page .ds-layout) { flex-direction: column !important; }
+		:global(.datasets-page .ds-nav) { flex: none !important; width: 100% !important; max-width: none !important; }
+		:global(.datasets-page .ds-detail) { flex: none !important; width: 100% !important; }
 	}
 
 	:global(.py-kw) { color: #60a5fa; }

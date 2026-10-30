@@ -90,6 +90,7 @@
 	let books = $state<{ id: number; title: string; year: number; genre: string }[]>([]);
 	let db: unknown = $state(null);
 	let dbBusy = $state(false);
+	let menuOpen = $state(false);
 	let reduce = $state(false);
 
 	// DOM refs
@@ -608,28 +609,58 @@
 	.lp [data-hv="28"]:hover { color: var(--text) !important; }
 	.lp [data-hv="29"]:hover { color: var(--text) !important; }
 	.lp header { scroll-padding-top: 80px; }
+	/* Desktop: show nav links, hide hamburger; Mobile: hide nav links, show hamburger */
+	.lp-nav-mobile { display: none !important; }
+	@media (max-width: 767px) {
+		.lp-nav-desktop { display: none !important; }
+		.lp-nav-mobile { display: grid !important; }
+	}
 </style>
 
 <div class="lp">
   <!-- Header -->
   <header style="position:sticky;top:0;z-index:40;background:var(--bg);border-bottom:1px solid var(--line)">
-    <div style="max-width:1760px;margin:0 auto;padding:0 clamp(20px,4vw,64px);min-height:68px;display:flex;align-items:center;gap:32px;flex-wrap:wrap">
-      <a href="#start" aria-label="Tabula Startseite" style="display:flex;align-items:center;gap:9px;color:var(--text);text-decoration:none;font-weight:600;font-size:20px;letter-spacing:-.03em">
+    <div style="max-width:1760px;margin:0 auto;padding:0 clamp(16px,4vw,64px);min-height:60px;display:flex;align-items:center;gap:16px">
+      <a href="#start" aria-label="Tabula Startseite" style="display:flex;align-items:center;gap:9px;color:var(--text);text-decoration:none;font-weight:600;font-size:20px;letter-spacing:-.03em;flex:none">
         <span data-owl-icon="1" style="width:32px;height:28px;display:block"></span>Tabula
       </a>
-      <nav aria-label="Hauptnavigation" style="display:flex;gap:26px;flex:1;font-size:14px;flex-wrap:wrap">
+      <!-- Desktop nav -->
+      <nav aria-label="Hauptnavigation" class="lp-nav-desktop" style="display:flex;gap:26px;flex:1;font-size:14px">
         <a href="https://app.tabulasql.de/learn" style="color:var(--muted);text-decoration:none" data-hv="1">Lernen</a>
         <a href="/datasets" style="color:var(--muted);text-decoration:none" data-hv="2">Datensätze</a>
         <a href="#lernpfad" style="color:var(--muted);text-decoration:none" data-hv="3">Lernpfad</a>
         <a href="#lehrkraefte" style="color:var(--muted);text-decoration:none" data-hv="4">Für Lehrkräfte</a>
       </nav>
-      <div style="display:flex;align-items:center;gap:12px">
-        <button type="button" onclick={toggleTheme} aria-label="Hell/Dunkel umschalten" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer" data-hv="5">
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+        <button type="button" onclick={toggleTheme} aria-label="Hell/Dunkel umschalten" class="lp-nav-desktop" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer" data-hv="5">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
         </button>
-        <a href="https://app.tabulasql.de/login" style="display:inline-flex;align-items:center;height:38px;padding:0 16px;border:1px solid var(--line);border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap" data-hv="6">Anmelden</a>
+        <a href="https://app.tabulasql.de/login" style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap" data-hv="6">Anmelden</a>
+        <!-- Mobile hamburger -->
+        <button type="button" onclick={() => menuOpen = !menuOpen} aria-label="Menü" aria-expanded={menuOpen} class="lp-nav-mobile" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer">
+          {#if menuOpen}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>
+          {:else}
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="2" y1="4.5" x2="14" y2="4.5"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="11.5" x2="14" y2="11.5"/></svg>
+          {/if}
+        </button>
       </div>
     </div>
+    <!-- Mobile dropdown -->
+    {#if menuOpen}
+      <nav aria-label="Hauptnavigation mobil" style="border-top:1px solid var(--line);background:var(--bg);padding:12px clamp(16px,4vw,64px);display:flex;flex-direction:column;gap:0">
+        <a href="https://app.tabulasql.de/learn" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px;border-bottom:1px solid var(--line)">Lernen</a>
+        <a href="/datasets" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px;border-bottom:1px solid var(--line)">Datensätze</a>
+        <a href="#lernpfad" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px;border-bottom:1px solid var(--line)">Lernpfad</a>
+        <a href="#lehrkraefte" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px">Für Lehrkräfte</a>
+        <div style="padding-top:12px;margin-top:4px">
+          <button type="button" onclick={() => { toggleTheme(); menuOpen=false; }} aria-label="Hell/Dunkel umschalten" style="display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;background:none;border:0;cursor:pointer;padding:0">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
+            Hell/Dunkel
+          </button>
+        </div>
+      </nav>
+    {/if}
   </header>
 
   <main id="start">
