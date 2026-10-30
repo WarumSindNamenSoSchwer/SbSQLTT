@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SiteFooter from '$lib/tabula/SiteFooter.svelte';
 	// Klasse beitreten: Code -> Klasse prüfen -> Name+Passwort -> Erfolg
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
@@ -203,6 +204,7 @@
 
 		</div>
 	</main>
+	<SiteFooter />
 </div>
 
 <style>
