@@ -33,6 +33,18 @@
 
 	let _redirect = $state('');
 
+	// Schon angemeldet (z. B. „Anmelden“ auf der Website geklickt): direkt in den eigenen Bereich.
+	// Nur beim Aufruf der Seite, nicht nach dem Absenden (dafür sorgen die Handler unten).
+	let _checkedExisting = false;
+	$effect(() => {
+		if (_checkedExisting || session.loading) return;
+		_checkedExisting = true;
+		const u = session.user;
+		if (!u || page.url.searchParams.has('token')) return;
+		if (u.role === 'teacher') goto(session.needsKeyRecovery ? '/profil?schluessel=1' : (_redirect || '/teach'), { replaceState: true });
+		else goto(_redirect || '/learn', { replaceState: true });
+	});
+
 	// ---- View state ----------------------------------------------------------
 	type View = 'login' | 'register' | 'recovery' | 'forgot' | 'forgot-sent' | 'student-reset';
 	let view = $state<View>('login');

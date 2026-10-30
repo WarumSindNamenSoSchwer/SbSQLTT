@@ -5,8 +5,8 @@
  * - DB_PATH       Pfad zur SQLite-Datenbankdatei (Standard: /data/tabula.db)
  * - PORT          Port fuer den HTTP-Server (Standard: 3000)
  * - HOST          Bind-Adresse (Standard: 0.0.0.0)
- * - ALLOWED_ORIGIN Origin fuer CSRF-Check (Standard: https://www.tabulasql.de)
- * - SITE_URL      Basis-URL fuer Links in E-Mails (Standard: https://www.tabulasql.de)
+ * - ALLOWED_ORIGIN Origin fuer CSRF-Check (Standard: https://app.tabulasql.de, die App)
+ * - SITE_URL      Basis-URL fuer App-Links in E-Mails (Standard: https://app.tabulasql.de)
  * - LOG_LEVEL     Pino-Log-Level (Standard: info)
  */
 import { openDb } from './db.js'
@@ -21,7 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const DB_PATH   = process.env['DB_PATH']   ?? '/data/tabula.db'
 const PORT      = parseInt(process.env['PORT'] ?? '3000', 10)
 const HOST      = process.env['HOST']      ?? '0.0.0.0'
-const SITE_URL  = process.env['SITE_URL']  ?? 'https://www.tabulasql.de'
+const SITE_URL  = process.env['SITE_URL']  ?? 'https://app.tabulasql.de'
 
 // Migrations-Ordner relativ zum dist/-Ordner
 const MIGRATIONS_DIR = join(__dirname, '..', 'migrations')

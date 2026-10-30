@@ -160,7 +160,7 @@ export interface AuthPluginOptions {
 
 const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) => {
   const { db, limits, mail } = opts
-  const siteUrl = opts.siteUrl ?? 'https://www.tabulasql.de'
+  const siteUrl = opts.siteUrl ?? 'https://app.tabulasql.de'
 
   function currentSession(req: { cookies: Record<string, string | undefined> }) {
     const token = req.cookies[SESSION_COOKIE_NAME]

@@ -58,6 +58,8 @@ export interface SystemMail {
 }
 
 export function buildSystemMail(m: SystemMail): MailMessage {
+  // Fußzeile zeigt auf die Website (Impressum, Datenschutz), Buttons auf die App (app.*)
+  const web = m.siteUrl.replace('://app.', '://www.')
   const p = (t: string, size = 16, color = C.ink, extra = '') =>
     `<p style="margin:0 0 16px 0;font-family:${FONT};font-size:${size}px;line-height:${Math.round(size * 1.6)}px;color:${color};${extra}">${esc(t)}</p>`
 
@@ -106,7 +108,7 @@ export function buildSystemMail(m: SystemMail): MailMessage {
     </td></tr>
     <tr><td align="center" style="padding:20px 16px 0 16px;font-family:${FONT};font-size:12px;line-height:18px;color:${C.ink3};">
       Tabula, der kostenlose SQL-Trainer für die Schule<br>
-      <a href="${m.siteUrl}" style="color:${C.ink3};">tabulasql.de</a> · <a href="${m.siteUrl}/impressum" style="color:${C.ink3};">Impressum</a> · <a href="${m.siteUrl}/datenschutz" style="color:${C.ink3};">Datenschutz</a><br>
+      <a href="${web}" style="color:${C.ink3};">tabulasql.de</a> · <a href="${web}/impressum" style="color:${C.ink3};">Impressum</a> · <a href="${web}/datenschutz" style="color:${C.ink3};">Datenschutz</a><br>
       Diese E-Mail wurde automatisch verschickt. Fragen? <a href="mailto:kontakt@tabulasql.de" style="color:${C.ink3};">kontakt@tabulasql.de</a>
     </td></tr>
   </table>
@@ -126,7 +128,7 @@ export function buildSystemMail(m: SystemMail): MailMessage {
     ...m.notes.flatMap((t) => [t, '']),
     '--',
     'Tabula, der kostenlose SQL-Trainer für die Schule',
-    `${m.siteUrl} · Impressum: ${m.siteUrl}/impressum · Datenschutz: ${m.siteUrl}/datenschutz`,
+    `${web} · Impressum: ${web}/impressum · Datenschutz: ${web}/datenschutz`,
     'Diese E-Mail wurde automatisch verschickt. Fragen? kontakt@tabulasql.de',
   ].join('\n')
 

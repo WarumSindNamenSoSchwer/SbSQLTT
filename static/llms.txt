@@ -13,8 +13,8 @@ Hosted at https://www.tabulasql.de. Source: https://github.com/WarumSindNamenSoS
 ## Project pages
 
 - [Landing page](https://www.tabulasql.de/): pitch, current lesson preview, contact for teachers.
-- [Lesson catalog](https://www.tabulasql.de/learn): three tracks (Anfänger, Fortgeschritten, Profi), 14 planned lessons.
-- [Sample lesson: Mit WHERE filtern](https://www.tabulasql.de/learn/beginner/where-filters): the one fleshed-out lesson in v0.4 — narrative + interactive query editor.
+- [Lesson catalog](https://app.tabulasql.de/learn): three tracks (Anfänger, Fortgeschritten, Profi), 14 planned lessons.
+- [Sample lesson: Mit WHERE filtern](https://app.tabulasql.de/learn/beginner/where-filters): the one fleshed-out lesson in v0.4 — narrative + interactive query editor.
 - [SQL reference (stub)](https://www.tabulasql.de/docs): planned topic outline; content fills in over time.
 - [Hinweise für Lehrkräfte](https://www.tabulasql.de/fuer-lehrkraefte): teacher-facing notes on classroom use, data protection, technical requirements.
 

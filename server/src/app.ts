@@ -24,7 +24,7 @@ import quizWsPlugin from './routes/quiz-ws.js'
 export interface AppConfig {
   db: Db
   mail: MailSender
-  /** https://www.tabulasql.de */
+  /** https://app.tabulasql.de (die App; die Website www.* ruft die Konten-API nicht auf) */
   allowedOrigin?: string
   siteUrl?: string
   /** Nur fuer Tests: true deaktiviert den Origin-Check */
@@ -34,8 +34,8 @@ export interface AppConfig {
 }
 
 export async function buildApp(cfg: AppConfig) {
-  const allowedOrigin = cfg.allowedOrigin ?? process.env['ALLOWED_ORIGIN'] ?? 'https://www.tabulasql.de'
-  const siteUrl = cfg.siteUrl ?? process.env['SITE_URL'] ?? 'https://www.tabulasql.de'
+  const allowedOrigin = cfg.allowedOrigin ?? process.env['ALLOWED_ORIGIN'] ?? 'https://app.tabulasql.de'
+  const siteUrl = cfg.siteUrl ?? process.env['SITE_URL'] ?? 'https://app.tabulasql.de'
 
   const app = Fastify({
     logger: {

@@ -23,7 +23,7 @@ export const SECTIONS: Section[] = [
 		blocks: [
 			{
 				list: [
-					'Tabula setzt ohne Anmeldung keine Cookies und bindet keine Inhalte, Schriften oder Skripte von fremden Servern ein. Dein Browser spricht beim Besuch nur mit www.tabulasql.de.',
+					'Tabula setzt ohne Anmeldung keine Cookies und bindet keine Inhalte, Schriften oder Skripte von fremden Servern ein. Dein Browser spricht beim Besuch nur mit unseren eigenen Adressen: www.tabulasql.de (Website) und app.tabulasql.de (Lernen, Klassen und Anmeldung).',
 					'Es gibt kein Tracking, keine Reichweitenmessung und keine Werbung.',
 					'SQL-Abfragen und Übungsdatenbanken laufen vollständig in deinem Browser. Was du in den Editor schreibst, wird nicht an uns übertragen.',
 					'Lernen geht ohne Anmeldung. Schüler haben kein Konto: Sie melden sich über ihre Klasse mit Klassencode, Name und Passwort an. Name und Passwort verlassen dabei nie dein Gerät. Wir sehen von Schülern keine Namen, nur eine Nummer und den Fortschritt.',
@@ -89,7 +89,7 @@ export const SECTIONS: Section[] = [
 				src: ['A1', 'A3', 'T8']
 			},
 			{
-				p: 'Alle Verbindungen sind per HTTPS (TLS) verschlüsselt. Das Zertifikat stammt von Let’s Encrypt. Aufrufe ohne „www“ werden auf https://www.tabulasql.de umgeleitet.',
+				p: 'Alle Verbindungen sind per HTTPS (TLS) verschlüsselt. Das Zertifikat stammt von Let’s Encrypt. Aufrufe ohne „www“ werden auf https://www.tabulasql.de umgeleitet. Lernen, Klassen und Anmeldung laufen unter https://app.tabulasql.de, auf demselben Server.',
 				src: ['T10', 'R11']
 			}
 		]
@@ -111,6 +111,10 @@ export const SECTIONS: Section[] = [
 					'tabula-teacher-key (IndexedDB): als angemeldete Lehrkraft dein Schlüssel, mit dem dein Browser die Namen deiner Schüler lesen kann. Er ist so gespeichert, dass ihn kein Skript auslesen kann, und wird beim Abmelden gelöscht.',
 					'sveltekit:scroll und sveltekit:snapshot (sessionStorage): Scrollposition beim Zurückblättern. Wird beim Wechsel zwischen Seiten angelegt und beim Schließen des Tabs gelöscht.'
 				],
+				src: ['T11', 'T12', 'A4', 'A5', 'K1', 'K2']
+			},
+			{
+				p: 'Der Browser trennt diesen Speicher nach Adresse. Die Lektionen liegen auf app.tabulasql.de. Hast du früher auf www.tabulasql.de gelernt, nimmt dein Browser Fortschritt und Darstellung beim ersten Aufruf einer Lektion mit: Er hängt sie an die Adresse hinter einem „#“ an. Dieser Teil wird nicht an den Server gesendet. app.tabulasql.de übernimmt die Einträge, auf www.tabulasql.de werden sie gelöscht.',
 				src: ['T11', 'T12', 'A4', 'A5', 'K1', 'K2']
 			},
 			{
@@ -225,7 +229,7 @@ export const SECTIONS: Section[] = [
 		title: 'Anmelde-Cookie',
 		blocks: [
 			{
-				p: 'Nur wenn du dich anmeldest, setzen wir genau ein Cookie: tabula_session. Es enthält eine zufällige Sitzungskennung, damit du angemeldet bleibst. Es ist für Skripte nicht lesbar (HttpOnly), wird nur verschlüsselt übertragen (Secure), gilt nur für www.tabulasql.de, wird beim Abmelden gelöscht und läuft spätestens nach 30 Tagen ab. Weitere Cookies gibt es nicht.',
+				p: 'Nur wenn du dich anmeldest, setzen wir genau ein Cookie: tabula_session. Es enthält eine zufällige Sitzungskennung, damit du angemeldet bleibst. Es ist für Skripte nicht lesbar (HttpOnly), wird nur verschlüsselt übertragen (Secure), gilt nur für app.tabulasql.de (die Website www.tabulasql.de bekommt es nie), wird beim Abmelden gelöscht und läuft spätestens nach 30 Tagen ab. Weitere Cookies gibt es nicht.',
 				src: ['K6']
 			},
 			{
@@ -446,14 +450,14 @@ export const SOURCES: Source[] = [
 	{ id: 'K12', label: 'docs/BACKEND-DATENSCHUTZ.md K12: Schulen: Rolle als Verantwortliche bei verbindlichem Einsatz, dann Vertrag nach Art. 28 DSGVO', url: 'https://github.com/WarumSindNamenSoSchwer/SbSQLTT/blob/main/docs/BACKEND-DATENSCHUTZ.md' },
 	// Eigene technische Prüfung (Protokoll: docs/DATENSCHUTZ-QUELLEN.md)
 	{ id: 'T1', label: 'Prüfung 21.10.2026: Aufruf aller Seiten in frischem Chrome-Profil, Cookies: keine' },
-	{ id: 'T2', label: 'Prüfung 21.10.2026: Netzwerkmitschnitt aller Seiten, kontaktierter Host: nur www.tabulasql.de' },
+	{ id: 'T2', label: 'Prüfung 21.10.2026: Netzwerkmitschnitt aller Seiten, kontaktierter Host: nur www.tabulasql.de; seit 30.10.2026 zusätzlich app.tabulasql.de (gleicher Server, gleiche Konfiguration)' },
 	{ id: 'T3', label: 'Quellcode src/lib/tabula/sql.ts: SQLite (sql.js) läuft im Browser, WebAssembly von /sql/sql-wasm.wasm' },
 	{ id: 'T5', label: 'Prüfung 21.10.2026: kein Analyse-, Werbe- oder Tracking-Skript im Build und im Netzwerkmitschnitt' },
 	{ id: 'T6', label: 'Server-Konfiguration deploy/Caddyfile: keine log-Direktive in den Site-Blöcken; Test: Seitenaufrufe erzeugen keine Protokollzeile' },
 	{ id: 'T7', label: 'Server-Konfiguration deploy/Caddyfile: Standardprotokoll mit ip_mask 24/48, Rotation 00:00, roll_keep_for 312h; Test: Protokolldatei enthält keine vollständigen Besucher-IPs' },
 	{ id: 'T8', label: 'Hetzner-Metadaten des Servers: region eu-central, availability-zone nbg1-dc3' },
 	{ id: 'T9', label: 'AV-Vertrag im Hetzner-Kundenkonto (accounts.hetzner.com/account/dpa) abgeschlossen, bestätigt durch den Verantwortlichen am 21.10.2026' },
-	{ id: 'T10', label: 'TLS-Zertifikat von www.tabulasql.de, Aussteller: Let’s Encrypt; Weiterleitung tabulasql.de auf www (HTTP 301)' },
+	{ id: 'T10', label: 'TLS-Zertifikate von www.tabulasql.de und app.tabulasql.de, Aussteller: Let’s Encrypt; Weiterleitung tabulasql.de auf www (HTTP 301)' },
 	{ id: 'T11', label: 'Quellcode: einzige localStorage-Schlüssel tabula-progress, tabula-theme, tabula-guest-hint; Prüfung: frisches Profil hat nach Aufruf aller Seiten leeren localStorage' },
 	{ id: 'T12', label: 'SvelteKit-Quellcode runtime/client/constants.js: sessionStorage-Schlüssel sveltekit:snapshot und sveltekit:scroll' },
 	{ id: 'T13', label: 'Quellcode src/lib/tabula/course/*.ts: Übungsdatenbanken als SQL im Programmcode, Aufbau im Browser' },

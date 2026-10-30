@@ -44,6 +44,50 @@
 			}
 		</script>
 		<script>
+			// App auf app.tabulasql.de, Website auf www (src/lib/tabula/host.ts). Läuft vor allem anderen.
+			// www + App-Adresse (alte Links, QR-Codes, Anleitung): Fortschritt ohne Konto als URL-Fragment
+			// mitnehmen (Fragmente gehen nie an einen Server), auf www löschen, weiterleiten.
+			// app + Fragment: übernehmen (fertig gewinnt, sonst weiterer Schritt) und Fragment entfernen.
+			(function () {
+				var APP = /^\/(learn|teach|login|beitreten|profil|quiz|passwort-zuruecksetzen|email-bestaetigen)(\/|$)/;
+				var TAG = '#tabula-uebernahme=';
+				var KEYS = ['tabula-progress', 'tabula-theme', 'tabula-guest-hint'];
+				var h = location.hostname;
+				try {
+					if (h === 'www.tabulasql.de' && APP.test(location.pathname)) {
+						var d = {}, n = 0;
+						KEYS.forEach(function (k) { var v = localStorage.getItem(k); if (v) { d[k] = v; n++; } });
+						var to = 'https://app.tabulasql.de' + location.pathname + location.search;
+						if (n) {
+							if (location.hash) d['#'] = location.hash.slice(1);
+							to += TAG + encodeURIComponent(JSON.stringify(d));
+							localStorage.removeItem('tabula-progress');
+							localStorage.removeItem('tabula-guest-hint');
+						} else to += location.hash;
+						location.replace(to);
+						document.documentElement.style.visibility = 'hidden';
+					} else if (h === 'app.tabulasql.de' && location.hash.indexOf(TAG) === 0) {
+						var data = JSON.parse(decodeURIComponent(location.hash.slice(TAG.length)));
+						var theirs = JSON.parse(data['tabula-progress'] || '{}');
+						var mine = JSON.parse(localStorage.getItem('tabula-progress') || '{}');
+						Object.keys(theirs).forEach(function (id) {
+							var p = theirs[id], c = mine[id];
+							if (!c || (!c.done && (p.done || (p.step || 0) > (c.step || 0)))) mine[id] = p;
+						});
+						if (Object.keys(mine).length) localStorage.setItem('tabula-progress', JSON.stringify(mine));
+						if (data['tabula-theme'] && !localStorage.getItem('tabula-theme')) localStorage.setItem('tabula-theme', data['tabula-theme']);
+						if (data['tabula-guest-hint']) localStorage.setItem('tabula-guest-hint', data['tabula-guest-hint']);
+						history.replaceState(null, '', location.pathname + location.search + (data['#'] ? '#' + data['#'] : ''));
+					} else if (h === 'app.tabulasql.de' && location.pathname === '/' && location.hash) {
+						// "/#lehrkraefte" usw. sind Abschnitte der Startseite auf www
+						location.replace('https://www.tabulasql.de/' + location.hash);
+					}
+				} catch (e) {
+					if (h === 'app.tabulasql.de' && location.hash.indexOf(TAG) === 0) history.replaceState(null, '', location.pathname + location.search);
+				}
+			})();
+		</script>
+		<script>
 			// Theme vor dem Rendern anwenden (kein Flash). Standard: hell.
 			// Migration einmalig: alten Schlüssel 'sbsqltt-theme' auf 'tabula-theme' umziehen.
 			try {

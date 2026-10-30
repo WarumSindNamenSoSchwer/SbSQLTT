@@ -8,6 +8,7 @@
  */
 
 import { ACCOUNTS_LIVE } from './flags.js';
+import { onWwwHost } from './host.js';
 import {
 	apiMe,
 	apiLogin,
@@ -92,7 +93,18 @@ export async function initSession(): Promise<void> {
 	if (_initialized) return;
 	_initialized = true;
 
-	if (!ACCOUNTS_LIVE) {
+	// Die Website (www) kennt keine Anmeldung: Cookie und API liegen nur auf app.tabulasql.de.
+	// Reste aus der Zeit vor dem 30.10.2026 (Schlüssel der Lehrkraft, Schülername) hier löschen.
+	if (!ACCOUNTS_LIVE || onWwwHost()) {
+		if (onWwwHost()) {
+			forgetStudentName();
+			// deleteDatabase legt nichts an, wenn es keine gibt (anders als öffnen und Eintrag löschen)
+			try {
+				indexedDB.deleteDatabase('tabula');
+			} catch {
+				/* ignore */
+			}
+		}
 		_loading = false;
 		return;
 	}

@@ -22,8 +22,8 @@ services:
       DB_PATH: /data/tabula.db
       PORT: "3000"
       HOST: "0.0.0.0"
-      ALLOWED_ORIGIN: "https://www.tabulasql.de"
-      SITE_URL: "https://www.tabulasql.de"
+      ALLOWED_ORIGIN: "https://app.tabulasql.de"
+      SITE_URL: "https://app.tabulasql.de"
       LOG_LEVEL: "info"
     secrets:
       - smtp_noreply
