@@ -234,7 +234,7 @@
 
 	/* Dialog */
 	.dialog-overlay { position: fixed; inset: 0; background: rgb(15 23 42 / 0.5); z-index: 50; display: grid; place-items: center; padding: 20px; }
-	.dialog-box { background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-pop); padding: 26px; display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 480px; }
+	.dialog-box { box-sizing: border-box; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-pop); padding: 26px; display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 480px; }
 	.dialog-title { font-size: 18px; font-weight: 600; margin: 0; }
 	.dialog-body { font-size: 15px; line-height: 23px; color: var(--ink-2); margin: 0; }
 	.dialog-input { height: 44px; padding: 0 12px; border-radius: 7px; border: 1.5px solid var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--surface); font: inherit; font-size: 15px; outline: none; }

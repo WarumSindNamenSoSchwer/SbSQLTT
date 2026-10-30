@@ -595,7 +595,7 @@
 	.help-card-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 	:global(.help-edgar) { width: 44px; height: 40px; flex: none; }
 	.help-card-title { font-size: 16px; font-weight: 600; margin: 0; flex: 1; }
-	.stuck-row { width: 100%; display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); background: transparent; cursor: pointer; }
+	.stuck-row { width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--line); background: transparent; cursor: pointer; }
 	.stuck-row:hover { background: var(--subtle); }
 	.stuck-row-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 	.stuck-name { font-size: 15px; font-weight: 600; }

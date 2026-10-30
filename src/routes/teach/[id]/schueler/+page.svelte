@@ -270,7 +270,7 @@
 
 	/* Dialog */
 	.dialog-overlay { position: fixed; inset: 0; background: rgb(15 23 42 / 0.5); z-index: 50; display: grid; place-items: center; padding: 20px; }
-	.dialog-box { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-pop); padding: 28px; display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 480px; }
+	.dialog-box { box-sizing: border-box; background: var(--surface); border-radius: 14px; box-shadow: var(--shadow-pop); padding: 28px; display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 480px; }
 	.dialog-title { font-size: 18px; font-weight: 600; margin: 0; }
 	.dialog-body { font-size: 15px; line-height: 23px; color: var(--ink-2); margin: 0; }
 	.dialog-error { padding: 10px 12px; border-radius: 6px; background: var(--danger-soft); border: 1px solid var(--danger-line); color: var(--danger-ink); font-size: 14px; }
