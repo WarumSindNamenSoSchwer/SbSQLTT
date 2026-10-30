@@ -38,6 +38,9 @@
 	/** Neu erzeugter Wiederherstellungscode (einmal anzeigen) */
 	let shownCode = $state<string | null>(null);
 
+	// Schüler: Klasse verlassen Bestätigung
+	let leaveAsk = $state(false);
+
 	// Gefährliche Aktion (Lehrkraft: Konto löschen, Schüler: austreten)
 	let dangerOpen = $state(false);
 	let dangerConfirm = $state('');
@@ -189,6 +192,15 @@
 		if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 		return parts[0].slice(0, 2).toUpperCase();
 	});
+
+	// Thema-Steuerung
+	const currentTheme = $derived(dark ? 'dunkel' : 'hell');
+	function setTheme(t: 'hell' | 'dunkel' | 'auto') {
+		if (t === 'hell') { document.documentElement.classList.add('light'); }
+		else if (t === 'dunkel') { document.documentElement.classList.remove('light'); }
+		else { /* auto: System */ document.documentElement.classList.remove('light'); }
+		localStorage?.setItem('tabula-theme', t);
+	}
 </script>
 
 <svelte:head><title>Profil · Tabula</title></svelte:head>
@@ -197,188 +209,251 @@
 	<TopNav {dark} />
 
 	{#if toast}
-		<div class="toast" role="status"><span class="toast-ok">✓</span>{toast}</div>
+		<div class="toast" role="status">{toast}</div>
 	{/if}
 
 	<main class="main">
 		<div class="content">
-			<h1>Profil</h1>
 
-			{#if shownCode}
-				<div class="code-box" role="status">
-					<span class="code-title">Ihr neuer Wiederherstellungscode</span>
-					<span class="code-val mono">{shownCode}</span>
-					<span class="code-hint">Bitte notieren oder ausdrucken. Tabula kennt diesen Code nicht und kann ihn nicht wiederherstellen.</span>
-					<div class="edit-btns">
-						<button class="btn-cancel" onclick={() => window.print()}>Drucken</button>
-						<button class="btn-save" onclick={() => (shownCode = null)}>Notiert</button>
-					</div>
+			<!-- Kopf: Avatar + Name + Rolle -->
+			<div class="page-head">
+				<span class="avatar">{initials()}</span>
+				<div>
+					<p class="head-name">{session.displayName}</p>
+					<p class="head-sub">{session.teacher ? 'Lehrkraft' : (session.student?.class ? `Schüler in ${session.student.class.name}` : 'Schüler')}</p>
 				</div>
-			{/if}
-
-			{#if session.teacher && session.needsKeyRecovery}
-				<div class="recover-box" role="alert">
-					<span class="code-title">Namen Ihrer Schüler wiederherstellen</span>
-					<p class="code-hint">Ihr Passwort wurde zurückgesetzt. Die Namen Ihrer Schüler sind verschlüsselt und nur mit Ihrem Wiederherstellungscode wieder lesbar.</p>
-					<form class="profile-edit-form full" onsubmit={recoverWithCode}>
-						<input type="text" autocomplete="off" spellcheck="false" placeholder="Wiederherstellungscode (8 Wörter)" disabled={recBusy} bind:value={recCode} />
-						<input type="password" autocomplete="current-password" placeholder="Ihr neues Passwort" disabled={recBusy} bind:value={recPw} />
-						{#if recErr}<span class="field-err">{recErr}</span>{/if}
-						<div class="edit-btns">
-							<button type="submit" class="btn-save" disabled={recBusy}>{recBusy ? 'Wird geprüft …' : 'Wiederherstellen'}</button>
-							<button type="button" class="btn-cancel" disabled={recBusy} onclick={startFresh}>Ich habe keinen Code</button>
-						</div>
-						<span class="code-hint">Ohne Code: Sie bekommen einen neuen Schlüssel. Fortschritt und Klassen bleiben, die Namen erscheinen wieder, sobald sich Ihre Schüler das nächste Mal anmelden.</span>
-					</form>
-				</div>
-			{/if}
+				<button class="btn-logout" onclick={async () => { await sessionLogout(); goto('/login'); }}>Abmelden</button>
+			</div>
 
 			{#if session.user}
-				<div class="profile-head">
-					<span class="avatar">{initials()}</span>
-					<div class="head-text">
-						<span class="head-name">{session.displayName}</span>
-						<span class="head-sub">{session.teacher ? 'Lehrkraft' : `Schüler in ${session.student?.class?.name ?? ''}`}</span>
-					</div>
-				</div>
 
-				<div class="profile-table">
-					<!-- Name -->
-					<div class="profile-row">
-						<span class="profile-key">Name</span>
-						{#if editing === 'name'}
-							<form class="profile-edit-form" onsubmit={session.teacher ? saveTeacherName : saveStudentName}>
-								<input type="text" autocomplete="off" disabled={busy} bind:value={fName} />
-								{#if session.student}
-									<input type="password" autocomplete="current-password" placeholder="Dein Passwort" disabled={busy} bind:value={curPw} />
-									<span class="code-hint">Du meldest dich danach mit dem neuen Namen an. Deine Lehrkraft sieht ihn sofort.</span>
+				<!-- Warnung: Schlüssel nach Passwort-Reset wiederherstellen -->
+				{#if session.teacher && session.needsKeyRecovery}
+					<section class="section warn-section" role="alert">
+						<h2>Namen Ihrer Schüler wiederherstellen</h2>
+						<p class="section-hint">Ihr Passwort wurde zurückgesetzt. Die Namen Ihrer Schüler sind verschlüsselt und nur mit Ihrem Wiederherstellungscode wieder lesbar.</p>
+						<form class="edit-form" onsubmit={recoverWithCode}>
+							<input type="text" autocomplete="off" spellcheck="false" placeholder="Wiederherstellungscode (8 Wörter)" disabled={recBusy} bind:value={recCode} />
+							<input type="password" autocomplete="current-password" placeholder="Ihr neues Passwort" disabled={recBusy} bind:value={recPw} />
+							{#if recErr}<span class="field-err">{recErr}</span>{/if}
+							<div class="btn-row">
+								<button type="submit" class="btn-save" disabled={recBusy}>{recBusy ? 'Wird geprüft ...' : 'Wiederherstellen'}</button>
+								<button type="button" class="btn-cancel" disabled={recBusy} onclick={startFresh}>Ich habe keinen Code</button>
+							</div>
+							<span class="field-hint">Ohne Code: Sie bekommen einen neuen Schlüssel. Fortschritt und Klassen bleiben, die Namen erscheinen wieder, sobald sich Ihre Schüler das nächste Mal anmelden.</span>
+						</form>
+					</section>
+				{/if}
+
+				<!-- Neu erzeugter Wiederherstellungscode -->
+				{#if shownCode}
+					<section class="section code-section" role="status">
+						<h2>Ihr neuer Wiederherstellungscode</h2>
+						<div class="code-val" aria-label="Wiederherstellungscode">{shownCode}</div>
+						<p class="field-hint">Bitte notieren oder ausdrucken. Tabula kennt diesen Code nicht und kann ihn nicht wiederherstellen.</p>
+						<div class="btn-row">
+							<button class="btn-cancel" onclick={() => window.print()}>Drucken</button>
+							<button class="btn-save" onclick={() => (shownCode = null)}>Notiert</button>
+						</div>
+					</section>
+				{/if}
+
+				<!-- === LEHRKRAFT === -->
+				{#if session.teacher}
+					<!-- Angaben -->
+					<section class="section">
+						<h2>Konto</h2>
+						<dl class="dl-grid">
+							<dt>Name</dt>
+							<dd>
+								{#if editing === 'name'}
+									<form class="inline-form" onsubmit={saveTeacherName}>
+										<input type="text" autocomplete="off" disabled={busy} bind:value={fName} />
+										{#if err}<span class="field-err">{err}</span>{/if}
+										<div class="btn-row">
+											<button type="submit" class="btn-save" disabled={busy}>{busy ? 'Speichern ...' : 'Speichern'}</button>
+											<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
+										</div>
+									</form>
+								{:else}
+									<span class="val-row">{session.displayName}<button class="btn-action" onclick={() => startEdit('name')}>Ändern</button></span>
 								{/if}
-								{#if err}<span class="field-err">{err}</span>{/if}
-								<div class="edit-btns">
-									<button type="submit" class="btn-save" disabled={busy}>{busy ? 'Speichern …' : 'Speichern'}</button>
-									<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
-								</div>
-							</form>
-						{:else}
-							<span class="profile-val">{session.displayName}</span>
-							<button class="profile-action" onclick={() => startEdit('name')}>Ändern</button>
-						{/if}
-					</div>
-
-					{#if session.teacher}
-						<div class="profile-row">
-							<span class="profile-key">E-Mail</span>
-							<span class="profile-val">{session.teacher.email}</span>
-							<span class="profile-action-placeholder"></span>
+							</dd>
+							<dt>E-Mail</dt>
+							<dd>{session.teacher.email}</dd>
+							<dt>Schule</dt>
+							<dd>
+								{#if editing === 'school'}
+									<form class="inline-form" onsubmit={saveSchool}>
+										<input type="text" autocomplete="organization" disabled={busy} bind:value={fSchool} />
+										{#if err}<span class="field-err">{err}</span>{/if}
+										<div class="btn-row">
+											<button type="submit" class="btn-save" disabled={busy}>Speichern</button>
+											<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
+										</div>
+									</form>
+								{:else}
+									<span class="val-row">{session.teacher.school ?? 'Nicht angegeben'}<button class="btn-action" onclick={() => startEdit('school')}>Ändern</button></span>
+								{/if}
+							</dd>
+						</dl>
+						<div class="btn-group">
+							<button class="btn-secondary" onclick={() => startEdit('password')}>Passwort ändern</button>
 						</div>
-						<div class="profile-row">
-							<span class="profile-key">Schule</span>
-							{#if editing === 'school'}
-								<form class="profile-edit-form" onsubmit={saveSchool}>
-									<input type="text" autocomplete="organization" disabled={busy} bind:value={fSchool} />
-									{#if err}<span class="field-err">{err}</span>{/if}
-									<div class="edit-btns">
-										<button type="submit" class="btn-save" disabled={busy}>Speichern</button>
-										<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
-									</div>
-								</form>
-							{:else}
-								<span class="profile-val">{session.teacher.school ?? 'Nicht angegeben'}</span>
-								<button class="profile-action" onclick={() => startEdit('school')}>Ändern</button>
-							{/if}
-						</div>
-					{:else if session.student?.class}
-						<div class="profile-row">
-							<span class="profile-key">Klasse</span>
-							<span class="profile-val">{session.student.class.name} · {session.student.class.teacher_name}</span>
-							<span class="profile-action-placeholder"></span>
-						</div>
-						<div class="profile-row">
-							<span class="profile-key">Klassencode</span>
-							<span class="profile-val mono">{session.student.class.code}</span>
-							<span class="profile-action-placeholder"></span>
-						</div>
-					{/if}
-
-					<!-- Passwort -->
-					<div class="profile-row" class:no-border={!session.teacher}>
-						<span class="profile-key">Passwort</span>
 						{#if editing === 'password'}
-							<form class="profile-edit-form" onsubmit={session.teacher ? saveTeacherPassword : saveStudentPassword}>
+							<form class="edit-form" onsubmit={saveTeacherPassword}>
 								<input type="password" autocomplete="current-password" placeholder="Aktuelles Passwort" disabled={busy} bind:value={curPw} />
 								<input type="password" autocomplete="new-password" placeholder="Neues Passwort (mind. 8 Zeichen)" disabled={busy} bind:value={newPw} />
 								<input type="password" autocomplete="new-password" placeholder="Neues Passwort wiederholen" disabled={busy} bind:value={newPw2} />
 								{#if err}<span class="field-err">{err}</span>{/if}
-								<div class="edit-btns">
-									<button type="submit" class="btn-save" disabled={busy}>{busy ? 'Speichern …' : 'Speichern'}</button>
+								<div class="btn-row">
+									<button type="submit" class="btn-save" disabled={busy}>{busy ? 'Speichern ...' : 'Speichern'}</button>
+									<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
+								</div>
+							</form>
+						{/if}
+					</section>
+
+					<!-- Wiederherstellungscode -->
+					<section class="section">
+						<h2>Wiederherstellungscode</h2>
+						<p class="section-hint">Nur bei Ihnen gespeichert. Mit diesem Code können Sie verschlüsselte Schülernamen wiederherstellen, falls Sie Ihr Passwort vergessen.</p>
+						{#if editing === 'recovery'}
+							<form class="edit-form" onsubmit={newRecovery}>
+								<input type="password" autocomplete="current-password" placeholder="Ihr Passwort" disabled={busy} bind:value={curPw} />
+								<span class="field-hint">Erzeugt einen neuen Code. Der alte gilt danach nicht mehr.</span>
+								{#if err}<span class="field-err">{err}</span>{/if}
+								<div class="btn-row">
+									<button type="submit" class="btn-save" disabled={busy}>Neuen Code erzeugen</button>
 									<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
 								</div>
 							</form>
 						{:else}
-							<span class="profile-val">••••••••</span>
-							<button class="profile-action" onclick={() => startEdit('password')}>Ändern</button>
+							<button class="btn-secondary" onclick={() => startEdit('recovery')}>Neuen Code erzeugen</button>
 						{/if}
-					</div>
+					</section>
 
-					{#if session.teacher}
-						<div class="profile-row no-border">
-							<span class="profile-key">Wiederherstellungscode</span>
-							{#if editing === 'recovery'}
-								<form class="profile-edit-form" onsubmit={newRecovery}>
-									<input type="password" autocomplete="current-password" placeholder="Ihr Passwort" disabled={busy} bind:value={curPw} />
-									<span class="code-hint">Erzeugt einen neuen Code. Der alte gilt danach nicht mehr.</span>
-									{#if err}<span class="field-err">{err}</span>{/if}
-									<div class="edit-btns">
-										<button type="submit" class="btn-save" disabled={busy}>Neuen Code erzeugen</button>
-										<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
-									</div>
-								</form>
-							{:else}
-								<span class="profile-val">Nur bei Ihnen</span>
-								<button class="profile-action" onclick={() => startEdit('recovery')}>Neu erzeugen</button>
-							{/if}
+					<!-- Darstellung -->
+					<section class="section">
+						<h2>Darstellung</h2>
+						<div class="theme-pills" role="radiogroup" aria-label="Darstellung">
+							<button type="button" role="radio" aria-checked={!dark} class="theme-pill" class:active={!dark} onclick={() => setTheme('hell')}>Hell</button>
+							<button type="button" role="radio" aria-checked={dark} class="theme-pill" class:active={dark} onclick={() => setTheme('dunkel')}>Dunkel</button>
 						</div>
-					{/if}
-				</div>
+					</section>
 
-				<p class="privacy">
-					{#if session.teacher}
-						Die Namen Ihrer Schüler entschlüsselt nur Ihr Browser. Tabula selbst kennt sie nicht.
-					{:else}
-						Dein Name und dein Passwort sind nur auf diesem Gerät. Tabula speichert eine Nummer und deinen Fortschritt, deinen Namen kann nur deine Lehrkraft lesen.
-					{/if}
-				</p>
+					<!-- Konto löschen -->
+					<section class="section danger-section">
+						<h2 class="danger-title">Konto löschen</h2>
+						<p class="section-hint">Ihr Konto, alle Klassen und der Lernfortschritt Ihrer Schüler werden endgültig gelöscht. Geben Sie zur Bestätigung Ihre E-Mail-Adresse ein.</p>
+						<input
+							placeholder={session.teacher?.email ?? 'Ihre E-Mail-Adresse'}
+							aria-label="E-Mail-Adresse zur Bestätigung"
+							bind:value={dangerConfirm}
+							style="height:42px;padding:0 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);font-size:14px;width:100%;box-sizing:border-box;outline:none;font-family:inherit"
+						/>
+						<button
+							type="button"
+							class="btn-danger-sm"
+							disabled={dangerConfirm.trim().toLowerCase() !== (session.teacher?.email ?? '').toLowerCase()}
+							onclick={() => { dangerOpen = true; dangerConfirm = dangerConfirm; }}
+						>Konto endgültig löschen</button>
+					</section>
 
-				<div class="section-gap">
-					<button class="btn-logout" onclick={async () => { await sessionLogout(); goto('/login'); }}>Abmelden</button>
-				</div>
+				<!-- === SCHÜLER === -->
+				{:else if session.student}
+					<!-- Name und Passwort -->
+					<section class="section">
+						<h2>Meine Angaben</h2>
+						<dl class="dl-grid">
+							<dt>Name</dt>
+							<dd>
+								{#if editing === 'name'}
+									<form class="inline-form" onsubmit={saveStudentName}>
+										<input type="text" autocomplete="off" disabled={busy} bind:value={fName} />
+										<input type="password" autocomplete="current-password" placeholder="Dein Passwort" disabled={busy} bind:value={curPw} />
+										<span class="field-hint">Du meldest dich danach mit dem neuen Namen an.</span>
+										{#if err}<span class="field-err">{err}</span>{/if}
+										<div class="btn-row">
+											<button type="submit" class="btn-save" disabled={busy}>{busy ? 'Speichern ...' : 'Speichern'}</button>
+											<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
+										</div>
+									</form>
+								{:else}
+									<span class="val-row">{session.displayName}<button class="btn-action" onclick={() => startEdit('name')}>Ändern</button></span>
+								{/if}
+							</dd>
+							<dt>Passwort</dt>
+							<dd>
+								{#if editing === 'password'}
+									<form class="inline-form" onsubmit={saveStudentPassword}>
+										<input type="password" autocomplete="current-password" placeholder="Aktuelles Passwort" disabled={busy} bind:value={curPw} />
+										<input type="password" autocomplete="new-password" placeholder="Neues Passwort (mind. 8 Zeichen)" disabled={busy} bind:value={newPw} />
+										<input type="password" autocomplete="new-password" placeholder="Neues Passwort wiederholen" disabled={busy} bind:value={newPw2} />
+										{#if err}<span class="field-err">{err}</span>{/if}
+										<div class="btn-row">
+											<button type="submit" class="btn-save" disabled={busy}>{busy ? 'Speichern ...' : 'Speichern'}</button>
+											<button type="button" class="btn-cancel" onclick={() => (editing = null)}>Abbrechen</button>
+										</div>
+									</form>
+								{:else}
+									<span class="val-row">••••••••<button class="btn-action" onclick={() => startEdit('password')}>Ändern</button></span>
+								{/if}
+							</dd>
+						</dl>
+					</section>
 
-				<div class="danger-box">
-					<div class="danger-text">
-						<span class="danger-title">{session.teacher ? 'Konto löschen' : 'Aus der Klasse austreten'}</span>
-						<span class="danger-sub">{session.teacher ? 'Konto, alle Klassen und alle Daten Ihrer Schüler werden sofort gelöscht.' : 'Dein Fortschritt in der Klasse wird sofort gelöscht.'}</span>
-					</div>
-					<button class="btn-danger" onclick={() => (dangerOpen = true)}>{session.teacher ? 'Konto löschen' : 'Austreten'}</button>
-				</div>
+					<!-- Meine Klasse -->
+					<section class="section">
+						<h2>Meine Klasse</h2>
+						{#if session.student.class}
+							<div class="class-row">
+								<div>
+									<p class="class-name">{session.student.class.name}</p>
+									<p class="class-sub">bei {session.student.class.teacher_name}</p>
+								</div>
+								<button class="btn-danger-sm" onclick={() => (leaveAsk = true)}>Klasse verlassen</button>
+							</div>
+							{#if leaveAsk}
+								<div class="leave-confirm" role="alertdialog" aria-label="Klasse verlassen?">
+									<p>Wirklich verlassen? Deine Lehrkraft sieht deinen Fortschritt danach nicht mehr. Dein Fortschritt bleibt in diesem Browser.</p>
+									<div class="btn-row">
+										<button class="btn-cancel" onclick={() => (leaveAsk = false)}>Abbrechen</button>
+										<button class="btn-danger-sm" onclick={() => { void confirmDanger(); }}>Verlassen</button>
+									</div>
+								</div>
+							{/if}
+						{:else}
+							<p class="section-hint">Du bist in keiner Klasse. <a class="link" href="/beitreten">Klasse beitreten</a></p>
+						{/if}
+					</section>
+
+					<!-- Darstellung -->
+					<section class="section">
+						<h2>Darstellung</h2>
+						<div class="theme-pills" role="radiogroup" aria-label="Darstellung">
+							<button type="button" role="radio" aria-checked={!dark} class="theme-pill" class:active={!dark} onclick={() => setTheme('hell')}>Hell</button>
+							<button type="button" role="radio" aria-checked={dark} class="theme-pill" class:active={dark} onclick={() => setTheme('dunkel')}>Dunkel</button>
+						</div>
+					</section>
+				{/if}
+
 			{/if}
 		</div>
 	</main>
 
-	{#if dangerOpen}
+	<!-- Löschen-Dialog (Lehrkraft) -->
+	{#if dangerOpen && session.teacher}
 		<div class="overlay" role="presentation">
-			<div role="dialog" aria-modal="true" aria-label={session.teacher ? 'Konto löschen' : 'Austreten'} class="dialog">
-				<h2>{session.teacher ? 'Konto wirklich löschen?' : 'Wirklich austreten?'}</h2>
-				<p class="dialog-body">Das lässt sich nicht rückgängig machen. {session.teacher ? 'Tippen Sie' : 'Tippe'} zur Bestätigung <strong>{dangerWord}</strong>{session.teacher ? ' und geben Sie Ihr Passwort ein' : ''}.</p>
-				<input type="text" class="dialog-input" autocomplete="off" placeholder={dangerWord} disabled={dangerBusy} bind:value={dangerConfirm} />
-				{#if session.teacher}
-					<label class="dialog-body" for="danger-pw">Ihr Passwort</label>
-					<input id="danger-pw" type="password" class="dialog-input" autocomplete="current-password" disabled={dangerBusy} bind:value={dangerPw} />
-				{/if}
+			<div role="dialog" aria-modal="true" aria-label="Konto löschen" class="dialog">
+				<h2>Konto wirklich löschen?</h2>
+				<p class="dialog-body">Das lässt sich nicht rückgängig machen. Geben Sie zur Bestätigung Ihr Passwort ein.</p>
+				<input type="password" class="dialog-input" autocomplete="current-password" placeholder="Ihr Passwort" disabled={dangerBusy} bind:value={dangerPw} />
 				{#if dangerErr}<span class="field-err">{dangerErr}</span>{/if}
 				<div class="dialog-btns">
-					<button class="btn-dialog-cancel" onclick={() => { dangerOpen = false; dangerConfirm = ''; dangerPw = ''; dangerErr = null; }} disabled={dangerBusy}>Abbrechen</button>
-					<button class="btn-dialog-delete" onclick={confirmDanger} disabled={dangerBusy || dangerConfirm.trim().toUpperCase() !== dangerWord || (!!session.teacher && !dangerPw)}>
-						{dangerBusy ? 'Bitte warten …' : session.teacher ? 'Endgültig löschen' : 'Austreten'}
+					<button class="btn-dialog-cancel" onclick={() => { dangerOpen = false; dangerPw = ''; dangerErr = null; }} disabled={dangerBusy}>Abbrechen</button>
+					<button class="btn-dialog-delete" onclick={confirmDanger} disabled={dangerBusy || !dangerPw}>
+						{dangerBusy ? 'Bitte warten ...' : 'Endgültig löschen'}
 					</button>
 				</div>
 			</div>
@@ -388,91 +463,241 @@
 
 <style>
 	.page { min-height: 100dvh; display: flex; flex-direction: column; position: relative; }
-	.main { flex: 1; display: flex; justify-content: center; padding: 44px 40px 80px; }
-	.content { width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 24px; }
-	h1 { font-size: 36px; line-height: 44px; font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+
+	.main {
+		flex: 1;
+		display: flex;
+		justify-content: center;
+		padding: clamp(24px, 5vh, 56px) 20px 80px;
+	}
+
+	.content {
+		width: 100%;
+		max-width: 600px;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
 
 	/* Toast */
-	.toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 50; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 18px; border-radius: 10px; background: #0f172a; color: #fff; font-size: 14px; font-weight: 500; box-shadow: 0 12px 32px -12px rgb(15 23 42 / .28); white-space: nowrap; }
-	.toast-ok { color: #4ade80; }
+	.toast {
+		position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+		z-index: 50; height: 44px; padding: 0 18px; border-radius: 10px;
+		background: #0f172a; color: #fff; font-size: 14px; font-weight: 500;
+		display: flex; align-items: center;
+		box-shadow: 0 12px 32px -12px rgb(15 23 42 / .28); white-space: nowrap;
+	}
 
-	/* Profil-Tabelle */
-	.profile-table { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-	.profile-row { display: grid; grid-template-columns: 200px minmax(0, 1fr) auto; align-items: center; gap: 16px; min-height: 56px; padding: 0 20px; border-bottom: 1px solid var(--line); }
-	.profile-row.no-border { border-bottom: none; }
-	.profile-key { font-size: 14px; color: var(--ink-2); }
-	.profile-val { font-size: 15px; }
-	.profile-action { font-size: 14px; font-weight: 500; color: var(--accent-strong); cursor: pointer; font-family: inherit; text-align: right; white-space: nowrap; }
-	.profile-action:hover { text-decoration: underline; }
-	.profile-action-placeholder { width: 44px; }
-	.mono { font-family: var(--mono, 'IBM Plex Mono', monospace); }
+	/* Seiten-Kopf */
+	.page-head {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		padding: 4px 0 8px;
+	}
+	.avatar {
+		width: 48px; height: 48px; border-radius: 999px;
+		background: var(--accent-soft); color: var(--accent-ink);
+		display: grid; place-items: center; font-weight: 600; font-size: 16px; flex: none;
+	}
+	.head-name { margin: 0; font-size: 18px; font-weight: 600; }
+	.head-sub { margin: 2px 0 0; font-size: 14px; color: var(--ink-2); }
+	.btn-logout {
+		margin-left: auto;
+		height: 38px; padding: 0 14px; border-radius: 7px;
+		border: 1px solid var(--line-strong);
+		font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+		color: var(--ink);
+	}
+	.btn-logout:hover { background: var(--subtle); }
 
-	.profile-edit-form { grid-column: 2 / 4; display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
-	input { height: 44px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 15px; font-family: inherit; color: var(--ink); outline: none; width: 100%; box-sizing: border-box; }
+	/* Sektions-Karten */
+	.section {
+		padding: 22px 24px;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 14px;
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+	h2 {
+		margin: 0;
+		font-size: 16px;
+		font-weight: 600;
+	}
+	.section-hint { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+	.field-hint { font-size: 13px; color: var(--ink-3); line-height: 1.4; }
+	.field-err { font-size: 13px; color: var(--danger-ink); }
+
+	/* Warn-Sektion (Schlüssel-Wiederherstellung) */
+	.warn-section {
+		border-color: #fcd34d;
+		background: #fef3c7;
+	}
+	:global(html:not(.light)) .warn-section {
+		border-color: #78350f;
+		background: #451a03;
+	}
+
+	/* Code-Sektion */
+	.code-section { border-color: var(--accent-line); background: var(--accent-soft); }
+	.code-val {
+		padding: 14px 16px; border-radius: 8px;
+		border: 1.5px dashed var(--line-strong); background: var(--surface);
+		font-family: 'IBM Plex Mono', monospace; font-size: 16px; line-height: 1.5;
+		word-break: break-word; user-select: all; color: var(--ink);
+	}
+
+	/* Danger-Sektion */
+	.danger-section { border-color: var(--danger-line); }
+	.danger-title { color: var(--danger-ink); }
+
+	/* DL-Grid */
+	.dl-grid {
+		margin: 0;
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 10px 24px;
+		font-size: 15px;
+		align-items: start;
+	}
+	dt { color: var(--ink-3); font-size: 14px; padding-top: 2px; }
+	dd { margin: 0; }
+	.val-row { display: flex; align-items: center; gap: 12px; }
+
+	/* Inline-Formulare */
+	.inline-form { display: flex; flex-direction: column; gap: 8px; }
+	.edit-form { display: flex; flex-direction: column; gap: 8px; }
+
+	input[type="text"], input[type="email"], input[type="password"] {
+		height: 44px; padding: 0 12px; border-radius: 8px;
+		border: 1px solid var(--line-strong); background: var(--surface);
+		font-size: 15px; font-family: inherit; color: var(--ink);
+		outline: none; width: 100%; box-sizing: border-box;
+	}
 	input::placeholder { color: var(--ink-3); }
 	input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); border-width: 1.5px; }
 	input:disabled { opacity: 0.6; cursor: not-allowed; }
-	.field-err { font-size: 13px; color: var(--danger-ink); }
-	.edit-btns { display: flex; gap: 10px; }
-	.btn-save { height: 36px; padding: 0 14px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
+
+	/* Buttons */
+	.btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+	.btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+	.btn-save {
+		height: 36px; padding: 0 14px; border-radius: 7px;
+		background: var(--accent); color: #fff;
+		font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+	}
 	.btn-save:hover:not(:disabled) { background: var(--accent-strong); }
 	.btn-save:disabled { opacity: 0.7; cursor: not-allowed; }
-	.btn-cancel { height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line-strong); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
-	.btn-cancel:hover { background: var(--subtle) !important; }
+	.btn-cancel {
+		height: 36px; padding: 0 14px; border-radius: 7px;
+		border: 1px solid var(--line-strong);
+		font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+		color: var(--ink);
+	}
+	.btn-cancel:hover { background: var(--subtle); }
+	.btn-secondary {
+		height: 38px; padding: 0 14px; border-radius: 7px;
+		border: 1px solid var(--line); background: var(--surface);
+		font-size: 14px; cursor: pointer; font-family: inherit;
+		color: var(--ink); align-self: flex-start;
+	}
+	.btn-secondary:hover { background: var(--subtle); }
+	.btn-action {
+		font-size: 14px; font-weight: 500; color: var(--accent-ink);
+		cursor: pointer; font-family: inherit;
+		text-underline-offset: 3px;
+	}
+	.btn-action:hover { text-decoration: underline; }
+	.btn-danger-sm {
+		height: 38px; padding: 0 14px; border-radius: 7px;
+		border: 1px solid var(--danger-line);
+		background: var(--surface); color: var(--danger-ink);
+		font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit;
+		align-self: flex-start;
+		white-space: nowrap;
+	}
+	.btn-danger-sm:hover:not(:disabled) { background: var(--danger-soft); }
+	.btn-danger-sm:disabled { opacity: 0.5; cursor: not-allowed; }
 
-	/* Sonstiges */
-	.section-gap { display: flex; flex-direction: column; gap: 6px; }
-	.btn-logout { height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--line-strong); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; align-self: flex-start; }
-	.btn-logout:hover { background: var(--subtle) !important; }
+	/* Thema-Pills */
+	.theme-pills {
+		display: flex; gap: 4px; padding: 3px;
+		border-radius: 9px; background: var(--subtle); align-self: flex-start;
+	}
+	.theme-pill {
+		height: 32px; padding: 0 14px; border-radius: 7px;
+		border: none; font-size: 14px; cursor: pointer; font-family: inherit;
+		color: var(--ink-2);
+	}
+	.theme-pill.active {
+		background: var(--surface); color: var(--ink);
+		box-shadow: 0 1px 3px rgb(15 23 42 / .1);
+	}
 
-	/* Danger */
-	.danger-box { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border: 1px solid var(--danger-line); border-radius: 10px; }
-	.danger-text { flex: 1; display: flex; flex-direction: column; }
-	.danger-title { font-size: 15px; font-weight: 600; color: var(--danger-ink); }
-	.danger-sub { font-size: 14px; color: var(--ink-2); }
-	.btn-danger { height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--danger); color: var(--danger-ink); font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; }
-	.btn-danger:hover { background: var(--danger-soft) !important; }
+	/* Klassen-Info */
+	.class-row {
+		display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+	}
+	.class-name { margin: 0; font-weight: 600; font-size: 15px; }
+	.class-sub { margin: 2px 0 0; font-size: 13px; color: var(--ink-3); }
+	.leave-confirm {
+		padding: 14px 16px; border-radius: 10px;
+		background: var(--danger-soft);
+		display: flex; flex-direction: column; gap: 10px;
+		font-size: 14px; line-height: 1.5; color: var(--danger-ink);
+	}
+	.leave-confirm p { margin: 0; }
+	.link { color: var(--accent-ink); font-weight: 500; }
 
 	/* Dialog */
-	.overlay { position: fixed; inset: 0; background: rgb(15 23 42 / .5); display: grid; place-items: center; z-index: 40; }
-	.dialog { width: 460px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 10px; background: var(--surface); box-shadow: 0 12px 32px -12px rgb(15 23 42 / .28); }
-	h2 { font-size: 18px; line-height: 26px; font-weight: 600; margin: 0; }
-	.dialog-body { font-size: 15px; line-height: 23px; color: var(--ink-2); margin: 0; }
-	.dialog-input { height: 44px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 15px; font-family: monospace; color: var(--ink); outline: none; width: 100%; box-sizing: border-box; }
+	.overlay {
+		position: fixed; inset: 0;
+		background: rgb(15 23 42 / .5);
+		display: grid; place-items: center; z-index: 40;
+	}
+	.dialog {
+		width: 460px; max-width: calc(100vw - 32px);
+		display: flex; flex-direction: column; gap: 12px;
+		padding: 24px; border-radius: 14px;
+		background: var(--surface);
+		box-shadow: 0 12px 32px -12px rgb(15 23 42 / .28);
+	}
+	.dialog h2 { font-size: 18px; line-height: 1.4; font-weight: 600; margin: 0; }
+	.dialog-body { font-size: 15px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+	.dialog-input {
+		height: 44px; padding: 0 12px; border-radius: 8px;
+		border: 1px solid var(--line-strong); background: var(--surface);
+		font-size: 15px; font-family: inherit; color: var(--ink);
+		outline: none; width: 100%; box-sizing: border-box;
+	}
 	.dialog-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); border-width: 1.5px; }
 	.dialog-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
-	.btn-dialog-cancel { height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--line-strong); font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; }
-	.btn-dialog-cancel:hover { background: var(--subtle) !important; }
-	.btn-dialog-delete { height: 40px; padding: 0 16px; border-radius: 6px; background: var(--danger); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; }
+	.btn-dialog-cancel {
+		height: 40px; padding: 0 16px; border-radius: 7px;
+		border: 1px solid var(--line-strong);
+		font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit;
+	}
+	.btn-dialog-cancel:hover { background: var(--subtle); }
+	.btn-dialog-delete {
+		height: 40px; padding: 0 16px; border-radius: 7px;
+		background: var(--danger); color: #fff;
+		font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit;
+	}
 	.btn-dialog-delete:hover:not(:disabled) { opacity: 0.85; }
 	.btn-dialog-delete:disabled { opacity: 0.5; cursor: not-allowed; }
 
-
-	/* Kopf, Codes, Wiederherstellung */
-	.profile-head { display: flex; align-items: center; gap: 14px; }
-	.avatar { width: 48px; height: 48px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-weight: 600; }
-	.head-text { display: flex; flex-direction: column; }
-	.head-name { font-size: 18px; font-weight: 600; }
-	.head-sub { font-size: 14px; color: var(--ink-2); }
-	.code-box, .recover-box { display: flex; flex-direction: column; gap: 8px; padding: 16px 20px; border-radius: 10px; border: 1px solid var(--accent-line); background: var(--accent-soft); }
-	.recover-box { border-color: var(--warn-line, #fcd34d); background: var(--warn-bg, #fef3c7); }
-	.code-title { font-size: 15px; font-weight: 600; }
-	.code-val { font-size: 17px; padding: 10px 12px; border-radius: 6px; background: var(--surface); user-select: all; word-break: break-word; }
-	.code-hint { font-size: 13px; line-height: 18px; color: var(--ink-2); margin: 0; }
-	.profile-edit-form.full { grid-column: auto; padding: 0; }
-	.privacy { font-size: 13px; line-height: 18px; color: var(--ink-3); margin: 0; }
 	@media print {
 		:global(body *) { visibility: hidden; }
-		.code-val { visibility: visible; }
-		.code-val { position: absolute; top: 40px; left: 40px; right: 40px; }
+		.code-val { visibility: visible; position: absolute; top: 40px; left: 40px; right: 40px; }
 	}
 
-	@media (max-width: 767px) {
-		.main { padding: 24px 16px 48px; }
-		.profile-row { grid-template-columns: 1fr auto; gap: 8px; }
-		.profile-key { grid-column: 1; font-size: 13px; }
-		.profile-val { grid-column: 1; }
-		.profile-action { grid-row: 1; grid-column: 2; }
-		.profile-edit-form { grid-column: 1 / 3; }
+	@media (max-width: 640px) {
+		.main { padding: 16px 12px 48px; }
+		.section { padding: 16px; }
+		.dl-grid { grid-template-columns: 1fr; gap: 6px; }
+		dt { color: var(--ink-3); font-size: 13px; }
+		.val-row { flex-direction: column; align-items: flex-start; gap: 6px; }
 	}
 </style>

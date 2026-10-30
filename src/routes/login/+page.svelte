@@ -22,7 +22,6 @@
 		sync();
 		const mo = new MutationObserver(sync);
 		mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-		// Nur eigene Pfade wie "/quiz/ABC123" (kein "//host", kein "https://..."), sonst Standardziel
 		const r = page.url.searchParams.get('redirect') ?? '';
 		_redirect = /^\/(?![\/\\])[^\s]*$/.test(r) ? r : '';
 		const c = page.url.searchParams.get('code');
@@ -33,8 +32,6 @@
 
 	let _redirect = $state('');
 
-	// Schon angemeldet (z. B. „Anmelden“ auf der Website geklickt): direkt in den eigenen Bereich.
-	// Nur beim Aufruf der Seite, nicht nach dem Absenden (dafür sorgen die Handler unten).
 	let _checkedExisting = false;
 	$effect(() => {
 		if (_checkedExisting || session.loading) return;
@@ -232,6 +229,19 @@
 		seg = s;
 		go('login');
 	}
+
+	// Metadaten je View/Seg
+	type Meta = { kicker: string; title: string; pose: string };
+	const meta = $derived((): Meta => {
+		if (view === 'recovery') return { kicker: 'Für Lehrkräfte', title: 'Ihr Wiederherstellungscode', pose: 'success' };
+		if (view === 'forgot' || view === 'forgot-sent') return { kicker: 'Für Lehrkräfte', title: 'Passwort vergessen', pose: view === 'forgot-sent' ? 'success' : 'thinking' };
+		if (view === 'student-reset') return { kicker: 'Für Schüler', title: 'Passwort vergessen', pose: 'thinking' };
+		if (view === 'register') return { kicker: 'Für Lehrkräfte', title: 'Lehrer-Konto erstellen', pose: loginError ? 'thinking' : 'wave' };
+		// login
+		return seg === 0
+			? { kicker: 'Für Schüler', title: 'Anmelden', pose: loginError ? 'thinking' : 'wave' }
+			: { kicker: 'Für Lehrkräfte', title: 'Anmelden', pose: loginError ? 'thinking' : 'wave' };
+	});
 </script>
 
 <svelte:head><title>Anmelden · Tabula</title></svelte:head>
@@ -240,16 +250,19 @@
 	<TopNav {dark} />
 
 	<main class="center">
-		<div class="form-wrap">
+		<div class="wrap">
+
+			<!-- Hero-Block: Edgar + Kicker + Titel -->
+			<div class="hero">
+				<Edgar pose={meta().pose} {dark} class="hero-owl" />
+				<div class="hero-text">
+					<p class="kicker">{meta().kicker}</p>
+					<h1>{meta().title}</h1>
+				</div>
+			</div>
 
 			{#if view === 'login'}
-				<Edgar pose="wave" {dark} class="owl" />
-
-				<div class="title-block">
-					<h1>Anmelden</h1>
-					<p class="sub">{seg === 0 ? 'Mit deiner Klasse: Klassencode, Name und Passwort.' : 'Mit Ihrer E-Mail-Adresse.'}</p>
-				</div>
-
+				<!-- Umschalter Schüler / Lehrkraft -->
 				<div class="segment">
 					<button class="seg-btn" class:on={seg === 0} onclick={() => switchSeg(0)}>Ich bin Schüler</button>
 					<button class="seg-btn" class:on={seg === 1} onclick={() => switchSeg(1)}>Ich bin Lehrkraft</button>
@@ -262,32 +275,26 @@
 					</div>
 				{/if}
 
-				{#if loginError}
-					<div class="err-banner" role="alert">
-						<span class="err-ico">!</span>
-						{seg === 0 ? 'Klassencode, Name oder Passwort falsch.' : 'E-Mail-Adresse oder Passwort falsch.'}
-					</div>
-				{/if}
-
-				{#if serverError}
-					<div class="err-banner" role="alert"><span class="err-ico">!</span>{serverError}</div>
-				{/if}
-
 				{#if seg === 0}
-					<form onsubmit={submitStudentLogin} novalidate>
+					<!-- Schüler-Login -->
+					<form class="card" onsubmit={submitStudentLogin} novalidate>
+						{#if loginError}
+							<p class="alert-err" role="alert">Klassencode, Name oder Passwort falsch. Prüfe beides und versuche es erneut.</p>
+						{/if}
+						{#if serverError}
+							<p class="alert-err" role="alert">{serverError}</p>
+						{/if}
 						<div class="field">
 							<label for="cl-code">Klassencode</label>
 							<input id="cl-code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"
 								placeholder="z. B. blau-tiger-mond-42" class:err={codeErr} disabled={busy} bind:value={loginCode} />
-							<span class="field-hint">Steht an der Tafel oder bei deiner Lehrkraft.</span>
-							{#if codeErr}<span class="field-hint err-hint">Bitte gib den Klassencode ein.</span>{/if}
+							{#if codeErr}<span class="hint err">Bitte gib den Klassencode ein.</span>{/if}
 						</div>
 						<div class="field">
 							<label for="cl-name">Name</label>
 							<input id="cl-name" type="text" autocomplete="off" placeholder="z. B. Lena S."
 								class:err={nameErr} disabled={busy} bind:value={loginName} />
-							<span class="field-hint">Derselbe Name wie beim Beitreten. Groß- und Kleinschreibung ist egal.</span>
-							{#if nameErr}<span class="field-hint err-hint">Bitte gib deinen Namen ein.</span>{/if}
+							{#if nameErr}<span class="hint err">Bitte gib deinen Namen ein.</span>{/if}
 						</div>
 						<div class="field">
 							<div class="label-row">
@@ -296,19 +303,31 @@
 							</div>
 							<input id="cl-pw" type="password" autocomplete="current-password" placeholder="••••••••"
 								class:err={pwErr} disabled={busy} bind:value={loginPw} />
-							{#if pwErr}<span class="field-hint err-hint">Bitte gib dein Passwort ein.</span>{/if}
+							{#if pwErr}<span class="hint err">Bitte gib dein Passwort ein.</span>{/if}
 						</div>
-						<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Anmelden …' : 'Anmelden'}</button>
+						<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Anmelden ...' : 'Anmelden'}</button>
 					</form>
-					<p class="foot-note">Dein Name und dein Passwort verlassen diesen Rechner nicht. Tabula sieht nur eine Nummer, deinen Namen kann nur deine Lehrkraft lesen.</p>
-					<p class="foot">Neu in der Klasse? <a class="link-foot" href="/beitreten">Klasse beitreten</a></p>
+
+					<!-- Hinweis: Klasse beitreten -->
+					<div class="info-row card">
+						<p class="info-txt"><strong>Neu in der Klasse?</strong> Du brauchst noch kein Passwort. Tritt zuerst mit dem Klassencode deiner Lehrkraft bei.</p>
+						<a class="link-sm" href="/beitreten">Klasse beitreten</a>
+					</div>
+
 				{:else}
-					<form onsubmit={submitTeacherLogin} novalidate>
+					<!-- Lehrkraft-Login -->
+					<form class="card" onsubmit={submitTeacherLogin} novalidate>
+						{#if loginError}
+							<p class="alert-err" role="alert">E-Mail-Adresse oder Passwort falsch. Prüfen Sie beides und versuchen Sie es erneut.</p>
+						{/if}
+						{#if serverError}
+							<p class="alert-err" role="alert">{serverError}</p>
+						{/if}
 						<div class="field">
-							<label for="t-email">E-Mail</label>
+							<label for="t-email">E-Mail-Adresse</label>
 							<input id="t-email" type="email" autocomplete="username" placeholder="name@schule.de"
 								class:err={tEmailErr} disabled={busy} bind:value={tEmail} />
-							{#if tEmailErr}<span class="field-hint err-hint">Bitte geben Sie Ihre E-Mail-Adresse ein.</span>{/if}
+							{#if tEmailErr}<span class="hint err">Bitte geben Sie Ihre E-Mail-Adresse ein.</span>{/if}
 						</div>
 						<div class="field">
 							<div class="label-row">
@@ -317,171 +336,159 @@
 							</div>
 							<input id="t-pw" type="password" autocomplete="current-password" placeholder="••••••••"
 								class:err={tPwErr} disabled={busy} bind:value={tPw} />
-							{#if tPwErr}<span class="field-hint err-hint">Bitte geben Sie Ihr Passwort ein.</span>{/if}
+							{#if tPwErr}<span class="hint err">Bitte geben Sie Ihr Passwort ein.</span>{/if}
 						</div>
-						<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Anmelden …' : 'Anmelden'}</button>
+						<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Anmelden ...' : 'Anmelden'}</button>
+						<p class="foot-inline">Noch kein Konto? <button type="button" class="link-sm" onclick={() => go('register')}>Lehrer-Konto erstellen</button></p>
 					</form>
-					<p class="foot">Noch kein Konto? <button type="button" class="link-foot" onclick={() => go('register')}>Konto für Lehrkräfte erstellen</button></p>
+
+					<!-- Hinweis Schüler beim Lehrer-Login -->
+					<div class="info-row card">
+						<p class="info-txt"><strong>Du bist Schüler oder Schülerin?</strong> Du brauchst kein Konto. Tritt mit dem Klassencode deiner Lehrkraft bei.</p>
+						<a class="link-sm" href="/beitreten">Klasse beitreten</a>
+					</div>
 				{/if}
 
 			{:else if view === 'student-reset'}
-				<Edgar pose="thinking" {dark} class="owl" />
-				<div class="title-block">
-					<h1>Passwort vergessen?</h1>
-					<p class="sub">Bitte deine Lehrkraft um einen Einmal-Code. Er gilt 15 Minuten.</p>
-				</div>
-				{#if showNotice}
-					<div class="notice-box" role="status"><span class="notice-ico">i</span><span>Die Anmeldung ist in Kürze verfügbar.</span></div>
-				{/if}
-				{#if serverError}
-					<div class="err-banner" role="alert"><span class="err-ico">!</span>{serverError}</div>
-				{/if}
-				<form onsubmit={submitStudentReset} novalidate>
+				<!-- Schüler: Einmal-Code der Lehrkraft -->
+				<form class="card" onsubmit={submitStudentReset} novalidate>
+					<p class="card-intro">Bitte deine Lehrkraft um einen Einmal-Code. Er gilt 15 Minuten.</p>
+					{#if showNotice}
+						<div class="notice-box" role="status"><span class="notice-ico">i</span><span>Die Anmeldung ist in Kürze verfügbar.</span></div>
+					{/if}
+					{#if serverError}
+						<p class="alert-err" role="alert">{serverError}</p>
+					{/if}
 					<div class="field">
 						<label for="sr-code">Klassencode</label>
 						<input id="sr-code" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"
 							placeholder="z. B. blau-tiger-mond-42" class:err={codeErr} disabled={busy} bind:value={loginCode} />
+						{#if codeErr}<span class="hint err">Bitte gib den Klassencode ein.</span>{/if}
 					</div>
 					<div class="field">
 						<label for="sr-name">Name</label>
 						<input id="sr-name" type="text" autocomplete="off" placeholder="z. B. Lena S." class:err={nameErr} disabled={busy} bind:value={loginName} />
-						<span class="field-hint">Derselbe Name wie beim Beitreten. Groß- und Kleinschreibung ist egal.</span>
-						{#if nameErr}<span class="field-hint err-hint">Bitte gib deinen Namen ein.</span>{/if}
+						{#if nameErr}<span class="hint err">Bitte gib deinen Namen ein.</span>{/if}
 					</div>
 					<div class="field">
 						<label for="sr-rc">Einmal-Code der Lehrkraft</label>
-						<input id="sr-rc" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="z. B. K7M4QX2P"
-							class:err={resetCodeErr} disabled={busy} bind:value={resetCode} />
-						{#if resetCodeErr}<span class="field-hint err-hint">Bitte gib den Code deiner Lehrkraft ein.</span>{/if}
+						<input id="sr-rc" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false"
+							placeholder="z. B. K7M4QX2P" class:err={resetCodeErr} disabled={busy} bind:value={resetCode} />
+						{#if resetCodeErr}<span class="hint err">Bitte gib den Code deiner Lehrkraft ein.</span>{/if}
 					</div>
 					<div class="field">
 						<label for="sr-pw">Neues Passwort</label>
 						<input id="sr-pw" type="password" autocomplete="new-password" placeholder="••••••••"
 							class:err={resetPwErr} disabled={busy} bind:value={resetPw} />
-						{#if resetPwErr}<span class="field-hint err-hint">Mindestens 8 Zeichen.</span>{/if}
+						{#if resetPwErr}<span class="hint err">Mindestens 8 Zeichen.</span>{/if}
 					</div>
 					<div class="field">
 						<label for="sr-pw2">Neues Passwort wiederholen</label>
 						<input id="sr-pw2" type="password" autocomplete="new-password" placeholder="••••••••"
 							class:err={resetPw2Err} disabled={busy} bind:value={resetPw2} />
-						{#if resetPw2Err}<span class="field-hint err-hint">Die Passwörter stimmen nicht überein.</span>{/if}
+						{#if resetPw2Err}<span class="hint err">Die Passwörter stimmen nicht überein.</span>{/if}
 					</div>
-					<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Wird gespeichert …' : 'Neues Passwort speichern'}</button>
+					<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Wird gespeichert ...' : 'Neues Passwort speichern'}</button>
 				</form>
-				<p class="foot">Zurück zur <button type="button" class="link-foot" onclick={() => go('login')}>Anmeldung</button></p>
+				<p class="foot-link"><button type="button" class="link-sm" onclick={() => go('login')}>Zurück zur Anmeldung</button></p>
 
 			{:else if view === 'register'}
-				<div class="title-block">
-					<h1>Konto für Lehrkräfte</h1>
-					<p class="sub">Schüler brauchen kein Konto. Sie treten Ihrer Klasse mit dem Klassencode bei.</p>
-				</div>
-
-				{#if showNotice}
-					<div class="notice-box" role="status"><span class="notice-ico">i</span><span>Konten sind in Kürze verfügbar.</span></div>
-				{/if}
-				{#if serverError}
-					<div class="err-banner" role="alert"><span class="err-ico">!</span>{serverError}</div>
-				{/if}
-
-				<form onsubmit={submitRegister} novalidate>
+				<!-- Lehrkraft-Registrierung -->
+				<form class="card" onsubmit={submitRegister} novalidate>
+					{#if showNotice}
+						<div class="notice-box" role="status"><span class="notice-ico">i</span><span>Konten sind in Kürze verfügbar.</span></div>
+					{/if}
+					{#if serverError}
+						<p class="alert-err" role="alert">{serverError}</p>
+					{/if}
 					<div class="field">
 						<label for="regl-name">Name</label>
 						<input id="regl-name" type="text" autocomplete="name" placeholder="z. B. Anna Müller"
 							class:err={regNameErr} disabled={busy} bind:value={regName} />
-						<span class="field-hint">Sehen Ihre Schüler beim Beitreten.</span>
-						{#if regNameErr}<span class="field-hint err-hint">Bitte geben Sie Ihren Namen ein.</span>{/if}
+						{#if regNameErr}<span class="hint err">Bitte geben Sie Ihren Namen ein.</span>{/if}
 					</div>
 					<div class="field">
-						<label for="regl-email">E-Mail</label>
+						<label for="regl-email">E-Mail-Adresse</label>
 						<input id="regl-email" type="email" autocomplete="email" placeholder="name@gymnasium-beispiel.de"
 							class:err={regEmailErr} disabled={busy} bind:value={regEmail} />
-						{#if regEmailErr}<span class="field-hint err-hint">Bitte geben Sie eine gültige E-Mail-Adresse ein.</span>{/if}
+						{#if regEmailErr}<span class="hint err">Bitte geben Sie eine gültige E-Mail-Adresse ein.</span>{/if}
 					</div>
 					<div class="field">
 						<label for="regl-pw">Passwort</label>
 						<input id="regl-pw" type="password" autocomplete="new-password" placeholder="••••••••"
 							class:err={regLPwErr} disabled={busy} bind:value={regLPw} />
 						{#if touched}
-							<div class="rules">
-								<span class:ok={lpw8ok} class:no={!lpw8ok}>{lpw8ok ? '✓' : '○'} mind. 8 Zeichen</span>
-								<span class:ok={lpwHasNum} class:no={!lpwHasNum}>{lpwHasNum ? '✓' : '○'} eine Zahl</span>
-							</div>
+							<ul class="rules" aria-label="Passwort-Regeln">
+								<li class:rule-ok={lpw8ok} class:rule-no={!lpw8ok}><span class="rule-dot" class:dot-ok={lpw8ok}>{lpw8ok ? '✓' : ''}</span>Mindestens 8 Zeichen</li>
+								<li class:rule-ok={lpwHasNum} class:rule-no={!lpwHasNum}><span class="rule-dot" class:dot-ok={lpwHasNum}>{lpwHasNum ? '✓' : ''}</span>Mindestens eine Zahl</li>
+							</ul>
 						{/if}
 					</div>
 					<div class="field">
 						<label for="regl-pw2">Passwort wiederholen</label>
 						<input id="regl-pw2" type="password" autocomplete="new-password" placeholder="••••••••"
 							class:err={regLPwRepeatErr} disabled={busy} bind:value={regLPwRepeat} />
-						{#if regLPwRepeatErr}<span class="field-hint err-hint">Die Passwörter stimmen nicht überein.</span>{/if}
+						{#if regLPwRepeatErr}<span class="hint err">Die Passwörter stimmen nicht überein.</span>{/if}
 					</div>
 					<div class="field">
 						<div class="label-row">
 							<label for="regl-school">Schule</label>
-							<span class="opt-label">optional</span>
+							<span class="opt-lbl">optional</span>
 						</div>
 						<input id="regl-school" type="text" autocomplete="organization" placeholder="z. B. Gymnasium am Park"
 							disabled={busy} bind:value={regSchoolOpt} />
 					</div>
-					<div class="check-row" class:chk-err={regAcceptedErr}>
-						<button type="button" class="checkbox" class:checked={regAccepted} role="checkbox" aria-checked={regAccepted}
-							disabled={busy} onclick={() => (regAccepted = !regAccepted)}>{#if regAccepted}✓{/if}</button>
-						<span>Ich habe die Hinweise zum Datenschutz gelesen. <a href="/datenschutz" class="link-inline">Datenschutzerklärung</a></span>
-					</div>
+					<label class="check-row" class:chk-err={regAcceptedErr}>
+						<input type="checkbox" disabled={busy} bind:checked={regAccepted} style="width:18px;height:18px;accent-color:#2563eb;flex:none;margin-top:2px" />
+						<span>Ich habe die <a href="/datenschutz" class="link-inline">Datenschutzerklärung</a> gelesen. Gespeichert werden Name, E-Mail-Adresse, das Passwort nur als Hash und optional die Schule.</span>
+					</label>
 					{#if regAcceptedErr}
-						<span class="field-hint err-hint" style="margin-top:-8px">Bitte bestätigen Sie, dass Sie die Hinweise zum Datenschutz gelesen haben.</span>
+						<span class="hint err">Bitte bestätigen Sie, dass Sie die Datenschutzerklärung gelesen haben.</span>
 					{/if}
-					<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Konto wird erstellt …' : 'Konto erstellen'}</button>
+					<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Konto wird erstellt ...' : 'Lehrer-Konto erstellen'}</button>
+					<p class="foot-inline">Schon ein Konto? <button type="button" class="link-sm" onclick={() => switchSeg(1)}>Anmelden</button></p>
 				</form>
-				<p class="foot">Schon ein Konto? <button type="button" class="link-foot" onclick={() => switchSeg(1)}>Anmelden</button></p>
 
 			{:else if view === 'recovery'}
-				<Edgar pose="success" {dark} class="owl" />
-				<div class="title-block">
-					<h1>Ihr Wiederherstellungscode</h1>
-					<p class="sub">Die Namen Ihrer Schüler sind verschlüsselt, nur Ihr Browser kann sie lesen. Vergessen Sie Ihr Passwort, holen Sie sie mit diesem Code zurück. Tabula kennt den Code nicht und kann ihn nicht wiederherstellen.</p>
+				<!-- Wiederherstellungscode anzeigen -->
+				<div class="card">
+					<p class="card-intro">Die Namen Ihrer Schüler sind verschlüsselt, nur Ihr Browser kann sie lesen. Vergessen Sie Ihr Passwort, holen Sie sie mit diesem Code zurück. Tabula kennt den Code nicht und kann ihn nicht wiederherstellen.</p>
+					<div class="recovery-box" aria-label="Wiederherstellungscode">{recoveryCode}</div>
+					<div class="btn-row">
+						<button type="button" class="btn-secondary" onclick={() => window.print()}>Drucken</button>
+						<button type="button" class="btn-secondary" onclick={copyRecovery}>{copied ? 'Kopiert ✓' : 'Kopieren'}</button>
+					</div>
+					<label class="check-row">
+						<input type="checkbox" bind:checked={recoveryNoted} style="width:18px;height:18px;accent-color:#2563eb;flex:none;margin-top:2px" />
+						<span>Ich habe den Code notiert oder ausgedruckt.</span>
+					</label>
+					<button type="button" class="btn-primary" disabled={!recoveryNoted} onclick={() => goto(_redirect || '/teach')}>Weiter zu meinen Klassen</button>
+					<p class="hint-note">Ohne Code geht nichts verloren außer den Namen: Sie kommen zurück, sobald sich Ihre Schüler das nächste Mal anmelden. Einen neuen Code können Sie jederzeit im Profil erzeugen.</p>
 				</div>
-				<div class="recovery-box" aria-label="Wiederherstellungscode">{recoveryCode}</div>
-				<div class="btn-row">
-					<button type="button" class="btn-secondary" onclick={() => window.print()}>Drucken</button>
-					<button type="button" class="btn-secondary" onclick={copyRecovery}>{copied ? 'Kopiert ✓' : 'Kopieren'}</button>
-				</div>
-				<div class="check-row">
-					<button type="button" class="checkbox" class:checked={recoveryNoted} role="checkbox" aria-checked={recoveryNoted}
-						onclick={() => (recoveryNoted = !recoveryNoted)}>{#if recoveryNoted}✓{/if}</button>
-					<span>Ich habe den Code notiert oder ausgedruckt.</span>
-				</div>
-				<button type="button" class="btn-primary" disabled={!recoveryNoted} onclick={() => goto(_redirect || '/teach')}>Weiter zu meinen Klassen</button>
-				<p class="foot-note">Ohne Code geht nichts verloren außer den Namen: Sie kommen zurück, sobald sich Ihre Schüler das nächste Mal anmelden. Einen neuen Code können Sie jederzeit im Profil erzeugen.</p>
 
 			{:else if view === 'forgot'}
-				<Edgar pose="thinking" {dark} class="owl" />
-				<div class="title-block">
-					<h1>Passwort vergessen?</h1>
-					<p class="sub">Geben Sie die E-Mail-Adresse Ihres Lehrkraft-Kontos ein.</p>
-				</div>
-				{#if serverError}
-					<div class="err-banner" role="alert"><span class="err-ico">!</span>{serverError}</div>
-				{/if}
-				<form onsubmit={submitForgot} novalidate>
+				<!-- Lehrkraft: Passwort vergessen -->
+				<form class="card" onsubmit={submitForgot} novalidate>
+					<p class="card-intro">Geben Sie die E-Mail-Adresse Ihres Lehrkraft-Kontos ein.</p>
+					{#if serverError}
+						<p class="alert-err" role="alert">{serverError}</p>
+					{/if}
 					<div class="field">
-						<label for="forgot-email">E-Mail</label>
+						<label for="forgot-email">E-Mail-Adresse</label>
 						<input id="forgot-email" type="email" autocomplete="email" placeholder="name@schule.de"
 							class:err={forgotEmailErr} disabled={busy} bind:value={forgotEmail} />
-						{#if forgotEmailErr}<span class="field-hint err-hint">Bitte geben Sie eine gültige E-Mail-Adresse ein.</span>{/if}
+						{#if forgotEmailErr}<span class="hint err">Bitte geben Sie eine gültige E-Mail-Adresse ein.</span>{/if}
 					</div>
-					<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Wird gesendet …' : 'Link senden'}</button>
+					<button type="submit" class="btn-primary" disabled={busy}>{busy ? 'Wird gesendet ...' : 'Link zum Zurücksetzen senden'}</button>
 				</form>
-				<p class="foot-note">Halten Sie danach Ihren Wiederherstellungscode bereit, damit die Namen Ihrer Schüler sofort wieder lesbar sind.</p>
-				<p class="foot">Zurück zur <button type="button" class="link-foot" onclick={() => switchSeg(1)}>Anmeldung</button></p>
+				<p class="foot-link"><button type="button" class="link-sm" onclick={() => switchSeg(1)}>Zurück zur Anmeldung</button></p>
 
 			{:else if view === 'forgot-sent'}
-				<Edgar pose="success" {dark} class="owl" />
-				<div class="title-block"><h1>Schauen Sie in Ihr Postfach</h1></div>
-				<div class="ok-banner" role="status">
-					<span class="ok-ico">✓</span>
-					Falls ein Konto mit dieser Adresse existiert, haben wir Ihnen eine E-Mail geschickt.
+				<!-- Lehrkraft: E-Mail versendet -->
+				<div class="card" role="status">
+					<p style="margin:0;font-size:15px;line-height:1.55">Falls ein Konto mit dieser Adresse existiert, haben wir Ihnen eine E-Mail mit einem Link geschickt. Der Link ist eine Stunde gültig.</p>
 				</div>
-				<p class="foot">Zurück zur <button type="button" class="link-foot" onclick={() => switchSeg(1)}>Anmeldung</button></p>
+				<p class="foot-link"><button type="button" class="link-sm" onclick={() => switchSeg(1)}>Zurück zur Anmeldung</button></p>
 			{/if}
 
 		</div>
@@ -496,140 +503,251 @@
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
-		padding: 64px 20px 80px;
+		padding: clamp(32px, 7vh, 96px) 20px 64px;
 	}
 
-	.form-wrap {
+	.wrap {
 		width: 100%;
-		max-width: 400px;
+		max-width: 440px;
 		display: flex;
 		flex-direction: column;
-		gap: 18px;
+		gap: 20px;
+		animation: tbIn .3s ease-out;
 	}
 
-	:global(.owl) { width: 88px; height: 79px; display: block; }
+	@keyframes tbIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+	@media (prefers-reduced-motion: reduce) { .wrap { animation: none; } }
 
-	/* Title */
-	.title-block { display: flex; flex-direction: column; gap: 6px; }
-	h1 { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
-	.sub { font-size: 15px; line-height: 22px; color: var(--ink-2); margin: 0; }
+	/* Hero */
+	.hero {
+		display: flex;
+		align-items: flex-end;
+		gap: 16px;
+	}
+	:global(.hero-owl) { width: 96px; height: 86px; flex: none; display: block; }
+	.hero-text { padding-bottom: 6px; }
+	.kicker { margin: 0 0 4px; font-size: 14px; color: var(--ink-3); }
+	h1 {
+		margin: 0;
+		font-size: clamp(26px, 2.2vw, 34px);
+		line-height: 1.1;
+		font-weight: 600;
+		letter-spacing: -0.025em;
+		text-wrap: balance;
+	}
 
-	/* Segment */
-	.segment { display: grid; grid-template-columns: 1fr 1fr; padding: 4px; border-radius: 8px; background: var(--subtle); font-size: 15px; font-weight: 500; }
-	.seg-btn { height: 40px; display: grid; place-items: center; border-radius: 6px; color: var(--ink-2); cursor: pointer; font-size: 15px; font-weight: 500; }
-	.seg-btn.on { background: var(--surface); box-shadow: 0 1px 2px rgb(15 23 42 / .1); color: var(--ink); }
+	/* Umschalter */
+	.segment {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		padding: 3px;
+		border-radius: 9px;
+		background: var(--subtle);
+	}
+	.seg-btn {
+		height: 36px;
+		display: grid;
+		place-items: center;
+		border-radius: 7px;
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--ink-2);
+		cursor: pointer;
+		font-family: inherit;
+		transition: background .15s, color .15s;
+	}
+	.seg-btn.on {
+		background: var(--surface);
+		box-shadow: 0 1px 3px rgb(15 23 42 / .1);
+		color: var(--ink);
+	}
 
-	/* Banners */
+	/* Karten */
+	.card {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		padding: 24px;
+		background: var(--surface);
+		border: 1px solid var(--line);
+		border-radius: 14px;
+	}
+
+	.card-intro { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+
+	/* Fehler-/Info-Banner in Karten */
+	.alert-err {
+		margin: 0;
+		padding: 12px 14px;
+		border-radius: 8px;
+		background: var(--danger-soft);
+		border: 1px solid var(--danger-line);
+		color: var(--danger-ink);
+		font-size: 14px;
+		line-height: 1.5;
+	}
+
+	/* Notice */
 	.notice-box {
-		display: flex; gap: 10px; padding: 12px 14px; border-radius: 10px;
-		border: 1px solid var(--accent-line); background: var(--accent-soft);
-		font-size: 14px; line-height: 20px; color: var(--accent-ink);
+		display: flex;
+		gap: 10px;
+		padding: 12px 14px;
+		border-radius: 8px;
+		border: 1px solid var(--accent-line);
+		background: var(--accent-soft);
+		font-size: 14px;
+		color: var(--accent-ink);
 	}
 	.notice-ico {
-		width: 20px; height: 20px; flex: none; border-radius: 999px;
-		background: var(--accent); color: #fff; display: grid; place-items: center;
-		font-size: 12px; font-weight: 700;
-	}
-	.err-banner {
-		display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
-		border: 1px solid var(--danger-line); background: var(--danger-soft);
-		font-size: 14px; line-height: 20px; color: var(--danger-ink);
-	}
-	.err-ico {
-		width: 20px; height: 20px; flex: none; border-radius: 999px;
-		background: var(--danger); color: #fff; display: grid; place-items: center;
-		font-size: 12px; font-weight: 700;
-	}
-	.ok-banner {
-		display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px;
-		border: 1px solid var(--ok-line); background: var(--ok-soft);
-		font-size: 14px; line-height: 20px; color: var(--ok-ink);
-	}
-	.ok-ico {
-		width: 20px; height: 20px; flex: none; border-radius: 999px;
-		background: var(--ok); color: #fff; display: grid; place-items: center;
-		font-size: 12px; font-weight: 700;
+		width: 18px; height: 18px; flex: none; border-radius: 999px;
+		background: var(--accent); color: #fff;
+		display: grid; place-items: center; font-size: 11px; font-weight: 700;
 	}
 
-	/* Form */
-	form { display: flex; flex-direction: column; gap: 18px; }
+	/* Info-Reihe (Klasse beitreten / Schüler beim Lehrer) */
+	.info-row {
+		flex-direction: row;
+		align-items: center;
+		gap: 14px;
+	}
+	.info-txt { margin: 0; flex: 1; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+	.info-txt strong { color: var(--ink); font-weight: 600; }
+
+	/* Felder */
 	.field { display: flex; flex-direction: column; gap: 6px; }
 	label { font-size: 14px; font-weight: 500; }
 	.label-row { display: flex; align-items: baseline; gap: 8px; }
 	.label-row label { flex: 1; }
-	.opt-label { font-size: 13px; color: var(--ink-3); }
+	.opt-lbl { font-size: 13px; color: var(--ink-3); font-weight: 400; }
 
-	input {
-		height: 44px; padding: 0 12px; border-radius: 6px;
-		border: 1px solid var(--line-strong); background: var(--surface);
-		font-size: 15px; font-family: inherit; color: var(--ink);
-		outline: none; width: 100%; box-sizing: border-box;
+	input[type="text"], input[type="email"], input[type="password"] {
+		height: 44px;
+		padding: 0 12px;
+		border-radius: 8px;
+		border: 1px solid var(--line-strong);
+		background: var(--surface);
+		font-size: 15px;
+		font-family: inherit;
+		color: var(--ink);
+		outline: none;
+		width: 100%;
+		box-sizing: border-box;
+		font-weight: 400;
 	}
 	input::placeholder { color: var(--ink-3); }
 	input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); border-width: 1.5px; }
 	input.err { border-color: var(--danger); border-width: 1.5px; }
 	input:disabled { opacity: 0.6; cursor: not-allowed; }
 
-	.field-hint { font-size: 13px; line-height: 18px; color: var(--ink-3); }
-	.err-hint { color: var(--danger-ink); }
+	.hint { font-size: 13px; line-height: 1.4; color: var(--ink-3); }
+	.hint.err { color: var(--danger-ink); }
 
-	/* Password rules */
-	.rules { display: flex; flex-wrap: wrap; gap: 6px 14px; }
-	.rules .ok { font-size: 13px; color: var(--ok-ink); }
-	.rules .no { font-size: 13px; color: var(--ink-3); }
+	/* Passwort-Regeln */
+	.rules {
+		margin: -2px 0 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		font-size: 13px;
+	}
+	.rules li { display: flex; align-items: center; gap: 8px; }
+	.rule-ok { color: var(--ok-ink); }
+	.rule-no { color: var(--ink-3); }
+	.rule-dot {
+		width: 14px; height: 14px; border-radius: 50%; flex: none;
+		display: grid; place-items: center;
+		background: var(--line); color: var(--ink-3); font-size: 10px;
+	}
+	.dot-ok { background: var(--ok); color: #fff; }
 
 	/* Checkbox */
-	.check-row { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 20px; }
-	.check-row.chk-err .checkbox { border-color: var(--danger); }
-	.checkbox {
-		width: 20px; height: 20px; flex: none; border-radius: 5px;
-		border: 1.5px solid var(--line-strong); background: var(--surface);
-		display: grid; place-items: center; font-size: 12px;
-		margin-top: 1px; cursor: pointer;
+	.check-row {
+		display: flex;
+		gap: 10px;
+		align-items: flex-start;
+		font-size: 14px;
+		line-height: 1.5;
+		color: var(--ink-2);
+		cursor: pointer;
 	}
-	.checkbox.checked { background: var(--accent); border-color: var(--accent); color: #fff; }
-	.link-inline { color: var(--accent-strong); text-decoration: underline; }
+	.check-row.chk-err { color: var(--danger-ink); }
+	.link-inline { color: var(--accent-ink); text-underline-offset: 3px; }
 
-	/* Button */
+	/* Buttons */
 	.btn-primary {
-		display: flex; align-items: center; justify-content: center;
-		height: 48px; border-radius: 6px; background: var(--accent); color: #fff;
-		font-size: 16px; font-weight: 500; cursor: pointer;
-		font-family: inherit; width: 100%;
+		height: 46px;
+		border-radius: 8px;
+		background: var(--accent);
+		color: #fff;
+		font-size: 15px;
+		font-weight: 600;
+		cursor: pointer;
+		font-family: inherit;
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background .15s;
 	}
 	.btn-primary:hover:not(:disabled) { background: var(--accent-strong); }
 	.btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
 
-	/* Footer links */
-	.foot { font-size: 14px; color: var(--ink-2); text-align: center; margin: 0; }
-	.link-sm { font-size: 13px; font-weight: 500; color: var(--accent-strong); cursor: pointer; font-family: inherit; }
-	.link-sm:hover { text-decoration: underline; }
-	.link-foot { font-size: 14px; font-weight: 500; color: var(--accent-strong); cursor: pointer; font-family: inherit; }
-	.link-foot:hover { text-decoration: underline; }
-	.foot-note { font-size: 13px; line-height: 18px; color: var(--ink-3); margin: 0; }
+	.btn-secondary {
+		flex: 1;
+		height: 44px;
+		border-radius: 8px;
+		border: 1px solid var(--line-strong);
+		background: var(--surface);
+		font-size: 14px;
+		font-weight: 500;
+		cursor: pointer;
+		font-family: inherit;
+		color: var(--ink);
+	}
+	.btn-secondary:hover { background: var(--subtle); }
 
+	.btn-row { display: flex; gap: 10px; }
+
+	/* Footer */
+	.foot-inline { margin: 0; font-size: 14px; color: var(--ink-2); }
+	.foot-link { margin: 0; font-size: 14px; }
+	.link-sm {
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--accent-ink);
+		cursor: pointer;
+		font-family: inherit;
+		text-underline-offset: 3px;
+	}
+	.link-sm:hover { text-decoration: underline; color: var(--accent-strong); }
+
+	.hint-note { font-size: 13px; line-height: 1.5; color: var(--ink-3); margin: 0; }
 
 	/* Wiederherstellungscode */
 	.recovery-box {
-		padding: 16px; border-radius: 10px; border: 1.5px dashed var(--line-strong); background: var(--subtle);
-		font-family: var(--font-mono, ui-monospace, monospace); font-size: 17px; line-height: 26px; text-align: center;
-		word-break: break-word; user-select: all; color: var(--ink);
+		padding: 16px;
+		border-radius: 10px;
+		border: 1.5px dashed var(--line-strong);
+		background: var(--subtle);
+		font-family: 'IBM Plex Mono', ui-monospace, monospace;
+		font-size: 17px;
+		line-height: 1.55;
+		text-align: center;
+		word-break: break-word;
+		user-select: all;
+		color: var(--ink);
 	}
-	.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-	.btn-secondary {
-		height: 44px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface);
-		font-size: 15px; font-weight: 500; color: var(--ink); cursor: pointer; font-family: inherit;
-	}
-	.btn-secondary:hover { background: var(--subtle); }
 	@media print {
 		:global(body *) { visibility: hidden; }
-		.recovery-box { visibility: visible; }
-		.recovery-box { position: absolute; top: 40px; left: 40px; right: 40px; border: 1px solid #000; }
+		.recovery-box { visibility: visible; position: absolute; top: 40px; left: 40px; right: 40px; border: 1px solid #000; }
 	}
 
-	@media (max-width: 767px) {
-		.center { padding: 24px 20px 48px; }
-		h1 { font-size: 26px; line-height: 32px; }
-		.form-wrap { gap: 16px; }
+	@media (max-width: 480px) {
+		.center { padding: 24px 16px 48px; }
+		.hero { gap: 12px; }
+		:global(.hero-owl) { width: 72px; height: 65px; }
+		.info-row { flex-direction: column; align-items: flex-start; }
 	}
 </style>

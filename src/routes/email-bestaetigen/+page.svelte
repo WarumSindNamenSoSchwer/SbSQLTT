@@ -67,11 +67,13 @@
 
 <style>
 	.page { min-height: 100dvh; display: flex; flex-direction: column; }
-	.center { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 64px 20px 80px; }
-	.form-wrap { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 18px; }
+	.center { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: clamp(32px,7vh,96px) 20px 64px; }
+	.form-wrap { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 20px; animation: tbIn .3s ease-out; }
+	@keyframes tbIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+	@media (prefers-reduced-motion: reduce) { .form-wrap { animation: none; } }
 	:global(.owl) { width: 88px; height: 79px; display: block; }
 	.title-block { display: flex; flex-direction: column; gap: 6px; }
-	h1 { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+	h1 { font-size: clamp(26px,2.2vw,34px); line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; margin: 0; }
 	.sub { font-size: 15px; line-height: 22px; color: var(--ink-2); margin: 0; }
 	.hint { font-size: 14px; line-height: 20px; color: var(--ink-2); margin: 0; }
 	.btn-primary { display: flex; align-items: center; justify-content: center; height: 48px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 500; text-decoration: none; }
