@@ -11,3 +11,8 @@ Zugangsdaten des Testkontos aus `~/.jcode/scratch/testkonto.json` (nicht im Repo
 | `ext-check.mjs` | live oder lokal | keine Anfragen an fremde Server auf 12 Seiten |
 | `local-e2e.mjs` | lokal (`tools/dev-stack.sh start`) | Registrierung mit Wiederherstellungscode, Klasse anlegen, kompletter Ablauf (13) |
 | `quiz-e2e.mjs` | lokal | Live-Quiz: Beamer + Handy über /quiz/PIN, Antwort mit Punkten |
+
+## Testanleitung (PDF für Lehrkräfte)
+`shots.mjs teacher|student|register` und `quiz-shots.mjs` machen die Bilder am Live-System (Testkonto),
+`build-doc.mjs` baut daraus `anleitung.html`, `topdf` (Swift, im Scratch-Ordner) druckt das PDF.
+Stand 30.10.2026: Bilder im Design v12.
