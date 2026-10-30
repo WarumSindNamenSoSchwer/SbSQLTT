@@ -335,16 +335,45 @@
 <div class="tb page">
 	<!-- ================= Kopfleiste ================= -->
 	<header class="top">
-		<a class="back-link" href="/learn" aria-label="Zurück zu den Lektionen"><span class="arr back"></span><span class="hide-sm hide-md">Lektionen</span></a>
-		<span class="sep hide-sm hide-md"></span>
-		<span class="ltitle hide-sm"><span class="hide-md">Lektion {lesson.no}&nbsp;·{' '}</span>{lesson.title}</span>
-		<div class="progress">
-			<div class="dots">
-				{#each dots as d}<span class="pdot {d}"></span>{/each}
-			</div>
-			<span class="steplbl">{stepLabel}</span>
+		<a class="back-link" href="/learn" aria-label="Zurück zu den Lektionen">
+			<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"></path></svg>
+			<span class="hide-sm">Lektionen</span>
+		</a>
+		<span class="sep hide-sm"></span>
+		<div class="ltitle-block hide-sm">
+			<span class="ltitle-kicker">{lesson.trackLabel} · Lektion {lesson.no}</span>
+			<span class="ltitle">{lesson.title}</span>
 		</div>
-		<div class="md-only step-dd">
+		<!-- Segment-Fortschrittsanzeige -->
+		<nav class="segs-nav" aria-label="Schritte der Lektion">
+			<div class="segs">
+				{#each lesson.steps as x, i}
+					{@const segDone = finished || i < cur}
+					{@const segCur = !finished && i === cur}
+					{@const segLocked = i > reached}
+					<button
+						type="button"
+						title={x.name}
+						aria-label={x.name}
+						aria-current={segCur ? 'step' : undefined}
+						disabled={segLocked}
+						onclick={() => goto(i)}
+						class="seg-btn"
+					>
+						<span class="seg-bar" class:seg-done={segDone} class:seg-cur={segCur} class:seg-locked={segLocked}></span>
+					</button>
+				{/each}
+			</div>
+			<span class="steplbl mono">{stepLabel}</span>
+		</nav>
+		<div class="top-actions">
+			<button class="icon-btn" title="Datenbank herunterladen (.db)" aria-label="Datenbank herunterladen" onclick={download} disabled={!db}>
+				<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"></path></svg>
+			</button>
+			<span class="avatar" title={session.displayName || 'Gast'}>{avatarInitials()}</span>
+		</div>
+		<!-- Mobil: Schritte-Dropdown -->
+		<div class="sm-steps">
 			<button class="chip mono" onclick={() => (stepMenu = !stepMenu)} aria-expanded={stepMenu}>{stepLabel} ▾</button>
 			{#if stepMenu}
 				<div class="dd" role="menu">
@@ -356,19 +385,6 @@
 				</div>
 			{/if}
 		</div>
-		<button class="chip mono hide-sm" title="Datenbank herunterladen (.db), z. B. für Python" onclick={download} disabled={!db}>⬇ .db</button>
-		<span class="avatar hide-sm" title={session.displayName || 'Gast'}>{avatarInitials()}</span>
-		<button class="icon44 sm-only" aria-label="Menü" onclick={() => (menu = !menu)}>⋯</button>
-		{#if menu}
-			<div class="dd right sm-only" role="menu">
-				<button class="dd-item" onclick={() => { download(); menu = false; }}>⬇ Datenbank herunterladen (.db)</button>
-				{#each lesson.steps as x, i}
-					<button class="dd-item" class:on={i === cur} disabled={i > reached} onclick={() => goto(i)}>
-						<span class="mk">{i === cur ? '●' : i < reached || finished ? '✓' : '○'}</span>{x.name}
-					</button>
-				{/each}
-			</div>
-		{/if}
 	</header>
 
 	{#if finished}
@@ -394,263 +410,330 @@
 				</div>
 			</div>
 		</main>
-	{:else}
-		<div class="body" class:norail={!railOpen}>
-			<!-- ================= Schritte ================= -->
-			<nav class="rail" aria-label="Schritte">
-				<span class="lbl rail-lbl">SCHRITTE</span>
-				{#each lesson.steps as x, i}
-					<button class="rstep" class:cur={i === cur} disabled={i > reached} title={i > reached ? 'Erst die Schritte davor abschließen' : undefined} onclick={() => goto(i)}>
-						<span class="rmk" class:muted={i > reached}>{i === cur ? '●' : i <= reached ? '✓' : '○'}</span>
-						<span class="rtxt"><span class="rname" class:open={i > reached}>{x.name}</span><span class="rtype">{x.type}</span></span>
-					</button>
-				{/each}
-				<span class="grow"></span>
-				<button class="rcollapse" onclick={() => (railOpen = false)}>« Einklappen</button>
-			</nav>
-			{#if !railOpen}
-				<button class="rail-open" onclick={() => (railOpen = true)} aria-label="Schritte ausklappen">»</button>
-			{/if}
-
-			<div class="main" data-main>
-				{#if step.kind === 'explain'}
-					<div class="read" style="padding-top:56px">
-						<div class="col">
-							<span class="lbl">SCHRITT {cur + 1} · ERKLÄRUNG</span>
-							<h1 class="h1">{step.title}</h1>
-							{#each step.paras as p}<p class="para">{p}</p>{/each}
-							<div class="code-card">
-								<div class="cc-head"><span>BEISPIEL</span><span class="hide-sm">{lesson.db.name}</span></div>
-								<div class="cc-body">
-									{#each step.example.split('\n') as l, i}
-										<div class="cl"><span class="cn">{i + 1}</span><span class="ct">{#each tok(l) as t}<span style="color:{t.c}">{t.t}</span>{/each}</span></div>
-									{/each}
-								</div>
-								<div class="cc-foot"><button class="try" onclick={() => tryExample(step.example)}>Ausprobieren<span class="arr"></span></button></div>
-							</div>
-						</div>
-					</div>
-				{:else if step.kind === 'summary'}
-					<div class="read" style="padding-top:48px">
-						<div class="col" style="gap:22px">
-							<div class="sum-head">
-								<div class="sum-title">
-									<span class="lbl">SCHRITT {cur + 1} · ZUSAMMENFASSUNG</span>
-									<h1 class="h1">{step.title}</h1>
-								</div>
-								<Edgar pose="read" {dark} class="sum-owl" />
-							</div>
-							<div class="sum-list">
-								{#each step.points as p, i}
-									<div class="sum-row"><span class="sum-n">{String(i + 1).padStart(2, '0')}</span><span>{p}</span></div>
-								{/each}
-							</div>
-							<div class="real">
-								<span class="real-t">Wozu braucht man das in echt?</span>
-								<span class="real-b">{step.real}</span>
-							</div>
-						</div>
-					</div>
-				{:else}
-					<!-- ================= Aufgabe ================= -->
-					<h1 class="sr-only">{lesson.title}: {step.task}</h1>
-					<div class="task">
-						<div class="task-txt">
-							<span class="lbl task-lbl">{taskLabel}</span>
-							<span class="task-t">{step.task}</span>
-							<span class="task-s">{step.taskSub}</span>
-						</div>
-						{#if attemptLabel}<span class="attempt mono">{attemptLabel}</span>{/if}
-					</div>
-					<!-- mobil: Aufgabe zugeklappt nach erstem Ausfuehren -->
-					<div class="m-work">
-						{#if !s.ran}
-							<div class="m-task">
-								<span class="lbl" style="font-size:11px">{taskLabel}</span>
-								<span class="m-task-t">{step.task}</span>
-								<span class="task-s">{step.taskSub}</span>
-							</div>
-						{:else}
-							<button class="m-task-c" onclick={() => (s.ran = false)}>
-								<span class="lbl" style="font-size:11px">AUFGABE</span><span class="m-task-ct">{step.task}</span><span class="muted">▾</span>
-							</button>
-						{/if}
-						<button class="m-schema" onclick={() => (sheet = true)}>
-							<span class="m-schema-t">Schema</span><span class="m-schema-s mono">{schema.map((t) => t.table).join(' · ')}</span><span class="muted">↑</span>
-						</button>
-					</div>
-
-					{#if dbState === 'fail'}
-						<div class="dbfail">
-							<div class="dbfail-in">
-								<Edgar pose="sleep" {dark} style="width:150px;height:135px" />
-								<span class="h2">Datenbank konnte nicht geladen werden</span>
-								<span class="dbfail-s">Prüfe die Internetverbindung und versuch es noch einmal. Deine Abfrage bleibt erhalten.</span>
-								<button class="btn primary" onclick={loadDb}>↻ Erneut versuchen</button>
-							</div>
-						</div>
-					{:else}
-						<div class="work">
-							<!-- Schema -->
-							<aside class="schema">
-								<span class="lbl" style="padding-bottom:6px">SCHEMA</span>
-								{#each schema as t}
-									<button class="tbl mono" onclick={() => (openTables[t.table] = !openTables[t.table])} ondblclick={() => insertName(t.table)}>
-										<span class="muted">{openTables[t.table] ? '▾' : '▸'}</span>{t.table}
-									</button>
-									{#if openTables[t.table]}
-										{#each t.cols as c}
-											<button class="col-row mono" onclick={() => editor?.insert(c.name)}>
-												<span class="grow">{c.name}</span>
-												{#if c.key}<span class="key">{c.key}</span>{/if}
-												<span class="ctype">{c.type}</span>
-											</button>
-										{/each}
-									{/if}
-								{/each}
-								<span class="grow"></span>
-								<span class="schema-hint">Klick auf einen Namen fügt ihn in den Editor ein.</span>
-							</aside>
-
-							<div class="ide">
-								<div class="editor" class:compact={resTab === 'viz' && viz}>
-									<div class="ed-head mono">
-										<span>query.sql</span>
-										{#if badge}<span class="ed-badge">{badge}</span>{/if}
-										<span class="grow"></span>
-										<span class="ed-sql">SQL</span>
-										<button class="m-reset" onclick={() => (dialog = 'reset')}>Zurücksetzen</button>
-									</div>
-									<div class="ed-body d-ed">
-										<CodeEditor bind:this={editor} bind:value={s.code} errLine={s.state === 'error' ? s.errLine : null} onrun={exec} />
-									</div>
-									<div class="ed-body m-ed">
-										<CodeEditor bind:this={mEditor} bind:value={s.code} errLine={s.state === 'error' ? s.errLine : null} onrun={exec} size="sm" minLines={6} />
-									</div>
-									<div class="ed-foot">
-										{#if s.state === 'running'}
-											<span class="run disabled">Läuft …</span>
-										{:else if runLabel === 'primary'}
-											<button class="run primary" onclick={exec} disabled={dbState !== 'ok'}>▶ Ausführen</button>
-										{:else}
-											<button class="run secondary" onclick={exec}>▶ Erneut ausführen</button>
-										{/if}
-										<button class="reset" onclick={() => (dialog = 'reset')}>Zurücksetzen</button>
-										<span class="grow"></span>
-										<span class="kbd mono">Strg / ⌘ + Enter</span>
-									</div>
-								</div>
-
-								<div class="result">
-									<div class="res-head">
-										<div class="res-tabs" role="tablist">
-											<button role="tab" class="res-tab lbl" class:on={resTab === 'result'} aria-selected={resTab === 'result'} onclick={() => (resTab = 'result')}>ERGEBNIS</button>
-											<button role="tab" class="res-tab lbl" class:on={resTab === 'viz'} aria-selected={resTab === 'viz'} disabled={!viz} onclick={() => (resTab = 'viz')}>WAS PASSIERT?</button>
-										</div>
-										<span class="mono res-n">{s.state === 'running' ? '' : resultCount}</span>
-									</div>
-									{#if s.state === 'running'}
-										<div class="res-empty"><span class="spin"></span>Abfrage läuft …</div>
-									{:else if dbState === 'loading'}
-										<div class="res-empty"><span class="spin"></span>Datenbank wird geladen …</div>
-									{:else if resTab === 'viz' && viz}
-										<QueryViz {viz} />
-									{:else if s.result && s.state !== 'error'}
-										<div class="res-table">
-											<div class="res-row res-hd" style="grid-template-columns:{grid}">
-												{#each s.result.columns as c}<span class="mono">{c}</span>{/each}
-											</div>
-											{#each shownRows as r}
-												<div class="res-row" style="grid-template-columns:{grid}">
-													{#each r as c}<span>{c === null ? 'NULL' : c}</span>{/each}
-												</div>
-											{/each}
-											{#if s.result.rows.length > 100}
-												<div class="res-more">Erste 100 von {s.result.rows.length.toLocaleString('de-DE')} Zeilen</div>
-											{/if}
-											{#if s.result.rows.length === 0}
-												<div class="res-more">Keine Zeile erfüllt die Bedingung.</div>
-											{/if}
-										</div>
-									{:else}
-										<div class="res-empty">{emptyText}</div>
-									{/if}
-								</div>
-							</div>
-						</div>
-					{/if}
-				{/if}
-			</div>
-		</div>
-
-		<!-- ================= Feedback-Leiste ================= -->
-		<footer class="fb" class:nomsg={step.kind === 'explain' || step.kind === 'summary'} data-tone={fb.tone} aria-live="polite">
-			{#if fb.footOwl}
-				{#key fb.owl + cur + s?.attempts}
-					<Edgar pose={fb.owl} mode={fb.owlMode} {dark} class="fb-owl" />
-				{/key}
-			{/if}
-			<span class="fb-ico" aria-hidden="true">{fb.icon}</span>
-			<div class="fb-txt">
-				<span class="fb-msg"><span class="m-ico" aria-hidden="true">{fb.icon}&nbsp;</span>{fb.msg}</span>
-				{#if fb.sub}<span class="fb-sub">{fb.sub}</span>{/if}
-				{#if fb.orig}<span class="fb-orig mono">▾ Originalfehler: {fb.orig}</span>{/if}
-			</div>
-			{#if step.kind === 'exercise' && s.tipOpen && s.state === 'wrong'}
-				<div class="tip">
-					<span class="lbl tip-lbl">EIN TIPP VON EDGAR</span>
-					<span class="tip-t">{step.tip}</span>
-					<button class="tip-sol" onclick={() => (dialog = 'solution')}>Lösung zeigen</button>
-				</div>
-			{/if}
-			{#if guestHint && step.kind === 'exercise' && s.state === 'solved'}
-				<span class="guest hide-sm">Melde dich an, um deinen Fortschritt zu sichern. <a href="/login" class="guest-a">Anmelden</a><button class="guest-x" aria-label="Hinweis schließen" onclick={closeGuest}>✕</button></span>
-			{/if}
-			<div class="fb-btns">
-				{#if tipBtn}<button class="btn tipbtn" onclick={() => (s.tipOpen = true)}>Tipp anzeigen</button>{/if}
-				<button class="btn secondary hide-sm" onclick={back} disabled={cur === 0}><span class="arr back"></span><span class="hide-md">Zurück</span></button>
-				{#if canNext}
-					<button class="btn primary hide-sm" onclick={next}>{nextLabel}<span class="arr"></span></button>
-				{:else}
-					<span class="btn disabled hide-sm" title="Erst nach richtiger Lösung">{nextLabel}<span class="arr"></span></span>
-				{/if}
-			</div>
-			<!-- mobil: grosser Hauptbutton -->
-			<div class="m-main">
-				{#if canNext}
-					<button class="m-btn primary" onclick={next}>{nextLabel}{#if step.kind !== 'summary'}<span class="arr"></span>{/if}</button>
-				{:else}
-					<button class="m-btn primary" onclick={exec} disabled={dbState !== 'ok' || s.state === 'running'}>{s.state === 'running' ? 'Läuft …' : '▶ Ausführen'}</button>
-				{/if}
-				{#if tipBtn}<button class="m-btn secondary" onclick={() => (s.tipOpen = true)}>Tipp anzeigen</button>{/if}
-			</div>
-		</footer>
-	{/if}
-
-	{#if finished}
 		<div class="m-done-btns">
 			{#if lesson.next}<a class="m-btn primary" href="/learn/{lesson.track}/{lesson.next.id}">Nächste Lektion<span class="arr"></span></a>{/if}
 			<a class="m-btn secondary" href="/learn">Zur Übersicht</a>
 		</div>
-	{/if}
-
-	<!-- ================= Dialoge ================= -->
-	{#if dialog}
-		<div class="scrim" role="presentation" onclick={() => (dialog = null)}>
-			<div class="dlg" role="dialog" aria-modal="true" tabindex="-1" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
-				{#if dialog === 'reset'}
-					<span class="dlg-t">Abfrage zurücksetzen?</span>
-					<span class="dlg-b">Deine Abfrage wird durch den Startcode ersetzt.</span>
-					<div class="dlg-btns"><button class="btn secondary" onclick={() => (dialog = null)}>Abbrechen</button><button class="btn primary" onclick={doReset}>Zurücksetzen</button></div>
-				{:else}
-					<span class="dlg-t">Lösung wirklich anzeigen?</span>
-					<span class="dlg-b">Die Lösung ersetzt deine Abfrage im Editor. Mit dem Tipp schaffst du es vielleicht auch selbst.</span>
-					<div class="dlg-btns"><button class="btn secondary" onclick={() => (dialog = null)}>Selbst weiterprobieren</button><button class="btn primary" onclick={doSolution}>Lösung zeigen</button></div>
-				{/if}
+	{:else if step.kind === 'explain'}
+		<!-- ================= Erklärung ================= -->
+		<main class="read-main" data-main>
+			<div class="col">
+				<div class="step-badge-row">
+					<span class="step-badge">Erklärung</span>
+					<span class="step-name-sm">{step.name}</span>
+				</div>
+				<h1 class="h1">{step.title}</h1>
+				{#each step.paras as p}<p class="para">{p}</p>{/each}
+				<div class="code-card">
+					<div class="cc-head"><span>Beispiel</span><span class="hide-sm">{lesson.db.name}</span></div>
+					<div class="cc-body">
+						{#each step.example.split('\n') as l, i}
+							<div class="cl"><span class="cn">{i + 1}</span><span class="ct">{#each tok(l) as t}<span style="color:{t.c}">{t.t}</span>{/each}</span></div>
+						{/each}
+					</div>
+					<div class="cc-foot">
+						<button class="try-btn" onclick={() => tryExample(step.example)}>Im Editor ausprobieren
+							<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+						</button>
+					</div>
+				</div>
 			</div>
-		</div>
+		</main>
+		<footer class="nav-foot">
+			<button class="nav-btn secondary" onclick={back} disabled={cur === 0}>
+				<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8H3M7.5 3.5 3 8l4.5 4.5"></path></svg>
+				Zurück
+			</button>
+			<span class="nav-hint">Lies die Erklärung, dann weiter.</span>
+			<button class="nav-btn primary" onclick={next}>Weiter
+				<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+			</button>
+		</footer>
+	{:else if step.kind === 'summary'}
+		<!-- ================= Zusammenfassung ================= -->
+		<main class="read-main" data-main>
+			<div class="col">
+				<div class="sum-head">
+					<Edgar pose="read" {dark} class="sum-owl" />
+					<div>
+						<div class="step-badge-row">
+							<span class="step-badge">Zusammenfassung</span>
+						</div>
+						<h1 class="h1">{step.title}</h1>
+					</div>
+				</div>
+				<ul class="sum-list">
+					{#each step.points as p}
+						<li class="sum-row">
+							<svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px"><path d="M3 8.5 6.5 12 13 4.5"></path></svg>
+							{p}
+						</li>
+					{/each}
+				</ul>
+				<div class="real-card">
+					<h2 class="real-t">Wozu braucht man das in echt?</h2>
+					<p class="real-b">{step.real}</p>
+				</div>
+			</div>
+		</main>
+		<footer class="nav-foot">
+			<button class="nav-btn secondary" onclick={back} disabled={cur === 0}>
+				<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8H3M7.5 3.5 3 8l4.5 4.5"></path></svg>
+				Zurück zur letzten Übung
+			</button>
+			<span class="nav-hint"></span>
+			<button class="nav-btn primary" onclick={next}>Lektion abschließen
+				<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+			</button>
+		</footer>
+	{:else}
+		<!-- ================= Aufgabe / Beispiel ================= -->
+		<main class="work-main" data-main>
+			<h1 class="sr-only">{lesson.title}: {step.task}</h1>
+
+			<!-- Linke Spalte: Aufgabe + Schema + Gast-Hinweis -->
+			<section class="left-col" aria-label="Aufgabe">
+				<div class="task-card">
+					<div class="step-badge-row">
+						<span class="step-badge">{taskLabel}</span>
+						<span class="step-name-sm">{step.name}</span>
+					</div>
+					<h2 class="task-title">{step.task}</h2>
+					{#if step.taskSub}<p class="task-sub">{step.taskSub}</p>{/if}
+
+				</div>
+
+				<!-- Schema-Akkordeon -->
+				<div class="schema-card">
+					<div class="schema-head">
+						<h2 class="schema-title">Schema</h2>
+						<span class="schema-hint">Klick fügt den Namen ein</span>
+					</div>
+					{#if dbState === 'loading'}
+						<div class="schema-loading">
+							<div class="skel"></div><div class="skel w70"></div><div class="skel w55"></div>
+						</div>
+					{/if}
+					{#each schema as t}
+						<div class="schema-tbl-block">
+							<div class="schema-tbl-row">
+								<button class="schema-toggle" onclick={() => (openTables[t.table] = !openTables[t.table])} aria-expanded={openTables[t.table]} aria-label="Tabelle {t.table} auf- oder zuklappen">
+									<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:{openTables[t.table] ? 'rotate(90deg)' : 'none'};transition:transform .15s"><path d="M6 3.5 10.5 8 6 12.5"></path></svg>
+								</button>
+								<button class="schema-tbl-btn mono" onclick={() => insertName(t.table)}>
+									<span class="schema-tbl-name">{t.table}</span>
+									<span class="schema-count">{total} Zeilen</span>
+								</button>
+							</div>
+							{#if openTables[t.table]}
+								<div class="schema-cols">
+									{#each t.cols as c}
+										<button class="schema-col-btn mono" onclick={() => insertName(c.name)}>
+											<span class="schema-col-name">{c.name}</span>
+											<span class="schema-col-type">{c.type}</span>
+											{#if c.key}<span class="schema-col-key">{c.key}</span>{/if}
+										</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
+					{/each}
+					{#if dbState === 'fail'}
+						<div class="schema-fail">
+							<Edgar pose="sleep" {dark} style="width:64px;height:58px" />
+							<div>
+								<p class="schema-fail-t">Datenbank konnte nicht geladen werden.</p>
+								<button class="schema-retry" onclick={loadDb}>Erneut versuchen</button>
+							</div>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Gast-Hinweis -->
+				{#if guestHint}
+					<div class="guest-card">
+						<p class="guest-txt">Fortschritt wird nur in diesem Browser gespeichert. Mit dem Klassencode deiner Lehrkraft kannst du einer <a href="/beitreten">Klasse beitreten</a>.</p>
+						<button class="guest-close" onclick={closeGuest} aria-label="Hinweis schließen">
+							<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg>
+						</button>
+					</div>
+				{/if}
+			</section>
+
+			<!-- Rechte Spalte: Editor + Feedback + Ergebnis -->
+			<section class="right-col" aria-label="Editor und Ergebnis">
+				<!-- Editor-Karte -->
+				<div class="editor-card">
+					<div class="ed-head">
+						<label for="tb-query" class="mono ed-label">query.sql</label>
+						<div class="ed-actions">
+							{#if step.kind === 'exercise'}
+								<button
+									class="ed-action-btn"
+									class:tip-active={s.tipOpen}
+									onclick={() => (s.tipOpen = !s.tipOpen)}
+									disabled={s.attempts < 3}
+									title={s.attempts < 3 ? 'Tipp freigeschaltet nach 3 Versuchen' : 'Tipp von Edgar'}
+								>
+									<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5h4M6.5 14.5h3M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.1V11h4v-.2c0-.4.2-.8.6-1.1A4.5 4.5 0 0 0 8 1.5Z"></path></svg>
+									Tipp
+								</button>
+								{#if s.attempts >= 3}
+									<button class="ed-action-btn" onclick={() => (dialog = 'solution')}>Lösung zeigen</button>
+								{/if}
+							{/if}
+							<button class="ed-action-btn" onclick={() => (dialog = 'reset')} title="Startcode wiederherstellen">
+								<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 3v3.5H6"></path><path d="M3 9.5A5 5 0 1 0 4 4.4L2.5 6.5"></path></svg>
+								Zurücksetzen
+							</button>
+							<!-- Bestätigungs-Popover -->
+							{#if dialog}
+								<div class="confirm-pop" role="alertdialog" onclick={(e) => e.stopPropagation()} onkeydown={() => {}}>
+									{#if dialog === 'reset'}
+										<p class="confirm-title">Abfrage zurücksetzen?</p>
+										<p class="confirm-text">Deine Abfrage wird durch den Startcode ersetzt.</p>
+										<div class="confirm-btns">
+											<button class="btn-sm secondary" onclick={() => (dialog = null)}>Abbrechen</button>
+											<button class="btn-sm primary" onclick={doReset}>Zurücksetzen</button>
+										</div>
+									{:else}
+										<p class="confirm-title">Lösung wirklich anzeigen?</p>
+										<p class="confirm-text">Die Lösung ersetzt deine Abfrage. Mit dem Tipp schaffst du es vielleicht auch selbst.</p>
+										<div class="confirm-btns">
+											<button class="btn-sm secondary" onclick={() => (dialog = null)}>Weiterprobieren</button>
+											<button class="btn-sm primary" onclick={doSolution}>Lösung zeigen</button>
+										</div>
+									{/if}
+								</div>
+								<div class="confirm-scrim" role="presentation" onclick={() => (dialog = null)}></div>
+							{/if}
+						</div>
+					</div>
+					<!-- Desktop-Editor -->
+					<div class="ed-body">
+						<CodeEditor bind:this={editor} bind:value={s.code} errLine={s.state === 'error' ? s.errLine : null} onrun={exec} />
+					</div>
+					<!-- Mobil-Editor -->
+					<div class="ed-body-sm">
+						<CodeEditor bind:this={mEditor} bind:value={s.code} errLine={s.state === 'error' ? s.errLine : null} onrun={exec} size="sm" minLines={6} />
+					</div>
+					<div class="ed-foot">
+						{#if s.state === 'running'}
+							<button class="run-btn" disabled>
+								<span class="spin-sm"></span>Läuft …
+							</button>
+						{:else}
+							<button class="run-btn" class:run-primary={runLabel === 'primary'} onclick={exec} disabled={dbState !== 'ok'}>
+								<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"></path></svg>
+								Ausführen
+							</button>
+						{/if}
+						<span class="ed-hint"><kbd class="mono">Strg / ⌘</kbd> + <kbd class="mono">Enter</kbd></span>
+						{#if attemptLabel}<span class="attempt-lbl mono">{attemptLabel}</span>{/if}
+					</div>
+				</div>
+
+				<!-- Feedback-Box mit Edgar -->
+				<div
+					class="fb-card"
+					class:fb-ok={fb.tone === 'ok'}
+					class:fb-danger={fb.tone === 'danger'}
+					class:fb-accent={fb.tone === 'accent'}
+					id="tb-feedback"
+					aria-live="polite"
+				>
+					{#key fb.owl + cur + s?.attempts}
+						<Edgar pose={fb.owl} mode={fb.owlMode} {dark} class="fb-owl" />
+					{/key}
+					<div class="fb-body">
+						<p class="fb-msg">{fb.msg}</p>
+						{#if fb.sub}<p class="fb-sub">{fb.sub}</p>{/if}
+						{#if fb.orig}<p class="fb-orig mono">{fb.orig}</p>{/if}
+					</div>
+					{#if canNext}
+						<button class="fb-next" onclick={next}>Weiter
+							<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+						</button>
+					{/if}
+				</div>
+
+				<!-- Tipp-Box -->
+				{#if step.kind === 'exercise' && s.tipOpen && s.state === 'wrong'}
+					<div class="tip-card">
+						<strong class="tip-lbl">Tipp von Edgar</strong>
+						<span class="tip-txt">{step.tip}</span>
+					</div>
+				{/if}
+
+				<!-- Ergebnis -->
+				<div class="result-card">
+					<div class="result-head">
+						<h2 class="result-title">Ergebnis</h2>
+						<div class="res-tabs" role="tablist">
+							<button role="tab" class="res-tab" class:on={resTab === 'result'} aria-selected={resTab === 'result'} onclick={() => (resTab = 'result')}>Tabelle</button>
+							<button role="tab" class="res-tab" class:on={resTab === 'viz'} aria-selected={resTab === 'viz'} disabled={!viz} onclick={() => (resTab = 'viz')}>Was passiert?</button>
+						</div>
+						<span class="mono result-n">{s?.state === 'running' ? '' : resultCount}</span>
+					</div>
+					{#if s?.state === 'running'}
+						<div class="res-empty"><span class="spin"></span>Abfrage läuft …</div>
+					{:else if dbState === 'loading'}
+						<div class="res-empty"><span class="spin"></span>Datenbank wird geladen …</div>
+					{:else if resTab === 'viz' && viz}
+						<QueryViz {viz} />
+					{:else if s?.result && s.state !== 'error'}
+						<div class="res-table">
+							<div class="res-row res-hd" style="grid-template-columns:{grid}">
+								{#each s.result.columns as c}<span class="mono">{c}</span>{/each}
+							</div>
+							{#each shownRows as r}
+								<div class="res-row" style="grid-template-columns:{grid}">
+									{#each r as c}<span>{c === null ? 'NULL' : c}</span>{/each}
+								</div>
+							{/each}
+							{#if s.result.rows.length > 100}
+								<div class="res-more">Erste 100 von {s.result.rows.length.toLocaleString('de-DE')} Zeilen</div>
+							{/if}
+							{#if s.result.rows.length === 0}
+								<div class="res-more">Keine Zeile erfüllt die Bedingung.</div>
+							{/if}
+						</div>
+					{:else}
+						<div class="res-empty">{emptyText}</div>
+					{/if}
+				</div>
+			</section>
+
+			<!-- Mobil: Schema-Button -->
+			<button class="m-schema-btn sm-only" onclick={() => (sheet = true)}>
+				Schema: {schema.map((t) => t.table).join(', ')}
+				<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13.5V2.5M3.5 8 8 3.5 12.5 8"></path></svg>
+			</button>
+		</main>
+
+		<!-- ================= Fussleiste ================= -->
+		<footer class="nav-foot">
+			<button class="nav-btn secondary" onclick={back} disabled={cur === 0}>
+				<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 8H3M7.5 3.5 3 8l4.5 4.5"></path></svg>
+				Zurück
+			</button>
+			<span class="nav-hint">{canNext ? '' : 'Lösung erst ausführen'}</span>
+			{#if tipBtn}
+				<button class="nav-btn tip-nav" onclick={() => (s.tipOpen = true)}>Tipp anzeigen</button>
+			{/if}
+			{#if canNext}
+				<button class="nav-btn primary" onclick={next}>{nextLabel}
+					<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+				</button>
+			{:else}
+				<button class="nav-btn primary" disabled>{nextLabel}
+					<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+				</button>
+			{/if}
+		</footer>
 	{/if}
 
+	<!-- ================= Schema-Sheet (Mobil) ================= -->
 	{#if sheet}
 		<div class="scrim sheet-scrim" role="presentation" onclick={() => (sheet = false)}></div>
 		<div class="sheet" role="dialog" aria-label="Schema">
@@ -678,332 +761,300 @@
 
 <style>
 	.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-	/* ---------- Grundgeruest (Werte 1:1 aus Lektion B2) ---------- */
-	.page { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-	.grow { flex: 1; }
+	.mono { font-family: var(--mono); }
 	.muted { color: var(--ink-3); }
-	.h1 { margin: 0; font-size: 36px; line-height: 44px; font-weight: 600; letter-spacing: -0.015em; }
-	.h2 { font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; }
-
+	.grow { flex: 1; }
+	.page { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 	/* Kopfleiste */
-	.top { height: 56px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-bottom: 1px solid var(--line); background: var(--surface); position: relative; z-index: 5; }
-	.back-link { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 6px; font-size: 14px; font-weight: 500; color: var(--ink-2); }
-	.back-link:hover { background: var(--subtle); }
-	.sep { width: 1px; height: 20px; background: var(--line); }
-	.ltitle { font-size: 15px; font-weight: 500; white-space: nowrap; }
-	.progress { flex: 1; display: flex; justify-content: center; align-items: center; gap: 12px; }
-	.dots { display: flex; align-items: center; gap: 6px; }
-	.pdot { width: 8px; height: 8px; border-radius: 999px; background: var(--line-strong); }
-	.pdot.done { background: var(--accent); }
-	.pdot.cur { width: 22px; background: var(--accent); }
-	.steplbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); }
-	.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line-strong) !important; font-size: 12px; color: var(--ink-2) !important; }
-	.chip:hover:not(:disabled) { background: var(--subtle) !important; }
-	.avatar { width: 32px; height: 32px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
-	.icon44 { width: 44px; height: 44px; display: grid; place-items: center; font-size: 18px; color: var(--ink-2) !important; }
-	.dd { position: absolute; top: 48px; z-index: 20; min-width: 240px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-pop); padding: 6px; display: flex; flex-direction: column; }
-	.dd.right { right: 8px; }
-	.dd-item { display: flex; gap: 10px; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 6px; font-size: 14px; }
-	.dd-item:hover, .dd-item.on { background: var(--accent-soft) !important; color: var(--accent-ink) !important; }
-	.dd-item .mk { width: 16px; color: var(--accent); }
-	.step-dd { position: relative; }
+	.top { height: 56px; flex: none; display: flex; align-items: center; gap: 14px; padding: 0 20px; border-bottom: 1px solid var(--line); background: var(--surface); position: relative; z-index: 10; }
+	.back-link { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 6px; font-size: 14px; font-weight: 500; color: var(--ink-2); text-decoration: none; }
+	.back-link:hover { background: var(--subtle); color: var(--ink); }
+	.sep { width: 1px; height: 22px; background: var(--line); }
+	.ltitle-block { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+	.ltitle-kicker { font-size: 12px; color: var(--ink-3); }
+	.ltitle { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-	/* Koerper */
-	.body { flex: 1; min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr); position: relative; }
-	.body.norail { grid-template-columns: 0 minmax(0, 1fr); }
-	.body.norail .rail { display: none; }
-	.rail { border-right: 1px solid var(--line); background: var(--surface); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; min-height: 0; overflow: auto; }
-	.rail-lbl { padding: 0 10px 8px; }
-	.rstep { display: flex; gap: 10px; padding: 8px 10px; border-radius: 6px; }
-	.rstep:hover:not(.cur):not(:disabled) { background: var(--subtle) !important; }
-	.rstep:disabled { cursor: not-allowed; }
+	/* Segment-Fortschritt */
+	.segs-nav { flex: 1 1 280px; display: flex; align-items: center; gap: 12px; min-width: 180px; justify-content: center; }
+	.segs { display: flex; gap: 4px; flex: 1; max-width: 420px; }
+	.seg-btn { flex: 1; height: 24px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; cursor: pointer; }
+	.seg-btn:disabled { cursor: default; }
+	.seg-bar { display: block; width: 100%; height: 4px; border-radius: 3px; background: var(--line-strong); transition: background 0.2s, height 0.2s; }
+	.seg-bar.seg-done { background: var(--accent); }
+	.seg-bar.seg-cur { height: 8px; background: var(--accent); }
+	.seg-bar.seg-locked { background: var(--line); }
+	.steplbl { font-size: 12px; letter-spacing: 0.06em; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+	.top-actions { display: flex; align-items: center; gap: 6px; }
+	.icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--surface); border-radius: 7px; cursor: pointer; color: var(--ink-2); }
+	.icon-btn:hover:not(:disabled) { background: var(--subtle); }
+	.icon-btn:disabled { opacity: 0.45; cursor: default; }
+	.avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--subtle); color: var(--ink-2); font-size: 13px; font-weight: 600; margin-left: 4px; }
+
+	.sm-steps { display: none; position: relative; }
+	.chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid var(--line-strong); font-size: 12px; color: var(--ink-2); }
+	.chip:hover { background: var(--subtle); }
+	.dd { position: absolute; top: 40px; right: 0; z-index: 20; min-width: 220px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-pop); padding: 6px; display: flex; flex-direction: column; }
+	.dd-item { display: flex; gap: 10px; align-items: center; min-height: 40px; padding: 0 10px; border-radius: 6px; font-size: 14px; border: 0; background: transparent; text-align: left; cursor: pointer; }
+	.dd-item:hover, .dd-item.on { background: var(--accent-soft); color: var(--accent-ink); }
 	.dd-item:disabled { color: var(--ink-3); cursor: not-allowed; }
-	.rstep.cur { background: var(--accent-soft) !important; }
-	.rmk { width: 18px; flex: none; color: var(--accent); font-size: 13px; line-height: 22px; }
-	.rmk.muted { color: var(--ink-3); }
-	.rtxt { display: flex; flex-direction: column; }
-	.rname { font-size: 14px; line-height: 22px; }
-	.rname.open { color: var(--ink-2); }
-	.rtype { font-size: 12px; line-height: 16px; color: var(--ink-3); }
-	.rstep.cur .rname { font-weight: 500; color: var(--accent-ink); }
-	.rstep.cur .rtype { color: var(--accent-ink); }
-	.rcollapse { font-size: 13px; color: var(--ink-3) !important; padding: 0 10px !important; text-align: left; }
-	.rail-open { position: absolute; left: 0; top: 20px; z-index: 3; width: 24px; height: 40px; border: 1px solid var(--line) !important; border-left: 0 !important; border-radius: 0 6px 6px 0 !important; background: var(--surface) !important; color: var(--ink-3) !important; }
+	.dd-item .mk { width: 16px; color: var(--accent); }
+	.hide-sm { /* shown by default */ }
 
-	.main { min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: auto; }
-
-	/* Lesespalte */
-	.read { flex: 1; display: flex; justify-content: center; padding: 56px 40px 40px; }
+	/* Leseansicht */
+	.read-main { flex: 1; min-height: 0; overflow-y: auto; display: flex; justify-content: center; padding: 48px clamp(16px, 3vw, 48px) 40px; }
 	.col { width: 680px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; }
-	.para { margin: 0; font-size: 16px; line-height: 26px; text-wrap: pretty; }
+	.h1 { margin: 0; font-size: 30px; line-height: 38px; font-weight: 600; letter-spacing: -0.015em; }
+	.lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); }
+
+	.step-badge-row { display: flex; align-items: center; gap: 8px; }
+	.step-badge { font-size: 12px; font-weight: 600; color: var(--accent-ink); background: var(--accent-soft); padding: 2px 8px; border-radius: 5px; }
+	.step-name-sm { font-size: 13px; color: var(--ink-3); }
+
+	.para { margin: 0; font-size: 15px; line-height: 1.65; color: var(--ink-2); text-wrap: pretty; }
 	.code-card { border-radius: 10px; background: #0f172a; overflow: hidden; }
 	.cc-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-bottom: 1px solid #1e293b; font-family: var(--mono); font-size: 12px; color: #64748b; }
 	.cc-body { padding: 12px 0; }
-	.cl { display: flex; font-family: var(--mono); font-size: 14px; line-height: 24px; }
+	.cl { display: flex; font-family: var(--mono); font-size: 14px; line-height: 22px; }
 	.cn { width: 44px; flex: none; text-align: right; padding-right: 14px; color: #64748b; }
-	.ct { white-space: pre; }
-	.cc-foot { display: flex; justify-content: flex-end; padding: 0 12px 12px; }
-	.try { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px !important; border-radius: 6px; background: #1e293b !important; color: #e2e8f0 !important; font-size: 14px; font-weight: 500; }
-	.try:hover { background: #334155 !important; }
-	.sum-head { display: flex; align-items: flex-end; gap: 16px; }
-	.sum-title { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-	:global(.tb .sum-owl) { width: 110px; height: 99px; flex: none; }
-	.sum-list { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
-	.sum-row { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16px; line-height: 26px; text-wrap: pretty; }
-	.sum-n { font-family: var(--mono); font-size: 13px; color: var(--accent-strong); width: 22px; flex: none; }
-	.real { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; border-radius: 10px; border: 1px solid var(--accent-line); background: var(--accent-soft); }
-	.real-t { font-size: 15px; font-weight: 600; color: var(--accent-ink); }
-	.real-b { font-size: 15px; line-height: 24px; text-wrap: pretty; }
+	.ct { white-space: pre; color: #e2e8f0; }
+	.cc-foot { display: flex; justify-content: flex-end; padding: 8px; border-top: 1px solid #1e293b; }
+	.try-btn { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 13px; font-weight: 500; cursor: pointer; }
+	.try-btn:hover { background: var(--subtle); }
 
-	/* Aufgabe */
-	.task { flex: none; padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--surface); display: flex; align-items: flex-start; gap: 24px; }
-	.task-txt { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-	.task-t { font-size: 18px; line-height: 26px; font-weight: 600; }
-	.task-s { font-size: 14px; line-height: 20px; color: var(--ink-2); }
-	.attempt { font-size: 12px; color: var(--ink-3); padding-top: 2px; }
+	/* Zusammenfassung */
+	.sum-head { display: flex; align-items: center; gap: 18px; }
+	:global(.tb .sum-owl) { width: 96px; height: 86px; flex: none; }
+	.sum-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+	.sum-row { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16px; line-height: 1.55; }
+	.real-card { padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+	.real-t { margin: 0 0 6px; font-size: 15px; font-weight: 600; }
+	.real-b { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2); text-wrap: pretty; }
 
-	.work { flex: 1; min-height: 0; display: grid; grid-template-columns: 240px minmax(0, 1fr); }
-	.schema { border-right: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 6px; background: var(--surface); overflow: auto; }
-	.tbl { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; padding: 4px 6px !important; border-radius: 6px; }
-	.tbl + .tbl, .col-row + .tbl { margin-top: 6px; }
-	.col-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 24px !important; border-radius: 6px; font-size: 13px; line-height: 20px; }
-	.col-row:hover, .tbl:hover { background: var(--subtle) !important; }
-	.key { font-size: 10px; line-height: 16px; padding: 0 5px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-ink); }
-	.ctype { color: var(--ink-3); font-size: 12px; }
-	.schema-hint { font-size: 12px; line-height: 18px; color: var(--ink-3); }
+	/* Aufgabe/Beispiel: zwei-Spalten-Layout */
+	.work-main { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; gap: 16px; padding: 16px clamp(16px, 2vw, 32px); align-items: flex-start; max-width: 2200px; width: 100%; margin: 0 auto; overflow-y: auto; }
+	.left-col { flex: 1 1 340px; max-width: 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+	.right-col { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 
-	.ide { min-width: 0; min-height: 0; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
-	.editor { flex: none; border-radius: 10px; background: #0f172a; overflow: hidden; display: flex; flex-direction: column; }
-	.ed-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid #1e293b; font-size: 12px; color: #94a3b8; }
-	.ed-badge { padding: 1px 8px; border-radius: 999px; background: #1e3a8a; color: #bfdbfe; font-size: 11px; line-height: 18px; }
-	.ed-sql { color: #64748b; }
-	.m-reset { display: none; color: #94a3b8 !important; font-size: 11px; }
-	.ed-body { height: 236px; transition: height 0.25s ease; }
-	.editor.compact .d-ed { height: 128px; }
-	.m-ed { display: none; }
-	.ed-foot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid #1e293b; }
-	.run { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px !important; border-radius: 6px; font-size: 14px; font-weight: 500; }
-	.run.primary { background: var(--accent) !important; color: #fff !important; }
-	.run.primary:hover:not(:disabled) { background: var(--accent-strong) !important; }
-	.run.primary:disabled { opacity: 0.6; }
-	.run.secondary { border: 1px solid #334155 !important; color: #e2e8f0 !important; }
-	.run.secondary:hover { background: #1e293b !important; }
-	.run.disabled { background: #334155; color: #94a3b8; }
-	.reset { display: inline-flex; align-items: center; height: 36px; padding: 0 10px !important; color: #94a3b8 !important; font-size: 14px; }
-	.reset:hover { color: #e2e8f0 !important; }
-	.kbd { font-size: 12px; color: #64748b; }
+	/* Aufgaben-Karte */
+	.task-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px 22px 20px; }
+	.task-title { margin: 8px 0 6px; font-size: 22px; line-height: 1.3; font-weight: 600; letter-spacing: -0.015em; }
+	.task-sub { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2); text-wrap: pretty; }
+	.expected-cols { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+	.expected-lbl { font-size: 13px; color: var(--ink-3); margin-right: 2px; }
+	.col-chip { font-size: 12px; font-weight: 500; padding: 3px 7px; border-radius: 5px; background: var(--subtle); border: 1px solid var(--line); }
 
-	.result { flex: 1; min-height: 140px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; display: flex; flex-direction: column; }
-	.res-head { flex: none; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; border-bottom: 1px solid var(--line); }
-	.res-tabs { display: flex; gap: 18px; }
-	.res-tab { padding: 10px 0 !important; border-bottom: 2px solid transparent !important; margin-bottom: -1px; }
-	.res-tab.on { color: var(--ink) !important; border-bottom-color: var(--accent) !important; }
-	.res-tab:disabled { opacity: 0.45; }
-	.res-tab:not(:disabled):not(.on):hover { color: var(--ink-2) !important; }
-	.res-n { font-size: 12px; color: var(--ink-3); }
-	.res-empty { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; font-size: 14px; color: var(--ink-3); }
-	.spin { width: 16px; height: 16px; border-radius: 999px; border: 2px solid var(--line-strong); border-top-color: var(--accent); animation: tb-spin 0.9s linear infinite; }
+	/* Schema-Karte */
+	.schema-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+	.schema-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+	.schema-title { margin: 0; font-size: 14px; font-weight: 600; }
+	.schema-hint { font-size: 12px; color: var(--ink-3); }
+	.schema-loading { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+	.skel { height: 14px; width: 40%; border-radius: 4px; background: var(--subtle); }
+	.skel.w70 { width: 70%; }
+	.skel.w55 { width: 55%; }
+	.schema-tbl-block { border-bottom: 1px solid var(--line); }
+	.schema-tbl-block:last-child { border-bottom: 0; }
+	.schema-tbl-row { display: flex; align-items: center; }
+	.schema-toggle { width: 36px; height: 40px; display: grid; place-items: center; border: 0; background: transparent; cursor: pointer; color: var(--ink-3); flex: none; }
+	.schema-tbl-btn { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 40px; padding: 0 16px 0 0; border: 0; background: transparent; cursor: pointer; text-align: left; }
+	.schema-tbl-btn:hover { color: var(--accent-ink); }
+	.schema-tbl-name { font-size: 13px; font-weight: 600; }
+	.schema-count { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+	.schema-cols { padding: 0 8px 8px 28px; display: flex; flex-direction: column; }
+	.schema-col-btn { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 8px; border: 0; border-radius: 5px; background: transparent; cursor: pointer; text-align: left; font-size: 13px; }
+	.schema-col-btn:hover { background: var(--accent-soft); }
+	.schema-col-name { flex: 1; }
+	.schema-col-type { font-size: 11px; color: var(--ink-3); }
+	.schema-col-key { font-size: 10px; font-weight: 600; color: var(--accent-ink); min-width: 18px; text-align: right; }
+	.schema-fail { padding: 20px 16px; display: flex; gap: 14px; align-items: center; }
+	.schema-fail-t { margin: 0 0 8px; font-size: 14px; font-weight: 500; }
+	.schema-retry { height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 13px; cursor: pointer; }
+
+	/* Gast-Hinweis */
+	.guest-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+	.guest-txt { margin: 0; flex: 1; }
+	.guest-txt a { color: var(--accent-ink); }
+	.guest-close { width: 28px; height: 28px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 5px; cursor: pointer; color: var(--ink-3); }
+	.guest-close:hover { background: var(--subtle); }
+
+	/* Editor-Karte */
+	.editor-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+	.ed-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 8px 8px 16px; border-bottom: 1px solid var(--line); }
+	.ed-label { font-size: 13px; color: var(--ink-2); flex: 1; }
+	.ed-actions { position: relative; display: flex; gap: 6px; flex-wrap: wrap; }
+	.ed-action-btn { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: 13px; font-weight: 500; cursor: pointer; color: var(--ink-2); }
+	.ed-action-btn:hover:not(:disabled) { background: var(--subtle); color: var(--ink); }
+	.ed-action-btn:disabled { opacity: 0.45; cursor: default; }
+	.ed-action-btn.tip-active { border-color: var(--accent-line); background: var(--accent-soft); color: var(--accent-ink); }
+	.ed-body { /* desktop */ }
+	.ed-body-sm { display: none; /* mobile */ }
+
+	/* Bestätigungs-Popover */
+	.confirm-scrim { position: fixed; inset: 0; z-index: 9; }
+	.confirm-pop { position: absolute; right: 0; top: 40px; z-index: 10; width: 280px; padding: 16px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow-pop); animation: tbIn 0.16s ease-out; }
+	.confirm-title { margin: 0 0 4px; font-size: 14px; font-weight: 600; }
+	.confirm-text { margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+	.confirm-btns { display: flex; gap: 8px; justify-content: flex-end; }
+	.btn-sm { display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+	.btn-sm.secondary { border: 1px solid var(--line); background: var(--surface); }
+	.btn-sm.primary { border: 1px solid var(--accent); background: var(--accent); color: #fff; font-weight: 500; }
+	.btn-sm.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+
+	.ed-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; border-top: 1px solid var(--line); }
+	.run-btn { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink-2); font-size: 14px; font-weight: 600; cursor: pointer; }
+	.run-btn.run-primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+	.run-btn.run-primary:hover:not(:disabled) { background: var(--accent-strong); border-color: var(--accent-strong); }
+	.run-btn:disabled { opacity: 0.5; cursor: default; }
+	.ed-hint { font-size: 13px; color: var(--ink-3); }
+	.ed-hint kbd { font-size: 12px; padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--surface); }
+	.attempt-lbl { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-left: auto; }
+	.spin-sm { width: 14px; height: 14px; border-radius: 999px; border: 2px solid var(--line); border-top-color: var(--accent); animation: tbSpin 0.7s linear infinite; }
+
+	/* Feedback-Box */
+	.fb-card { display: flex; gap: 14px; align-items: center; padding: 12px 16px; min-height: 76px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; transition: background 0.2s; }
+	.fb-card.fb-ok { background: var(--ok-soft); border-color: var(--ok-line); }
+	.fb-card.fb-danger { background: var(--danger-soft); border-color: var(--danger-line); }
+	.fb-card.fb-accent { background: var(--accent-soft); border-color: var(--accent-line); }
+	:global(.tb .fb-owl) { width: 62px; height: 56px; flex: none; }
+	.fb-body { flex: 1; min-width: 0; }
+	.fb-msg { margin: 0; font-size: 15px; font-weight: 600; }
+	.fb-card.fb-ok .fb-msg { color: var(--ok-ink); }
+	.fb-card.fb-danger .fb-msg { color: var(--danger-ink); }
+	.fb-card.fb-accent .fb-msg { color: var(--accent-ink); }
+	.fb-sub { margin: 2px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); text-wrap: pretty; }
+	.fb-orig { margin: 4px 0 0; font-size: 12px; color: var(--ink-3); }
+	.fb-next { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border: 1px solid var(--accent); border-radius: 7px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; animation: tbIn 0.2s ease-out; flex: none; }
+	.fb-next:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+
+	/* Tipp-Box */
+	.tip-card { display: flex; gap: 10px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; line-height: 1.55; }
+	.tip-lbl { font-weight: 600; flex: none; }
+	.tip-txt { color: var(--ink); }
+
+	/* Ergebnis-Karte */
+	.result-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-height: 160px; }
+	.result-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+	.result-title { margin: 0; font-size: 14px; font-weight: 600; }
+	.res-tabs { display: flex; gap: 12px; }
+	.res-tab { padding: 0 !important; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; background: transparent; font-size: 13px; color: var(--ink-3); cursor: pointer; }
+	.res-tab.on { color: var(--ink); border-bottom-color: var(--accent); }
+	.res-tab:disabled { opacity: 0.4; cursor: default; }
+	.result-n { font-size: 13px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+	.res-empty { flex: 1; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 28px 16px; text-align: center; font-size: 14px; color: var(--ink-3); }
+	.spin { width: 16px; height: 16px; border-radius: 999px; border: 2px solid var(--line-strong); border-top-color: var(--accent); animation: tbSpin 0.9s linear infinite; }
 	.res-table { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
 	.res-row { display: grid; border-bottom: 1px solid var(--line); min-width: max-content; }
 	.res-row > span { padding: 8px 16px; font-size: 14px; line-height: 20px; }
 	.res-row > span:first-child { position: sticky; left: 0; background: var(--surface); }
 	.res-hd { background: var(--subtle); position: sticky; top: 0; z-index: 1; }
-	.res-hd > span { font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); }
+	.res-hd > span { font-size: 12px; color: var(--ink-2); letter-spacing: 0.04em; }
 	.res-hd > span:first-child { background: var(--subtle); }
 	.res-more { padding: 8px 16px; font-size: 13px; color: var(--ink-3); }
 
-	.dbfail { flex: 1; display: grid; place-items: center; padding: 32px; }
-	.dbfail-in { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; max-width: 420px; }
-	.dbfail-s { font-size: 15px; line-height: 24px; color: var(--ink-2); }
+	.m-schema-btn { display: none; }
+	.sm-only { display: none; }
 
-	/* Feedback-Leiste */
-	.fb { flex: none; border-top: 1px solid var(--fb-line); background: var(--fb-bg); padding: 12px 24px; display: flex; align-items: center; gap: 14px; min-height: 76px; }
-	:global(.tb .fb-owl) { width: 52px; height: 47px; flex: none; }
-	.fb-ico { width: 24px; height: 24px; flex: none; border-radius: 999px; display: grid; place-items: center; background: var(--fb-ico-bg); color: var(--fb-ico); font-size: 13px; font-weight: 600; line-height: 1; }
-	.fb-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-	.fb-msg { font-size: 15px; line-height: 22px; font-weight: 600; color: var(--fb-ink); }
-	.m-ico { display: none; }
-	.fb-sub { font-size: 14px; line-height: 20px; color: var(--ink-2); }
-	.fb-orig { font-size: 12px; color: var(--ink-3); }
-	.tip { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--accent-line); background: var(--surface); width: 460px; flex: none; }
-	.tip-lbl { color: var(--accent-ink); }
-	.tip-t { font-size: 14px; line-height: 20px; }
-	.tip-sol { align-self: flex-start; font-size: 14px; font-weight: 500; color: var(--accent-strong) !important; text-decoration: underline; text-underline-offset: 3px; }
-	.guest { display: inline-flex; align-items: center; gap: 10px; height: 36px; padding: 0 6px 0 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); font-size: 13px; color: var(--ink-2); white-space: nowrap; }
-	.guest-a { color: var(--accent-strong) !important; font-weight: 500; }
-	.guest-x { width: 24px; text-align: center !important; color: var(--ink-3) !important; }
-	.fb-btns { display: flex; align-items: center; gap: 14px; }
-	.skip { font-size: 14px; color: var(--ink-3) !important; padding: 0 4px !important; }
-	.skip:hover { color: var(--ink-2) !important; }
-	.btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px !important; border-radius: 6px; font-size: 15px; font-weight: 500; white-space: nowrap; }
-	.btn.primary { padding: 0 18px !important; background: var(--accent) !important; color: #fff !important; }
-	.btn.primary:hover { background: var(--accent-strong) !important; }
-	.btn.secondary { border: 1px solid var(--line-strong) !important; background: var(--surface) !important; }
-	.btn.secondary:hover:not(:disabled) { background: var(--subtle) !important; }
-	.btn.secondary:disabled { color: var(--ink-3) !important; }
-	.btn.disabled { padding: 0 18px !important; background: var(--subtle); color: var(--ink-3); }
-	.btn.tipbtn { border: 1px solid var(--accent-line) !important; background: var(--surface) !important; color: var(--accent-ink) !important; }
-	.m-main, .m-done-btns { display: none; }
+	/* Fussleiste */
+	.nav-foot { position: sticky; bottom: 0; z-index: 15; display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--surface); border-top: 1px solid var(--line); }
+	.nav-btn { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); font-size: 14px; cursor: pointer; }
+	.nav-btn.secondary { color: var(--ink-2); }
+	.nav-btn.secondary:hover:not(:disabled) { background: var(--subtle); color: var(--ink); }
+	.nav-btn.secondary:disabled { opacity: 0.4; cursor: default; }
+	.nav-btn.primary { border-color: var(--accent); background: var(--accent); color: #fff; font-weight: 500; }
+	.nav-btn.primary:hover:not(:disabled) { background: var(--accent-strong); border-color: var(--accent-strong); }
+	.nav-btn.primary:disabled { opacity: 0.5; cursor: default; }
+	.nav-btn.tip-nav { border-color: var(--accent-line); color: var(--accent-ink); }
+	.nav-hint { flex: 1; text-align: center; font-size: 13px; color: var(--ink-3); }
 
 	/* Lektion geschafft */
-	.donescr { flex: 1; display: grid; place-items: center; padding: 40px; overflow: auto; }
-	.done-in { width: 600px; max-width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; text-align: center; }
-	:global(.tb .done-owl) { width: 200px; height: 180px; }
+	.donescr { flex: 1; display: grid; place-items: center; padding: 48px 20px; overflow: auto; }
+	.done-in { width: 560px; max-width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; animation: tbIn 0.3s ease-out; }
+	:global(.tb .done-owl) { width: 180px; height: 162px; }
 	.done-head { display: flex; flex-direction: column; gap: 8px; align-items: center; }
 	.done-sub { font-size: 16px; color: var(--ink-2); }
-	.done-list { width: 100%; display: flex; flex-direction: column; text-align: left; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-	.done-row { display: flex; gap: 12px; align-items: flex-start; padding: 14px 18px; border-bottom: 1px solid var(--line); font-size: 15px; line-height: 24px; }
-	.done-row:last-child { border-bottom: 0; }
-	.ok-dot { width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--ok-soft); color: var(--ok-ink); display: grid; place-items: center; font-size: 12px; font-weight: 600; margin-top: 1px; line-height: 1; }
-	.done-btns { display: flex; gap: 10px; }
-	.btn-lg { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 22px; border-radius: 6px; font-size: 16px; font-weight: 500; white-space: nowrap; }
-	.btn-lg.primary { background: var(--accent); color: #fff !important; }
-	.btn-lg.primary:hover { background: var(--accent-strong); }
-	.btn-lg.secondary { border: 1px solid var(--line-strong); background: var(--surface); }
+	.done-list { width: 100%; display: flex; flex-direction: column; text-align: left; border-top: 1px solid var(--line); }
+	.done-row { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 16px; line-height: 1.55; }
+	.ok-dot { flex: none; margin-top: 3px; }
+	.done-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+	.btn-lg { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 8px; font-size: 15px; font-weight: 600; white-space: nowrap; text-decoration: none; }
+	.btn-lg.primary { background: var(--accent); color: #fff; border: 1px solid var(--accent); }
+	.btn-lg.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+	.btn-lg.secondary { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+	.arr { display: inline-block; width: 0.9em; height: 0.9em; flex: none; vertical-align: -0.1em; background: currentColor;
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+	}
+	.m-done-btns { display: none; flex-direction: column; gap: 10px; padding: 12px 16px 20px; border-top: 1px solid var(--line); background: var(--surface); }
+	.m-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 6px; font-size: 16px; font-weight: 500; text-decoration: none; }
+	.m-btn.primary { background: var(--accent); color: #fff; }
+	.m-btn.secondary { border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); }
 
-	/* Dialoge */
-	.scrim { position: absolute; inset: 0; background: rgb(15 23 42 / 0.5); display: grid; place-items: center; z-index: 30; }
-	.dlg { width: 440px; max-width: calc(100% - 80px); display: flex; flex-direction: column; gap: 12px; padding: 24px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-pop); }
-	.dlg-t { font-size: 18px; line-height: 26px; font-weight: 600; }
-	.dlg-b { font-size: 15px; line-height: 24px; color: var(--ink-2); }
-	.dlg-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
-	.sheet-scrim { background: rgb(15 23 42 / 0.45); }
-	.sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 520px; max-height: 80%; z-index: 31; display: flex; flex-direction: column; background: var(--surface); border-radius: 16px 16px 0 0; box-shadow: var(--shadow-pop); }
+	/* Schema-Sheet (Mobil) */
+	.sheet-scrim { position: fixed; inset: 0; background: rgb(15 23 42 / 0.45); z-index: 30; }
+	.scrim { position: fixed; inset: 0; background: rgb(15 23 42 / 0.5); display: grid; place-items: center; z-index: 30; }
+	.sheet { position: fixed; left: 0; right: 0; bottom: 0; height: 520px; max-height: 80%; z-index: 31; display: flex; flex-direction: column; background: var(--surface); border-radius: 16px 16px 0 0; box-shadow: var(--shadow-pop); }
 	.grab { display: flex; justify-content: center; padding: 10px 0 4px; }
 	.grab span { width: 40px; height: 4px; border-radius: 999px; background: var(--line-strong); }
 	.sheet-head { display: flex; align-items: center; padding: 4px 8px 8px 20px; }
 	.sheet-t { flex: 1; font-size: 18px; font-weight: 600; }
 	.sheet-body { flex: 1; overflow: auto; padding: 0 12px; display: flex; flex-direction: column; }
-	.s-tbl { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px !important; font-size: 15px; font-weight: 500; }
-	.s-tbl.bt { border-top: 1px solid var(--line) !important; }
-	.s-col { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px 0 30px !important; border-top: 1px solid var(--line) !important; font-size: 14px; }
+	.icon44 { width: 44px; height: 44px; display: grid; place-items: center; font-size: 18px; color: var(--ink-2); border: 0; background: transparent; cursor: pointer; }
+	.s-tbl { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; font-size: 15px; font-weight: 500; border: 0; background: transparent; cursor: pointer; text-align: left; }
+	.s-tbl.bt { border-top: 1px solid var(--line); }
+	.s-col { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px 0 30px; border-top: 1px solid var(--line); font-size: 14px; border-left: 0; border-right: 0; border-bottom: 0; background: transparent; cursor: pointer; text-align: left; }
+	.key { font-size: 10px; padding: 0 5px; border-radius: 4px; background: var(--accent-soft); color: var(--accent-ink); }
+	.ctype { color: var(--ink-3); font-size: 12px; }
 	.s-ins { color: var(--accent-strong); font-family: var(--sans); font-size: 13px; font-weight: 500; width: 52px; text-align: right; }
 	.sheet-hint { padding: 10px 20px 24px; font-size: 13px; color: var(--ink-3); }
 
-	.m-work, .md-only, .sm-only { display: none; }
+	@keyframes tbIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+	@keyframes tbSpin { to { transform: rotate(360deg); } }
+	@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+	:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-	/* ---------- Tablet 768–1279 (Frame T-04) ---------- */
+	/* Tablet */
 	@media (max-width: 1279px) {
-		.top { gap: 12px; padding: 0 16px; }
-		.hide-md { display: none; }
-		.progress { display: none; }
-		.md-only { display: block; }
-		.ltitle { flex: 1; }
-		.rail, .rail-open { display: none; }
-		.body, .body.norail { grid-template-columns: minmax(0, 1fr); }
-		.task { padding: 12px 20px; }
-		.task-lbl { font-size: 11px; }
-		.task-t { font-size: 17px; line-height: 24px; }
-		.work { grid-template-columns: 190px minmax(0, 1fr); }
-		.schema { padding: 12px; gap: 4px; }
-		.tbl { font-size: 13px; padding: 4px !important; }
-		.col-row { font-size: 12px; padding: 3px 4px 3px 18px !important; }
-		.col-row .key { display: none; }
-		.ctype { font-size: 11px; }
-		.ide { padding: 12px 16px; gap: 12px; }
-		.ed-head { padding: 8px 14px; font-size: 11px; }
-		.ed-body { height: 132px; }
-		.ed-foot { padding: 8px 10px; }
-		.run { height: 40px; }
-		.kbd, .ed-sql { display: none; }
-		.fb { padding: 10px 16px; gap: 12px; min-height: 68px; }
-		:global(.tb .fb-owl) { width: 44px; height: 40px; }
-		.fb-ico { width: 22px; height: 22px; font-size: 12px; }
-		.fb-sub { font-size: 13px; }
-		.btn { height: 44px; }
-		.tip { width: 360px; }
-		.guest { display: none; }
-		.skip, .schema-hint { display: none; }
+		.ltitle-block { max-width: 200px; }
+		.segs-nav { min-width: 160px; }
 	}
 
-	/* ---------- Mobil < 768 (Frames M-*) ---------- */
+	/* Mobil */
 	@media (max-width: 767px) {
-		.page { font-size: 15px; line-height: 24px; }
-		.top { gap: 4px; padding: 0 6px; }
+		.top { padding: 0 12px; gap: 8px; }
 		.hide-sm { display: none !important; }
-		.md-only { display: none; }
-		.sm-only { display: grid; }
-		.dd.sm-only { display: flex; }
-		.progress { display: flex; gap: 10px; }
-		.dots { gap: 5px; }
-		.pdot { width: 7px; height: 7px; }
-		.pdot.cur { width: 18px; }
-		.steplbl { letter-spacing: 0; }
-		.back-link { width: 44px; height: 44px; justify-content: center; padding: 0; font-size: 18px; }
-		.main { padding: 14px 16px; gap: 12px; }
-		.read { padding: 0 !important; }
-		.col { gap: 12px; }
-		.col .lbl { font-size: 11px; margin-top: 8px; }
-		.h1 { font-size: 26px; line-height: 32px; letter-spacing: -0.01em; }
-		.para { font-size: 15px; line-height: 24px; }
-		.cc-head { display: none; }
-		.cc-body { padding: 10px 0; }
-		.cl { font-size: 13px; line-height: 22px; }
-		.cn { width: 32px; padding-right: 10px; color: #475569; }
-		.cc-foot { padding: 0 10px 10px; }
-		.try { height: 44px; padding: 0 14px !important; }
-		.sum-head { gap: 10px; }
-		:global(.tb .sum-owl) { width: 76px; height: 68px; }
-		.sum-row { gap: 10px; padding: 10px 0; font-size: 14px; line-height: 21px; }
-		.sum-n { font-size: 12px; width: 18px; }
-		.real { padding: 12px 14px; gap: 4px; }
-		.real-t, .real-b { font-size: 14px; line-height: 21px; }
+		.sm-steps { display: block; }
+		.segs-nav { flex: 1; min-width: 120px; }
+		.segs { max-width: 100%; }
+		.top-actions { gap: 4px; }
+		.icon-btn { width: 32px; height: 32px; }
+		.avatar { width: 28px; height: 28px; font-size: 11px; }
 
-		.task { display: none; }
-		.m-work { display: flex; flex-direction: column; gap: 12px; flex: none; }
-		.m-task { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-		.m-task-t { font-size: 16px; line-height: 23px; font-weight: 600; }
-		.m-task-c, .m-schema { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px !important; border: 1px solid var(--line) !important; border-radius: 10px; background: var(--surface) !important; }
-		.m-task-ct { flex: 1; min-width: 0; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-		.m-schema { border-color: var(--line-strong) !important; border-radius: 6px; }
-		.m-schema-t { font-size: 14px; font-weight: 500; }
-		.m-schema-s { flex: 1; font-size: 12px; color: var(--ink-3); }
-		.work { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
-		.schema { display: none; }
-		.ide { padding: 0; gap: 12px; flex: 1; min-height: 0; }
-		.ed-head { padding: 8px 12px; font-size: 11px; gap: 8px; }
-		.ed-badge, .ed-sql { display: none; }
-		.m-reset { display: inline; }
-		.d-ed { display: none; }
-		.m-ed { display: block; height: 164px; }
-		.ed-foot { display: none; }
-		.result { min-height: 120px; }
-		.res-head { padding: 0 12px; }
-		.res-tab { padding: 8px 0 !important; }
-		.res-head .lbl, .res-n { font-size: 11px; }
-		.res-row > span { padding: 7px 12px; font-size: 13px; line-height: 18px; }
-		.res-hd > span { padding: 6px 12px; font-size: 11px; letter-spacing: 0; }
+		.read-main { padding: 20px 16px 32px; }
+		.col { gap: 14px; }
+		.h1 { font-size: 22px; line-height: 28px; }
+		.step-badge-row { flex-wrap: wrap; }
+		.sum-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+		:global(.tb .sum-owl) { width: 72px; height: 64px; }
+		.sum-row { font-size: 15px; }
 
-		.fb { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 16px 20px; min-height: 0; flex-wrap: nowrap; position: relative; }
-		.fb { display: grid; grid-template-columns: 42px minmax(0, 1fr); column-gap: 10px; row-gap: 10px; align-items: center; }
-		:global(.tb .fb-owl) { width: 42px; height: 38px; grid-column: 1; }
-		.fb-ico { display: none; }
-		.fb-txt { grid-column: 2; gap: 0; }
-		.m-ico { display: inline; }
-		.fb-msg { font-size: 15px; line-height: 21px; }
-		.fb-sub { font-size: 13px; line-height: 19px; }
-		.tip { grid-column: 1 / -1; width: auto; padding: 10px 12px; }
-		.tip-lbl { font-size: 11px; }
-		.tip-sol { min-height: 28px; }
-		.fb-btns { display: none; }
-		.m-main { display: flex; flex-direction: column; gap: 10px; grid-column: 1 / -1; }
-		.m-btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 6px; font-size: 16px; font-weight: 500; }
-		.m-btn.primary { background: var(--accent) !important; color: #fff !important; }
-		.m-btn.primary:disabled { opacity: 0.6; }
-		.m-btn.secondary { border: 1px solid var(--line-strong) !important; background: var(--surface) !important; }
-		.fb[data-tone] > :global(.fb-owl:only-child) { display: none; }
+		.work-main { flex-direction: column; padding: 12px 14px; gap: 12px; overflow-y: auto; }
+		.left-col { max-width: 100%; order: 2; display: none; /* hide left col on mobile */ }
+		.right-col { order: 1; }
+		.ed-body { display: none; }
+		.ed-body-sm { display: block; }
+		.m-schema-btn { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; order: 3; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--surface); font-size: 14px; cursor: pointer; color: var(--ink-2); width: 100%; }
+		.sm-only { display: flex; }
 
-		.fb.nomsg > :global(.fb-owl), .fb.nomsg .fb-txt { display: none; }
-		.fb-orig { display: none; }
-		.donescr { padding: 14px 16px; }
-		.done-in { gap: 14px; }
-		:global(.tb .done-owl) { width: 170px; height: 153px; }
-		.done-head .lbl { font-size: 11px; }
-		.donescr .h1 { font-size: 28px; line-height: 34px; }
-		.done-sub { display: none; }
-		.done-row { gap: 10px; padding: 10px 12px; font-size: 14px; line-height: 21px; }
-		.ok-dot { background: none; width: auto; height: auto; }
+		.nav-foot { padding: 8px 14px; gap: 8px; }
+		.nav-btn { height: 44px; font-size: 15px; }
+		.nav-hint { display: none; }
+
+		.donescr { padding: 24px 16px; }
+		:global(.tb .done-owl) { width: 140px; height: 126px; }
 		.done-btns { display: none; }
-		.m-done-btns { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 20px; border-top: 1px solid var(--line); background: var(--surface); }
+		.m-done-btns { display: flex; }
+		.done-sub { display: none; }
 	}
+
 </style>

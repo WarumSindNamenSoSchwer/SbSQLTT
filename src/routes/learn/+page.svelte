@@ -47,13 +47,11 @@
 	});
 
 	// Fortschritt reaktiv aktualisieren wenn sich der Session-State aendert
-	// (z.B. nach Login mit Server-Merge)
 	$effect(() => {
 		void session.user;
 		void session.progressVersion;
 		progress = loadProgress();
 	});
-
 
 	type St = 'done' | 'started' | 'open' | 'locked';
 	const status = (id: string): St => {
@@ -73,21 +71,22 @@
 	const href = (l: (typeof CATALOG)[number]) => `/learn/${trackOf(l.track)}/${l.id}`;
 	const playable = (id: string) => !!LESSONS[id] || EXTRA_PLAYABLE.includes(id);
 
+	// Hero-Karte
+	const heroLesson = $derived(CATALOG.find((l) => l.id === hlId));
+	const heroStarted = $derived(hlId ? status(hlId) === 'started' : false);
+	const heroKicker = $derived(anyProgress ? 'Weiter lernen' : 'Jetzt starten');
+	const heroTitle = $derived(heroLesson?.title ?? 'Erste Abfrage mit SELECT');
+	const heroCta = $derived(heroStarted ? 'Weitermachen' : anyProgress ? 'Jetzt starten' : 'Jetzt lernen');
+	const heroHref = $derived(heroLesson ? href(heroLesson) : '/learn/beginner/select-basics');
+	const heroProg = $derived(hlId && progress[hlId]?.of ? progress[hlId] : null);
+	const heroPct = $derived(heroProg ? `${Math.round(((heroProg.step ?? 0) / heroProg.of!) * 100)}%` : '0%');
+	const heroSteps = $derived(heroProg ? `${heroProg.step ?? 0} / ${heroProg.of}` : '');
+
 	const tracks = $derived(
 		TRACK_INFO.map((t, i) => {
 			const lessons = CATALOG.filter((l) => l.track === i + 1).map((l) => {
 				const st = status(l.id);
-				const hl = l.id === hlId && st !== 'locked';
-				const started = st === 'started';
-				return {
-					...l,
-					st,
-					hl,
-					hlLabel: started ? 'WEITER MIT' : anyProgress ? 'ALS NÄCHSTES' : 'STARTE HIER',
-					cta: hl ? (started ? 'Weiter' : anyProgress ? 'Starten' : 'Los geht’s') : '',
-					stepInfo: hl && started && progress[l.id]?.of ? `Schritt ${progress[l.id].step} von ${progress[l.id].of}` : '',
-					focus: klasse?.focus?.id === l.id
-				};
+				return { ...l, st, focus: klasse?.focus?.id === l.id };
 			});
 			const done = lessons.filter((l) => l.st === 'done').length;
 			return { ...t, lessons, progress: `${done} / ${lessons.length}`, pct: `${Math.round((done / lessons.length) * 100)}%` };
@@ -100,6 +99,20 @@
 			setTimeout(() => (tip === id ? (tip = null) : null), 2500);
 		}
 	};
+
+	// Gast-Hinweis (tabula-guest-hint)
+	let guestHintClosed = $state(false);
+	onMount(() => {
+		try {
+			guestHintClosed = !!localStorage.getItem('tabula-guest-hint');
+		} catch {
+			guestHintClosed = false;
+		}
+	});
+	function closeGuestHint() {
+		guestHintClosed = true;
+		try { localStorage.setItem('tabula-guest-hint', '1'); } catch { /* ignore */ }
+	}
 </script>
 
 <svelte:head><title>Lektionen · Tabula</title></svelte:head>
@@ -107,74 +120,106 @@
 <div class="tb page">
 	<TopNav {dark} />
 	<main class="wrap">
-		<div class="inner">
-			<div class="head">
-				<h1 class="h1">Lektionen</h1>
-				<span class="sub">Von der ersten Abfrage bis zur eigenen Datenanalyse mit Python.</span>
-			</div>
-
-			{#if !session.user}
-				<div class="guest">
-					<span class="gi">i</span>
-					<span class="gt">Dein Fortschritt wird nur in diesem Browser gespeichert. Melde dich an, um ihn zu sichern.</span>
-					<a class="ga" href="/login">Anmelden</a>
+		<!-- Klassen-Fokus-Banner -->
+		{#if klasse?.focus}
+			{@const f = CATALOG.find((l) => l.id === klasse?.focus?.id)}
+			{#if f}
+				<div class="focus-banner">
+					<Edgar pose="raisehand" {dark} class="focus-owl" />
+					<p class="focus-txt">
+						Deine Klasse <strong>{klasse.name}</strong> arbeitet gerade an: <strong>{f.title}</strong>
+					</p>
+					<a class="focus-open" href={href(f)}>Öffnen
+						<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+					</a>
 				</div>
-			{:else if klasse?.focus}
-				{@const f = CATALOG.find((l) => l.id === klasse?.focus?.id)}
-				{#if f}
-					<div class="focus">
-						<Edgar pose="curious" {dark} class="focus-owl" />
-						<div class="ftxt">
-							<span class="lbl" style="color:var(--accent-ink)">FOKUS · KLASSE {klasse.name.toUpperCase()}</span>
-							<span class="ft">Deine Klasse arbeitet gerade an: {f.title}</span>
-							<span class="fs">Lektion {f.n} · ca. {f.dur} · Klasse {klasse.name}</span>
+			{/if}
+		{/if}
+
+		<!-- Hero-Karte -->
+		<section class="hero" aria-label="Weiterlernen">
+			<Edgar pose={heroStarted ? 'typing' : anyProgress ? 'point' : 'idle'} {dark} class="hero-owl" />
+			<div class="hero-txt">
+				<p class="hero-kicker">{heroKicker}</p>
+				<h1 class="hero-title">{heroTitle}</h1>
+				{#if heroProg}
+					<div class="hero-bar-row">
+						<div class="hero-bar" role="progressbar" aria-valuemin={0} aria-valuemax={heroProg.of ?? 1} aria-valuenow={heroProg.step ?? 0} aria-label="Fortschritt in der Lektion">
+							<div class="hero-bar-fill" style="width:{heroPct}"></div>
 						</div>
-						<a class="btn primary" href={href(f)}>Öffnen<span class="arr"></span></a>
+						<span class="hero-steps mono">{heroSteps}</span>
 					</div>
 				{/if}
-			{/if}
+			</div>
+			<a class="hero-cta" href={heroHref}>
+				{heroCta}
+				<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
+			</a>
+		</section>
 
+		<!-- Gast-Hinweis -->
+		{#if !session.user && !guestHintClosed}
+			<p class="guest-note">
+				Fortschritt wird nur in diesem Browser gespeichert. Mit dem Klassencode deiner Lehrkraft kannst du einer <a href="/beitreten">Klasse beitreten</a>.
+				<button class="guest-close" onclick={closeGuestHint} aria-label="Hinweis schließen">
+					<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"></path></svg>
+				</button>
+			</p>
+		{/if}
+
+		<!-- Tracks (zwei Spalten) -->
+		<div class="tracks">
 			{#each tracks as t}
-				<section class="track">
-					<div class="thead">
-						<span class="tnum mono">{t.num}</span>
-						<div class="tname"><span class="h2">{t.name}</span><span class="tdesc">{t.desc}</span></div>
-						<div class="tprog"><span class="mono">{t.progress}</span><span class="bar"><span style="width:{t.pct}"></span></span></div>
+				<section class="track" aria-label={t.name}>
+					<div class="track-head">
+						<h2 class="track-name">{t.name}</h2>
+						<span class="track-desc">{t.desc}</span>
+						<span class="track-prog mono">{t.progress}</span>
 					</div>
-					<div class="list">
+					<ol class="lesson-list">
 						{#each t.lessons as l}
 							{@const locked = l.st === 'locked'}
-							<a
-								class="row"
-								class:locked
-								class:hl={l.hl}
-								href={locked ? undefined : href(l)}
-								aria-disabled={locked}
-								title={locked ? 'Von deiner Lehrkraft noch nicht freigeschaltet' : undefined}
-								onclick={(e) => pending(e, l.id)}
-							>
-								<span class="n mono">{l.n}</span>
-								<span class="ttl">
-									{#if l.hl}<span class="hll mono">{l.hlLabel}</span>{/if}
-									<span class="tt">{l.title}</span>
-									{#if l.stepInfo}<span class="si">{l.stepInfo}</span>{/if}
-									<span class="mdur">{l.dur}</span>
-								</span>
-								{#if l.focus}<span class="fbadge">★ Fokus</span>{/if}
-								<span class="dur">{l.dur}</span>
-								<span class="stw">
-									{#if l.st === 'done'}<span class="b ok">✓ Fertig</span>
-									{:else if l.st === 'started'}<span class="b acc">◐ Begonnen</span>
-									{:else if l.st === 'open'}<span class="b open">○ Offen</span>
-									{:else}<span class="b lock"><span class="lk"><span></span><span></span></span>Gesperrt</span>{/if}
-								</span>
-								{#if l.cta}<span class="btn primary cta">{l.cta}<span class="arr"></span></span>
-								{:else if !locked}<span class="chev">›</span>
-								{:else}<span class="chev"></span>{/if}
-								{#if tip === l.id}<span class="tooltip">Diese Lektion ist bald verfügbar.</span>{/if}
-							</a>
+							{@const done = l.st === 'done'}
+							{@const started = l.st === 'started'}
+							<li class="lesson-item">
+								<button
+									type="button"
+									class="lesson-row"
+									class:locked
+									aria-disabled={locked}
+									title={locked ? 'Von deiner Lehrkraft noch nicht freigeschaltet' : undefined}
+									onclick={(e) => {
+										if (locked) return;
+										pending(e as MouseEvent, l.id);
+										if (playable(l.id)) window.location.href = href(l);
+									}}
+								>
+									<span class="lesson-num mono" class:num-done={done} class:num-open={!done && !locked} class:num-locked={locked}>{l.n}</span>
+									<span class="lesson-info">
+										<span class="lesson-title" class:muted={locked}>{l.title}</span>
+										<span class="lesson-dur">{l.dur}</span>
+									</span>
+									{#if l.focus}<span class="focus-badge">Fokus</span>{/if}
+									<span class="lesson-status" class:status-done={done} class:status-started={started} class:status-locked={locked}>
+										{#if locked}
+											<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"></rect><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+											Gesperrt
+										{:else if done}
+											<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5 6.5 12 13 4.5"></path></svg>
+											Fertig
+										{:else if started}
+											Begonnen
+										{:else}
+											Offen
+										{/if}
+									</span>
+								</button>
+								{#if tip === l.id}
+									<span class="tooltip">Diese Lektion ist bald verfügbar.</span>
+								{/if}
+							</li>
 						{/each}
-					</div>
+					</ol>
 				</section>
 			{/each}
 		</div>
@@ -183,99 +228,83 @@
 
 <style>
 	.page { min-height: 100dvh; display: flex; flex-direction: column; }
-	.wrap { display: flex; justify-content: center; padding: 48px 40px 72px; }
-	.inner { width: 960px; max-width: 100%; display: flex; flex-direction: column; gap: 28px; }
-	.head { display: flex; flex-direction: column; gap: 6px; }
-	.h1 { margin: 0; font-size: 36px; line-height: 44px; font-weight: 600; letter-spacing: -0.015em; }
-	.sub { font-size: 16px; color: var(--ink-2); }
-	.h2 { font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; }
+	.wrap { max-width: 1680px; margin: 0 auto; width: 100%; padding: 32px clamp(16px, 3vw, 48px) 80px; display: flex; flex-direction: column; gap: 24px; }
+	.mono { font-family: var(--mono); }
 
-	.guest { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; line-height: 20px; }
-	.gi { width: 22px; height: 22px; flex: none; border-radius: 999px; background: var(--subtle); color: var(--ink-2); display: grid; place-items: center; font-size: 12px; font-weight: 600; line-height: 1; }
-	.gt { flex: 1; color: var(--ink-2); }
-	.ga { font-weight: 500; color: var(--accent-strong) !important; }
+	/* Fokus-Banner */
+	.focus-banner { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 18px; border-radius: 12px; background: var(--accent); color: #fff; }
+	:global(.tb .focus-owl) { width: 44px; height: 40px; flex: none; }
+	.focus-txt { margin: 0; flex: 1 1 260px; font-size: 15px; }
+	.focus-open { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 16px; border-radius: 7px; background: #fff; color: #0f172a; text-decoration: none; font-size: 14px; font-weight: 600; }
+	.focus-open:hover { background: #eff6ff; }
 
-	.focus { display: flex; align-items: center; gap: 18px; padding: 16px 20px; border-radius: 10px; border: 1px solid var(--accent-line); background: var(--accent-soft); }
-	:global(.tb .focus-owl) { width: 62px; height: 56px; flex: none; }
-	.ftxt { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-	.ft { font-size: 18px; line-height: 26px; font-weight: 600; }
-	.fs { font-size: 14px; color: var(--ink-2); }
+	/* Hero-Karte */
+	.hero { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+	:global(.tb .hero-owl) { width: 120px; height: 108px; flex: none; }
+	.hero-txt { flex: 1 1 300px; min-width: 0; }
+	.hero-kicker { margin: 0 0 4px; font-size: 14px; color: var(--ink-3); }
+	.hero-title { margin: 0; font-size: 28px; line-height: 1.2; font-weight: 600; letter-spacing: -0.02em; }
+	.hero-bar-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; max-width: 360px; }
+	.hero-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--subtle); overflow: hidden; }
+	.hero-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
+	.hero-steps { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+	.hero-cta { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 9px; background: var(--accent); color: #fff; text-decoration: none; font-size: 15px; font-weight: 600; white-space: nowrap; }
+	.hero-cta:hover { background: var(--accent-strong); }
 
-	.track { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
-	.thead { display: flex; align-items: flex-end; gap: 16px; }
-	.tnum { font-size: 13px; color: var(--accent-strong); line-height: 32px; align-self: flex-start; }
-	.tname { flex: 1; display: flex; flex-direction: column; }
-	.tdesc { font-size: 14px; color: var(--ink-2); }
-	.tprog { display: flex; align-items: center; gap: 10px; padding-bottom: 3px; }
-	.tprog .mono { font-size: 12px; color: var(--ink-3); }
-	.bar { width: 120px; height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; display: block; }
-	.bar span { display: block; height: 100%; background: var(--accent); }
+	/* Gast-Hinweis */
+	.guest-note { margin: -8px 0 0; font-size: 14px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+	.guest-close { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 4px; border: 0; background: transparent; cursor: pointer; color: var(--ink-3); flex: none; }
+	.guest-close:hover { background: var(--subtle); }
+	.guest-note a { color: var(--accent-ink); }
+	.guest-note a:hover { color: var(--accent-strong); }
 
-	.list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
-	.row { position: relative; display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 0 20px; border-bottom: 1px solid var(--line); }
-	.row:last-child { border-bottom: 0; }
-	.row:not(.locked):hover { background: var(--subtle); }
-	.row:first-child { border-radius: 10px 10px 0 0; }
-	.row:last-child { border-radius: 0 0 10px 10px; }
-	.row.locked { cursor: default; }
-	.row.hl::before { content: ''; position: absolute; inset: -1px; border: 2px solid var(--accent); border-radius: 8px; pointer-events: none; }
-	.n { font-size: 13px; color: var(--ink-3); width: 24px; }
-	.ttl { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-	.hll { font-size: 11px; letter-spacing: 0.06em; color: var(--accent-strong); line-height: 16px; }
-	.tt { font-size: 16px; line-height: 24px; font-weight: 500; }
-	.si { font-size: 13px; line-height: 18px; color: var(--ink-2); }
-	.mdur { display: none; }
-	.fbadge { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--accent-line); color: var(--accent-ink); font-size: 12px; font-weight: 500; }
-	.dur { font-size: 13px; color: var(--ink-3); width: 64px; text-align: right; }
-	.stw { width: 128px; display: flex; justify-content: flex-end; }
-	.b { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 500; }
-	.b.ok { background: var(--ok-soft); color: var(--ok-ink); }
-	.b.acc { background: var(--accent-soft); color: var(--accent-ink); }
-	.b.open { border: 1px solid var(--line); color: var(--ink-2); }
-	.b.lock { gap: 7px; background: var(--subtle); color: var(--ink-3); }
-	.lk { display: flex; flex-direction: column; align-items: center; }
-	.lk span:first-child { width: 6px; height: 4px; border: 1.5px solid currentColor; border-bottom: 0; border-radius: 4px 4px 0 0; }
-	.lk span:last-child { width: 10px; height: 7px; border-radius: 2px; background: currentColor; }
-	.btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 6px; font-size: 15px; font-weight: 500; white-space: nowrap; }
-	.btn.primary { background: var(--accent); color: #fff !important; }
-	.btn.primary:hover { background: var(--accent-strong); }
-	.cta { height: 40px; padding: 0 16px; }
-	.chev { width: 16px; color: var(--ink-3); }
-	.tooltip { position: absolute; right: 256px; top: 50%; transform: translateY(-50%); padding: 6px 10px; border-radius: 6px; background: #0f172a; color: #fff; font-size: 13px; line-height: 18px; white-space: nowrap; z-index: 2; }
-	:global(html:not(.light)) .tooltip { background: #e2e8f0; color: #0f172a; }
+	/* Tracks-Raster */
+	.tracks { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 16px clamp(24px, 3vw, 56px); align-items: start; margin-top: 8px; }
+	.track { display: flex; flex-direction: column; margin-top: 16px; }
+	.track-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--line-strong); }
+	.track-name { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+	.track-desc { font-size: 14px; color: var(--ink-3); flex: 1; }
+	.track-prog { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+	/* Lektionsliste */
+	.lesson-list { list-style: none; margin: 0; padding: 0; }
+	.lesson-item { border-bottom: 1px solid var(--line); position: relative; }
+	.lesson-item:last-child { border-bottom: 0; }
+	.lesson-row { width: 100%; display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 10px 12px; border: 0; background: transparent; text-align: left; cursor: pointer; border-radius: 8px; margin: 2px 0; }
+	.lesson-row:not(.locked):hover { background: var(--subtle); }
+	.lesson-row.locked { cursor: default; }
+
+	/* Nummern-Badge */
+	.lesson-num { width: 34px; height: 34px; flex: none; display: grid; place-items: center; border-radius: 50%; font-size: 13px; font-weight: 600; border: 1.5px solid var(--line-strong); color: var(--ink-3); background: transparent; }
+	.lesson-num.num-done { background: var(--ok-soft); color: var(--ok-ink); border-color: var(--ok-line); }
+	.lesson-num.num-open { background: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-line); }
+	.lesson-num.num-locked { background: var(--subtle); color: var(--ink-3); border-color: var(--line); }
+
+	.lesson-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+	.lesson-title { font-size: 16px; font-weight: 500; color: var(--ink); }
+	.lesson-title.muted { color: var(--ink-3); }
+	.lesson-dur { font-size: 13px; color: var(--ink-3); }
+	.focus-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; border: 1px solid var(--accent-line); color: var(--accent-ink); font-size: 11px; font-weight: 500; }
+
+	.lesson-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--ink-3); white-space: nowrap; }
+	.lesson-status.status-done { color: var(--ok-ink); }
+	.lesson-status.status-started { color: var(--accent-ink); }
+	.lesson-status.status-locked { color: var(--ink-3); }
+
+	.tooltip { position: absolute; right: 16px; bottom: -30px; padding: 5px 10px; border-radius: 6px; background: #0f172a; color: #fff; font-size: 13px; white-space: nowrap; z-index: 5; pointer-events: none; }
+	:global(html:not(.light)) .tooltip { background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
 
 	@media (max-width: 767px) {
-		.page { font-size: 15px; line-height: 24px; }
-		.wrap { padding: 24px 16px 40px; }
-		.inner { gap: 18px; }
-		.head { gap: 4px; }
-		.h1 { font-size: 28px; line-height: 34px; letter-spacing: -0.01em; }
-		.sub { font-size: 14px; line-height: 20px; }
-		.guest { flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px 14px; }
-		.gi { display: none; }
-		.focus { flex-direction: column; align-items: stretch; gap: 10px; padding: 14px; }
+		.wrap { padding: 20px 16px 40px; gap: 18px; }
+		:global(.tb .hero-owl) { width: 80px; height: 72px; }
+		.hero { gap: 16px; padding: 18px; }
+		.hero-title { font-size: 20px; }
+		.hero-cta { height: 44px; font-size: 14px; }
+		.focus-banner { gap: 10px; padding: 12px 14px; }
 		:global(.tb .focus-owl) { display: none; }
-		.ft { font-size: 16px; line-height: 22px; }
-		.fs { display: none; }
-		.focus .btn { justify-content: center; height: 48px; font-size: 16px; }
-		.track { gap: 8px; margin-top: 6px; }
-		.thead { align-items: baseline; gap: 10px; }
-		.tnum { font-size: 12px; line-height: normal; align-self: auto; }
-		.h2 { font-size: 18px; line-height: 26px; }
-		.tdesc, .bar { display: none; }
-		.tprog { padding: 0; }
-		.row { gap: 12px; min-height: 56px; padding: 6px 14px; }
-		.n { font-size: 12px; width: 20px; }
-		.hll { font-size: 10px; line-height: 14px; }
-		.tt { font-size: 15px; line-height: 21px; }
-		.si, .dur, .fbadge, .cta, .chev { display: none; }
-		.mdur { display: block; font-size: 12px; line-height: 17px; color: var(--ink-3); }
-		.stw { width: auto; }
-		.b { height: auto; padding: 0; background: none !important; border: 0 !important; }
-		.b.ok { color: var(--ok-ink); }
-		.b.acc { color: var(--accent-ink); }
-		.b.open { color: var(--ink-3); }
-		.lk { display: none; }
-		.tooltip { right: 14px; top: auto; bottom: -32px; transform: none; }
+		.track-desc { display: none; }
+		.lesson-row { gap: 12px; min-height: 56px; padding: 8px 10px; }
+		.lesson-num { width: 30px; height: 30px; font-size: 12px; }
+		.lesson-title { font-size: 15px; }
 	}
 </style>
