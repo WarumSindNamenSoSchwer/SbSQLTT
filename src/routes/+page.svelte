@@ -92,6 +92,15 @@
 	let dbBusy = $state(false);
 	let menuOpen = $state(false);
 	let reduce = $state(false);
+	// Hero-Überschrift wird beim Laden getippt, danach blinkt der Strich weiter (wie in einem Editor)
+	const HERO_LINES = ['SQL lernen.', 'Einfach', 'ausprobieren.'];
+	const HERO_OFFS = HERO_LINES.map((_, i) => HERO_LINES.slice(0, i).reduce((n, l) => n + l.length, 0));
+	const HERO_TOTAL = HERO_LINES.reduce((n, l) => n + l.length, 0);
+	let typed = $state(HERO_TOTAL);
+	let typeCleanup = () => {};
+	const caretLine = $derived(
+		typed >= HERO_TOTAL ? HERO_LINES.length - 1 : HERO_OFFS.findLastIndex((o) => typed >= o)
+	);
 
 	// DOM refs
 	let heroRef: HTMLElement | undefined = $state();
@@ -224,7 +233,7 @@
 	// ---- Svelte highlight ----
 	function highlight(sql: string): string {
 		return sql.split('\n').map((line) =>
-			tok(line).map((t) => `<span style="color:${t.c}">${t.t.replace(/[&<>"']/g, (c: string) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]!)}</span>`).join('')
+			tok(line).map((t) => `<span style="color:${t.c}${t.c.includes('tok-kw') ? ';font-weight:500' : ''}">${t.t.replace(/[&<>"']/g, (c: string) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]!)}</span>`).join('')
 		).join('\n');
 	}
 
@@ -454,6 +463,15 @@
 
 	// ---- Mount ----
 	onMount(() => {
+		// Tippen nur ohne "Bewegung reduzieren"; sonst steht der Text sofort da
+		if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			typed = 0;
+			const delays = (n: number) => (HERO_OFFS.includes(n) && n > 0 ? 260 : 55 + Math.random() * 45);
+			let timer: ReturnType<typeof setTimeout>;
+			const step = () => { typed += 1; if (typed < HERO_TOTAL) timer = setTimeout(step, delays(typed)); };
+			timer = setTimeout(step, 350);
+			typeCleanup = () => clearTimeout(timer);
+		}
 		// Theme init
 		let stored = 'dark';
 		try { stored = localStorage.getItem('tabula-theme') ?? 'dark'; } catch { /* ignore */ }
@@ -495,6 +513,7 @@
 		}
 
 		return () => {
+			typeCleanup();
 			window.removeEventListener('scroll', onScroll);
 			window.removeEventListener('resize', onResize);
 			window.removeEventListener('pointermove', onMove as EventListener);
@@ -531,6 +550,8 @@
 		--tok-str: #86efac;
 		--tok-num: #fdba74;
 		--tok-com: #94a3b8;
+		--tok-id: #e8eef7;
+		--tok-op: #94a3b8;
 		--ink-3: #8796ad;
 		--shadow: 0 40px 90px -40px rgb(0 0 0/.8);
 	}
@@ -553,6 +574,8 @@
 		--tok-str: #15803d;
 		--tok-num: #b45309;
 		--tok-com: #64748b;
+		--tok-id: #0f172a;
+		--tok-op: #64748b;
 		--ink-3: #64748b;
 		--shadow: 0 40px 90px -40px rgb(15 23 42/.28);
 	}
@@ -576,6 +599,8 @@
 	.lp :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
 	@keyframes tbIn { from { transform: translateY(8px); } to { transform: none; } }
 	@keyframes tbBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+	.hero-caret { display: inline-block; width: .07em; height: .74em; margin-left: .05em; background: var(--blue); vertical-align: -.02em; animation: tbBlink 1.1s steps(1) infinite; }
+	.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 	@media (prefers-reduced-motion: reduce) {
 		.lp * { animation: none !important; transition: none !important; }
 	}
@@ -668,9 +693,15 @@
     <section bind:this={heroRef} aria-label="Einstieg" style="position:relative;max-width:1760px;margin:0 auto;padding:clamp(32px,7vh,96px) clamp(20px,4vw,64px) 0">
       <div>
         <h1 style="margin:0;font-size:clamp(46px,11vw,232px);line-height:.86;font-weight:700;letter-spacing:-.055em">
-          <span style="display:block;white-space:nowrap">SQL lernen.</span>
-          <span style="display:block;color:var(--blue)">Einfach</span>
-          <span style="display:block;color:var(--blue);white-space:nowrap">ausprobieren.<span aria-hidden="true" style="display:inline-block;width:.07em;height:.74em;margin-left:.05em;background:var(--blue);vertical-align:-.02em;animation:tbBlink 1.1s steps(1) infinite"></span></span>
+          <!-- Ganzer Text für Screenreader und Suchmaschinen, sichtbar wird er Buchstabe für Buchstabe getippt -->
+          <span class="sr-only">SQL lernen. Einfach ausprobieren.</span>
+          <span aria-hidden="true">
+            {#each HERO_LINES as line, i}
+              <span style="display:block;white-space:nowrap;{i > 0 ? 'color:var(--blue)' : ''}">
+                <span>{line.slice(0, Math.max(0, Math.min(line.length, typed - HERO_OFFS[i])))}</span>{#if caretLine === i}<span class="hero-caret"></span>{/if}<span style="visibility:hidden">{line.slice(Math.max(0, Math.min(line.length, typed - HERO_OFFS[i])))}</span>
+              </span>
+            {/each}
+          </span>
         </h1>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:24px 64px;align-items:flex-end;justify-content:space-between;margin-top:clamp(28px,4vh,56px)">
@@ -691,7 +722,7 @@
             <span style="flex:none;width:clamp(48px,4vw,68px);height:clamp(48px,4vw,68px);border-radius:50%;display:grid;place-items:center;border:2px solid var(--text);color:var(--text);transition:transform .4s cubic-bezier(.16,1,.3,1),background .25s,color .25s"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg></span>
           </a>
         </div>
-        <p style="flex:1 1 100%;margin:-8px 0 0;font-size:14px;color:var(--muted)">Lieber erst sehen, wie es im Unterricht läuft? <a href="/kontakt">Demo anfragen</a></p>
+        <p style="flex:1 1 100%;margin:-8px 0 0;font-size:14px;color:var(--muted)">Lieber erst sehen, wie es im Unterricht läuft? <a href="/kontakt" style="text-decoration:underline;text-underline-offset:3px">Demo anfragen</a></p>
       </div>
 
       <!-- Studio -->

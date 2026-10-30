@@ -32,6 +32,12 @@
 	--danger-line: #fecaca;
 	--danger-ink: #991b1b;
 	--shadow-pop: 0 12px 32px -12px rgb(15 23 42 / 0.28);
+	/* SQL-Einfärbung (highlight.ts), wie Entwurf v12 */
+	--tok-kw: #1d4ed8;
+	--tok-num: #b45309;
+	--tok-str: #15803d;
+	--tok-id: #0f172a;
+	--tok-op: #64748b;
 	--sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
 	--mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
 	background: var(--bg);
@@ -64,6 +70,11 @@ html:not(.light) .tb {
 	--danger-line: #7f1d1d;
 	--danger-ink: #fca5a5;
 	--shadow-pop: 0 12px 32px -12px rgb(0 0 0 / 0.6);
+	--tok-kw: #93c5fd;
+	--tok-num: #fdba74;
+	--tok-str: #86efac;
+	--tok-id: #e2e8f0;
+	--tok-op: #94a3b8;
 }
 .tb [data-tone='neutral'] { --fb-bg: var(--surface); --fb-line: var(--line); --fb-ink: var(--ink); --fb-ico-bg: var(--subtle); --fb-ico: var(--ink-2); }
 .tb [data-tone='accent'] { --fb-bg: var(--accent-soft); --fb-line: var(--accent-line); --fb-ink: var(--accent-ink); --fb-ico-bg: var(--accent); --fb-ico: #fff; }
@@ -91,3 +102,6 @@ html:not(.light) .tb {
 	margin-left: 0.2em;
 }
 .tb .arr.back { transform: scaleX(-1); margin-left: 0; margin-right: 0.2em; }
+
+/* Code auf dunklem Grund (Beispiel-Karte, letzte Abfrage, Quiz): immer helle Schrift */
+.tb .code-card, .tb .query-box, .tb .q-code { --tok-kw: #60a5fa; --tok-num: #fdba74; --tok-str: #86efac; --tok-id: #e2e8f0; --tok-op: #94a3b8; }
