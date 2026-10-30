@@ -313,28 +313,29 @@
 
 		{:else if phase === 'reveal_correct'}
 			<!-- E3-H Richtig -->
-			<div class="msg-center">
+			<div class="result-card result-ok">
 				<Edgar pose="success" style="width:150px;height:135px" />
-				<p class="msg-title ok">Richtig! +{earnedPoints.toLocaleString('de-DE')}</p>
+				<p class="result-title" style="color:var(--ok-ink)">Richtig!</p>
+				<p class="result-pts" style="color:var(--ok-ink)">+{earnedPoints.toLocaleString('de-DE')} Punkte</p>
 				{#if myRank !== null}
-					<p class="msg-body">Du bist auf Platz {myRank}.</p>
+					<p class="result-rank" style="color:var(--ink-2)">Platz {myRank}</p>
 				{/if}
 			</div>
 
 		{:else if phase === 'reveal_wrong'}
 			<!-- E3-H2 Falsch -->
-			<div class="msg-center">
+			<div class="result-card result-bad">
 				<Edgar pose="thinking" style="width:150px;height:135px" />
-				<p class="msg-title">Leider falsch</p>
+				<p class="result-title">Leider falsch</p>
 				{#if correctIdx !== null}
-					<p class="msg-body">Richtig wäre gewesen:</p>
+					<p class="result-body">Richtig war:</p>
 					<div class="pick-pill" style="background:{Q_COLORS[correctIdx]}">
 						<span class="pick-sym">{Q_SYMBOLS[correctIdx]}</span>
 						<span class="pick-text mono">{qOptions[correctIdx]}</span>
 					</div>
 				{/if}
 				{#if myRank !== null}
-					<p class="msg-body">Du bist auf Platz {myRank}.</p>
+					<p class="result-rank" style="color:var(--ink-2)">Platz {myRank}</p>
 				{/if}
 			</div>
 
@@ -540,6 +541,28 @@
 	.opt-tile:disabled { cursor: default; }
 	.opt-sym { font-size: 26px; width: 28px; text-align: center; }
 	.opt-text { font-size: 15px; font-weight: 500; }
+
+	/* Ergebnis-Karte (richtig / falsch) */
+	.result-card {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 14px;
+		padding: 28px 24px;
+		text-align: center;
+		border-radius: 20px;
+		margin: 16px;
+		animation: tb-in .3s ease-out;
+	}
+	@keyframes tb-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+	.result-ok { background: var(--ok-soft); }
+	.result-bad { background: var(--danger-soft); }
+	.result-title { font-size: 28px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
+	.result-pts { font-size: 22px; font-weight: 600; margin: 0; }
+	.result-rank { font-size: 15px; margin: 0; }
+	.result-body { font-size: 15px; color: var(--ink-2); margin: 0; }
 
 	/* Spinner */
 	.spinner {

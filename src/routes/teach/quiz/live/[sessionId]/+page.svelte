@@ -285,8 +285,13 @@
 				<div class="progress-bar-fill" style="width:{qTotal ? Math.round((qIndex - 1) / qTotal * 100) + '%' : '0%'}"></div>
 			</div>
 			<span class="answered-label"><b>{answeredCount}</b> / {totalParticipants || participants.length} geantwortet</span>
-			<div class="timer-circle">
-				<span class="timer-num mono">{timeLeft}</span>
+			<div
+				class="timer-circle"
+				style="background:conic-gradient(var(--accent) {Math.round(timeLeft / Math.max(qTimeLimit, 1) * 360)}deg,var(--subtle) 0)"
+			>
+				<span class="timer-inner">
+					<span class="timer-num mono" style="color:{timeLeft <= 5 ? 'var(--danger-ink)' : 'var(--ink)'}">{timeLeft}</span>
+				</span>
 			</div>
 			<button class="btn-skip" onclick={() => send({ type: 'reveal' })}>Überspringen</button>
 		</div>
@@ -314,25 +319,34 @@
 			<span class="answered-label">{revealCounts.reduce((s, n) => s + n, 0)} Antworten</span>
 		</div>
 		<div class="reveal-body">
-			<!-- Balken-Liste links -->
-			<div class="reveal-bars">
+			<!-- Vertikale Balken: je Antwortoption eine Spalte -->
+			<div class="reveal-vcols">
 				{#each qOptions as opt, i}
-					<div class="reveal-row">
-						<span class="rev-sym">{Q_SYMBOLS[i]}</span>
-						<span class="rev-text mono">{opt}</span>
-						<div class="rev-bar-wrap">
-							<div class="rev-bar-fill" style="width:{revealBarWidth(i)};background:{Q_COLORS[i]}"></div>
+					{@const total = revealCounts.reduce((s, n) => s + n, 0)}
+					{@const maxC = Math.max(...revealCounts, 1)}
+					{@const pct = Math.round((revealCounts[i] ?? 0) / maxC * 100)}
+					<div class="rev-vcol">
+						<span class="rev-vcount mono">{revealCounts[i] ?? 0}</span>
+						<div class="rev-vbar-wrap">
+							<div
+								class="rev-vbar-fill"
+								style="height:{pct}%;background:{Q_COLORS[i]};opacity:{i === revealCorrectIdx ? 1 : 0.5};transition:height .8s cubic-bezier(.16,1,.3,1)"
+							></div>
 						</div>
-						<span class="rev-count mono">{revealCounts[i] ?? 0}</span>
+						<div class="rev-vlabel mono" style="opacity:{i === revealCorrectIdx ? 1 : 0.5}">
+							<span class="rev-vsym" aria-hidden="true">{Q_SYMBOLS[i]}</span>
+							<span class="rev-vtext">{opt}</span>
+							{#if i === revealCorrectIdx}<span class="rev-check">✓</span>{/if}
+						</div>
 					</div>
 				{/each}
 			</div>
-			<!-- Info-Box rechts -->
-			<div class="reveal-info">
-				<p class="rev-correct-label">✓ Richtig: {Q_SYMBOLS[revealCorrectIdx]}</p>
-				<p class="rev-correct-text mono">{qOptions[revealCorrectIdx]}</p>
+			<!-- Edgar + "Weiter" Leiste unten -->
+			<div class="reveal-footer">
+				<Edgar pose="hint" style="width:80px;height:72px;flex:none" />
+				<p class="reveal-hint-text">Richtig: <strong>{Q_SYMBOLS[revealCorrectIdx]} {qOptions[revealCorrectIdx]}</strong></p>
 				<button class="btn-weiter" onclick={() => { phase = 'leaderboard'; }}>
-					Weiter <span aria-hidden="true">→</span>
+					Weiter
 				</button>
 			</div>
 		</div>
@@ -574,12 +588,20 @@
 		width: 120px;
 		height: 120px;
 		border-radius: 999px;
-		border: 10px solid var(--accent);
 		display: grid;
 		place-items: center;
 		flex: none;
+		transition: background .9s linear;
 	}
-	.timer-num { font-size: 52px; font-weight: 500; }
+	.timer-inner {
+		width: 96px;
+		height: 96px;
+		border-radius: 999px;
+		background: var(--bg);
+		display: grid;
+		place-items: center;
+	}
+	.timer-num { font-size: 52px; font-weight: 700; }
 	.btn-skip {
 		font-size: 26px;
 		color: var(--ink-3);
@@ -641,52 +663,66 @@
 	}
 	.reveal-body {
 		flex: 1;
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 520px;
-		gap: 64px;
-		padding: 8px 64px 64px;
+		display: flex;
+		flex-direction: column;
+		gap: 32px;
+		padding: 8px 64px 40px;
 		min-height: 0;
 	}
-	.reveal-bars {
+	.reveal-vcols {
+		flex: 1;
+		display: flex;
+		align-items: flex-end;
+		gap: 32px;
+		min-height: 0;
+		padding: 0 32px;
+	}
+	.rev-vcol {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
-		gap: 22px;
-		justify-content: center;
-	}
-	.reveal-row {
-		display: grid;
-		grid-template-columns: 72px 560px minmax(0, 1fr) 80px;
 		align-items: center;
-		gap: 20px;
+		gap: 12px;
+		height: 100%;
+		justify-content: flex-end;
 	}
-	.rev-sym { font-size: 48px; text-align: center; }
-	.rev-text { font-size: 40px; font-weight: 500; }
-	.rev-bar-wrap {
-		height: 72px;
-		border-radius: 12px;
-		background: var(--subtle);
-		overflow: hidden;
-	}
-	.rev-bar-fill { height: 100%; border-radius: 12px; transition: width 0.6s ease; }
-	.rev-count { font-size: 44px; font-weight: 500; text-align: right; }
-	.reveal-info {
+	.rev-vcount { font-size: 36px; font-weight: 700; }
+	.rev-vbar-wrap {
+		width: 100%;
+		flex: 1;
 		display: flex;
-		flex-direction: column;
-		gap: 24px;
-		justify-content: center;
-		padding: 40px;
-		border-radius: 16px;
-		border: 2px solid var(--ok);
-		background: var(--ok-soft);
+		align-items: flex-end;
 	}
-	.rev-correct-label {
-		font-size: 40px;
+	.rev-vbar-fill {
+		width: 100%;
+		min-height: 8px;
+		border-radius: 12px 12px 0 0;
+	}
+	.rev-vlabel {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 28px;
 		font-weight: 600;
-		color: var(--ok-ink);
+		text-align: center;
 	}
-	.rev-correct-text {
-		font-size: 40px;
-		line-height: 52px;
+	.rev-vsym { font-size: 30px; }
+	.rev-vtext { font-size: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
+	.rev-check { color: var(--ok); font-size: 32px; }
+	.reveal-footer {
+		display: flex;
+		align-items: center;
+		gap: 28px;
+		padding: 28px 32px;
+		border-radius: 16px;
+		background: var(--subtle);
+		flex: none;
+	}
+	.reveal-hint-text {
+		flex: 1;
+		margin: 0;
+		font-size: 30px;
+		line-height: 1.4;
 	}
 	.btn-weiter {
 		display: inline-flex;
