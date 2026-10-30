@@ -92,7 +92,7 @@
 	.error-box { padding: 14px; border-radius: 8px; background: var(--danger-soft); border: 1px solid var(--danger-line); color: var(--danger-ink); font-size: 14px; }
 	.field { display: flex; flex-direction: column; gap: 6px; }
 	.field-label { font-size: 14px; font-weight: 500; color: var(--ink-2); }
-	.field-input { height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 15px; width: 100%; }
+	.field-input { box-sizing: border-box; height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 15px; width: 100%; }
 	.field-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 	.btn-row { display: flex; gap: 10px; justify-content: flex-end; padding-top: 4px; }
 	.btn-primary { display: inline-flex; align-items: center; height: 44px; padding: 0 20px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }

@@ -160,6 +160,11 @@
 		border-bottom: 1px solid var(--line);
 	}
 	.eval-row:last-child { border-bottom: none; }
+	/* Handy: Balken weglassen, Name + Prozent + Punkte passen in eine Zeile */
+	@media (max-width: 640px) {
+		.eval-row { grid-template-columns: 24px minmax(0, 1fr) auto auto; gap: 10px; padding: 0 12px; }
+		.eval-bar-wrap { display: none; }
+	}
 	.eval-num { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-3); }
 	.eval-name { font-size: 15px; }
 	.eval-bar-wrap {

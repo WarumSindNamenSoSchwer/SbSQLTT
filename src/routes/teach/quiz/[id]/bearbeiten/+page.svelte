@@ -302,7 +302,7 @@
 	.add-title { font-size: 20px; font-weight: 600; }
 	.field { display: flex; flex-direction: column; gap: 6px; }
 	.field-label { font-size: 14px; font-weight: 500; color: var(--ink-2); }
-	.field-input { height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 15px; width: 100%; }
+	.field-input { box-sizing: border-box; height: 44px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 15px; width: 100%; }
 	.field-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 	.ta { height: auto; padding: 10px 14px; resize: vertical; }
 	.mono { font-family: var(--mono); font-size: 13px; }
