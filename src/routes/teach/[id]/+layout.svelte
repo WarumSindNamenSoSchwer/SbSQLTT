@@ -233,12 +233,12 @@
 			<div class="class-header-top">
 				<div class="class-header-title">
 					<h1 class="class-name">{cls.name}</h1>
-					<span class="class-meta">Schuljahr {schuljahr()} · {cls.student_count ?? 0} Schüler</span>
+					<span class="class-meta">{cls.student_count ?? 0} Schüler</span>
 				</div>
 				<div class="class-header-actions">
 					<button class="code-btn" onclick={openQr} title="QR-Code anzeigen">
 						<span class="mono code-text">{cls.join_code}</span>
-						<span class="code-qr-hint">QR ⤢</span>
+						<span class="code-qr-hint">QR</span>
 					</button>
 					<a href="/teach/quiz" class="btn-quiz">▶ Quiz</a>
 				</div>

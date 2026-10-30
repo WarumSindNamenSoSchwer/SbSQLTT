@@ -15,9 +15,9 @@
 	import { CATALOG } from '$lib/tabula/lessons.js';
 
 	function lessonLabel(id: string | null | undefined): string {
-		if (!id) return 'Kein Fokus gesetzt';
+		if (!id) return 'Kein Fokus';
 		const e = CATALOG.find((c) => c.id === id);
-		return e ? `Lektion ${e.n} · ${e.title}` : id;
+		return e ? `${e.n} · ${e.title}` : id;
 	}
 	let dark = $state(false);
 
@@ -58,7 +58,6 @@
 				return;
 			}
 			if (session.user.role !== 'teacher') {
-				// Schüler: Hinweis
 				return;
 			}
 			loadClasses();
@@ -83,15 +82,6 @@
 	const activeClasses = $derived(classes.filter(c => !c.archived));
 	const archivedClasses = $derived(classes.filter(c => c.archived));
 	const shown = $derived(tab === 'aktiv' ? activeClasses : archivedClasses);
-
-	function relativeTime(ts: number): string {
-		const s = Math.floor(Date.now() / 1000 - ts);
-		if (s < 120) return 'gerade eben';
-		if (s < 3600) return `vor ${Math.floor(s / 60)} min`;
-		if (s < 86400) return `vor ${Math.floor(s / 3600)} Std.`;
-		if (s < 172800) return 'gestern';
-		return `vor ${Math.floor(s / 86400)} Tagen`;
-	}
 </script>
 
 <svelte:head><title>Klassen · Tabula</title></svelte:head>
@@ -139,11 +129,14 @@
 			<div class="teach-content">
 				<div class="page-header">
 					<h1 class="page-title">Klassen</h1>
-					<div class="seg-tabs">
-						<button class:active={tab === 'aktiv'} onclick={() => (tab = 'aktiv')}>Aktiv</button>
-						<button class:active={tab === 'archiviert'} onclick={() => (tab = 'archiviert')}>Archiviert</button>
+					<div class="seg-tabs" role="tablist" aria-label="Filter">
+						<button role="tab" aria-selected={tab === 'aktiv'} class:active={tab === 'aktiv'} onclick={() => (tab = 'aktiv')}>Aktiv</button>
+						<button role="tab" aria-selected={tab === 'archiviert'} class:active={tab === 'archiviert'} onclick={() => (tab = 'archiviert')}>Archiviert</button>
 					</div>
-					<button class="btn-primary" onclick={() => goto('/teach/neu')}>+ Neue Klasse</button>
+					<button class="btn-primary" onclick={() => goto('/teach/neu')}>
+						<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
+						Neue Klasse
+					</button>
 				</div>
 
 				{#if session.user && session.user.role === 'teacher' && !session.user.email_verified_at}
@@ -163,7 +156,10 @@
 							<Edgar pose="curious" {dark} class="empty-owl" />
 							<span class="empty-title">Noch keine Klasse</span>
 							<p class="empty-body">Legen Sie Ihre erste Klasse an. Ihre Schüler treten danach mit einem Code oder QR-Code bei.</p>
-							<button class="btn-primary mt6" onclick={() => goto('/teach/neu')}>+ Neue Klasse</button>
+							<button class="btn-primary mt6" onclick={() => goto('/teach/neu')}>
+								<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"></path></svg>
+								Neue Klasse
+							</button>
 						</div>
 					{:else}
 						<div class="empty-state">
@@ -171,32 +167,37 @@
 						</div>
 					{/if}
 				{:else}
-					<div class="class-grid">
-						{#each shown as cls (cls.id)}
-							<button class="class-card" onclick={() => goto(`/teach/${cls.id}`)}>
-								<div class="class-card-head">
-									<div class="class-card-info">
-										<span class="class-name">{cls.name}</span>
-										<span class="class-meta">
-											{cls.student_count ?? 0} Schüler
-										</span>
-									</div>
-									<span class="card-dots" aria-hidden="true">⋯</span>
-								</div>
-								<div class="class-focus-box">
-									<span class="lbl">FOKUS</span>
-									<span class="class-focus">{lessonLabel(cls.focus_lesson)}</span>
-								</div>
-								<div class="class-card-footer">
-									{#if (cls.stuck_count ?? 0) > 0}
-										<span class="badge danger">! {cls.stuck_count} hängen fest</span>
-									{:else}
-										<span class="badge ok">✓ Niemand hängt fest</span>
-									{/if}
-									<span class="class-last">{relativeTime(cls.created_at)}</span>
-								</div>
-							</button>
-						{/each}
+					<div class="class-table-wrap">
+						<table class="class-table">
+							<thead>
+								<tr>
+									<th scope="col">Klasse</th>
+									<th scope="col">Fokus</th>
+									<th scope="col" class="th-right">Schüler</th>
+									<th scope="col">Hängt fest</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each shown as cls (cls.id)}
+									<tr class="class-row" onclick={() => goto(`/teach/${cls.id}`)}>
+										<td>
+											<button type="button" class="class-name-btn" onclick={() => goto(`/teach/${cls.id}`)}>
+												{cls.name}
+											</button>
+										</td>
+										<td class="td-focus">{lessonLabel(cls.focus_lesson)}</td>
+										<td class="td-right">{cls.student_count ?? 0}</td>
+										<td>
+											{#if (cls.stuck_count ?? 0) > 0}
+												<span class="stuck-dot red"></span><span class="stuck-txt danger">{cls.stuck_count} hängen fest</span>
+											{:else}
+												<span class="stuck-dot green"></span><span class="stuck-txt ok">Niemand</span>
+											{/if}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
 					</div>
 				{/if}
 			</div>
@@ -219,51 +220,48 @@
 
 	.teach-main { flex: 1; display: flex; justify-content: center; padding: 44px 40px; }
 	@media (max-width: 767px) { .teach-main { padding: 20px 16px; } }
-	.teach-content { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 28px; }
+	.teach-content { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 24px; }
 
-	.page-header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+	.page-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 	.verify-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--accent-line); background: var(--accent-soft); color: var(--accent-ink); font-size: 14px; line-height: 20px; }
 	.verify-banner span { flex: 1; min-width: 220px; }
 	.verify-btn { height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--accent-line); background: var(--surface); color: var(--accent-ink); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
 	.verify-btn:disabled { opacity: .7; cursor: default; }
-	.page-title { flex: 1; font-size: 36px; line-height: 44px; font-weight: 600; letter-spacing: -0.015em; }
-	@media (max-width: 767px) { .page-title { font-size: 26px; line-height: 34px; } }
+	.page-title { flex: 1; font-size: clamp(26px, 2.2vw, 34px); font-weight: 600; letter-spacing: -0.025em; }
 
-	.seg-tabs { display: flex; padding: 3px; border-radius: 8px; background: var(--subtle); font-size: 14px; font-weight: 500; }
-	.seg-tabs button { padding: 5px 14px; border-radius: 6px; color: var(--ink-2); }
+	.seg-tabs { display: flex; gap: 2px; padding: 3px; border-radius: 8px; background: var(--subtle); font-size: 14px; font-weight: 500; }
+	.seg-tabs button { height: 32px; padding: 0 12px; border-radius: 6px; color: var(--ink-2); cursor: pointer; }
 	.seg-tabs button.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(15 23 42 / 0.08); }
 
-	.btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 6px; background: var(--accent); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer; }
+	.btn-primary { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 16px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
 	.btn-primary:hover { background: var(--accent-strong); }
 
 	.error-box { padding: 14px; border-radius: 8px; background: var(--danger-soft); border: 1px solid var(--danger-line); color: var(--danger-ink); font-size: 14px; }
 
-	.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 10px; padding: 56px 40px; min-height: 300px; }
-	:global(.empty-owl) { width: 150px; height: 135px; }
+	.empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 16px; padding: 64px 24px; min-height: 300px; }
+	:global(.empty-owl) { width: 140px; height: 126px; }
 	.empty-title { font-size: 22px; font-weight: 600; }
-	.empty-body { font-size: 15px; color: var(--ink-2); max-width: 440px; line-height: 24px; }
+	.empty-body { font-size: 15px; color: var(--ink-2); max-width: 44ch; line-height: 1.6; }
 	.mt6 { margin-top: 6px; }
 
-	.class-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-	@media (max-width: 1024px) { .class-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-	@media (max-width: 640px) { .class-grid { grid-template-columns: 1fr; } }
-
-	.class-card { display: flex; flex-direction: column; gap: 14px; padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); text-align: left; cursor: pointer; transition: box-shadow 0.15s; }
-	.class-card:hover { box-shadow: 0 4px 16px -4px rgb(15 23 42 / 0.12); }
-
-	.class-card-head { display: flex; align-items: flex-start; gap: 10px; }
-	.class-card-info { flex: 1; display: flex; flex-direction: column; }
-	.class-name { font-size: 18px; line-height: 26px; font-weight: 600; }
-	.class-meta { font-size: 13px; color: var(--ink-3); }
-	.card-dots { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 6px; color: var(--ink-3); }
-
-	.class-focus-box { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 6px; background: var(--subtle); }
-	.lbl { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--ink-3); }
-	.class-focus { font-size: 14px; line-height: 20px; font-weight: 500; }
-
-	.class-card-footer { display: flex; align-items: center; gap: 10px; }
-	.badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-	.badge.danger { background: var(--danger-soft); color: var(--danger-ink); }
-	.badge.ok { border: 1px solid var(--line); color: var(--ink-2); font-weight: 500; }
-	.class-last { flex: 1; text-align: right; font-size: 13px; color: var(--ink-3); }
+	/* Table */
+	.class-table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+	.class-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 15px; }
+	.class-table thead tr { background: var(--subtle); }
+	.class-table th { text-align: left; padding: 11px 20px; font: 500 12px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink-3); border-bottom: 1px solid var(--line); }
+	.th-right { text-align: right; }
+	.class-table tbody tr.class-row { cursor: pointer; transition: background 0.1s; }
+	.class-table tbody tr.class-row:hover { background: var(--subtle); }
+	.class-table td { padding: 15px 20px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+	.class-table tbody tr:last-child td { border-bottom: none; }
+	.class-name-btn { font-weight: 600; font-size: 15px; cursor: pointer; }
+	.class-name-btn:hover { text-decoration: underline; color: var(--accent-ink); }
+	.td-focus { color: var(--ink-2); font-size: 14px; }
+	.td-right { text-align: right; font-variant-numeric: tabular-nums; }
+	.stuck-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: middle; flex: none; }
+	.stuck-dot.red { background: var(--danger); }
+	.stuck-dot.green { background: var(--ok); }
+	.stuck-txt { font-size: 14px; font-weight: 500; vertical-align: middle; }
+	.stuck-txt.danger { color: var(--danger-ink); }
+	.stuck-txt.ok { color: var(--ink-3); font-weight: 400; }
 </style>
