@@ -832,6 +832,16 @@
       </div>
     </section>
 
+    <!-- Marquee -->
+    <section bind:this={marqueeSection} aria-hidden="true" style="margin-top:clamp(96px,14vh,180px);overflow:hidden;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+      <div style="display:flex;align-items:center;gap:.35em;white-space:nowrap;font-size:clamp(64px,12vw,250px);line-height:1;font-weight:700;letter-spacing:-.05em;transform:translateX(calc(var(--mp,0) * -38% + 2%));will-change:transform">
+        <span>SELECT</span><span style="color:var(--blue)">*</span><span>FROM</span><span bind:this={mqOwlSpan} data-owl={mqWave ? 'wave' : 'lookaround'} style="display:inline-block;width:1.05em;height:.95em;flex:none"></span><span>WHERE</span><span style="color:var(--blue)">JOIN</span><span>GROUP BY</span>
+      </div>
+      <div style="display:flex;gap:.35em;white-space:nowrap;font-size:clamp(64px,12vw,250px);line-height:1;font-weight:700;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:2px var(--blue);transform:translateX(calc(var(--mp,0) * 38% - 46%));will-change:transform">
+        <span>ORDER BY</span><span>HAVING</span><span>LIMIT</span><span>CREATE TABLE</span><span>PRIMARY KEY</span>
+      </div>
+    </section>
+
     <!-- Lehrkräfte (sticky) -->
     <section bind:this={teachSection} id="lehrkraefte" aria-label="Für Lehrkräfte" style="position:relative;height:{teachWrapH};margin-top:clamp(64px,10vh,140px);background:var(--surface);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
       <div style="position:{stickyPos};top:68px;min-height:{stickyMinH};display:flex;flex-direction:column;justify-content:center;max-width:1760px;margin:0 auto;padding:40px clamp(20px,4vw,64px)">
@@ -1060,16 +1070,6 @@
         <div style="padding:22px 32px 0 0"><h3 style="margin:0 0 6px;font-size:clamp(18px,1.3vw,22px);font-weight:600">Direkt loslegen</h3><p style="margin:0;font-size:15px;line-height:1.6;color:var(--muted);max-width:44ch">Browser öffnen, Abfrage schreiben. Auch auf dem Schulrechner.</p></div>
         <div style="padding:22px 32px 0 0"><h3 style="margin:0 0 6px;font-size:clamp(18px,1.3vw,22px);font-weight:600">Verstehen, was fehlt</h3><p style="margin:0;font-size:15px;line-height:1.6;color:var(--muted);max-width:44ch">Konkrete Hinweise helfen beim nächsten Versuch.</p></div>
         <div style="padding:22px 32px 0 0"><h3 style="margin:0 0 6px;font-size:clamp(18px,1.3vw,22px);font-weight:600">Mit den Daten weiterarbeiten</h3><p style="margin:0;font-size:15px;line-height:1.6;color:var(--muted);max-width:44ch">Der Lernpfad führt über die eigene Datenbank bis zur Datenanalyse mit Python.</p></div>
-      </div>
-    </section>
-
-    <!-- Marquee -->
-    <section bind:this={marqueeSection} aria-hidden="true" style="margin-top:clamp(96px,14vh,180px);overflow:hidden;padding:12px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-      <div style="display:flex;align-items:center;gap:.35em;white-space:nowrap;font-size:clamp(64px,12vw,250px);line-height:1;font-weight:700;letter-spacing:-.05em;transform:translateX(calc(var(--mp,0) * -38% + 2%));will-change:transform">
-        <span>SELECT</span><span style="color:var(--blue)">*</span><span>FROM</span><span bind:this={mqOwlSpan} data-owl={mqWave ? 'wave' : 'lookaround'} style="display:inline-block;width:1.05em;height:.95em;flex:none"></span><span>WHERE</span><span style="color:var(--blue)">JOIN</span><span>GROUP BY</span>
-      </div>
-      <div style="display:flex;gap:.35em;white-space:nowrap;font-size:clamp(64px,12vw,250px);line-height:1;font-weight:700;letter-spacing:-.05em;color:transparent;-webkit-text-stroke:2px var(--blue);transform:translateX(calc(var(--mp,0) * 38% - 46%));will-change:transform">
-        <span>ORDER BY</span><span>HAVING</span><span>LIMIT</span><span>CREATE TABLE</span><span>PRIMARY KEY</span>
       </div>
     </section>
 
