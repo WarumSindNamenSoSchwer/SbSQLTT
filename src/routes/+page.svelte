@@ -108,7 +108,7 @@
 	let roleSection: HTMLElement | undefined = $state();
 	let roleViewport: HTMLElement | undefined = $state();
 	let roleTrack: HTMLElement | undefined = $state();
-	let owlIcon: { [k: string]: string } = {};
+	let owlIcon: { [k: string]: string } = { light: G.icon({}), dark: G.icon(G.DARK) };
 
 	// ---- Derived ----
 	const heroLines = $derived(heroCode.split('\n').map((_, i) => i + 1));
@@ -228,7 +228,7 @@
 	}
 
 	// ---- Theme ----
-	function applyTheme(t: string) {
+	function applyTheme(t: string, save = false) {
 		const root = document.documentElement;
 		if (t === 'light') {
 			root.classList.add('light');
@@ -237,12 +237,13 @@
 			root.classList.remove('light');
 			delete root.dataset.tb;
 		}
-		try { localStorage.setItem('tabula-theme', t); } catch { /* ignore */ }
+		// Nur speichern, wenn jemand den Schalter benutzt (Datenschutz: Eintrag erst durch eigene Handlung)
+		if (save) try { localStorage.setItem('tabula-theme', t); } catch { /* ignore */ }
 	}
 
 	function toggleTheme() {
 		theme = theme === 'dark' ? 'light' : 'dark';
-		applyTheme(theme);
+		applyTheme(theme, true);
 		paintOwls();
 	}
 
@@ -462,8 +463,7 @@
 		reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		pinned = !reduce && innerWidth >= 900 && innerHeight >= 680;
 
-		// Load owl icons
-		owlIcon = { light: G.icon({}), dark: G.icon(G.DARK) };
+		// Owl icons are prepared at declaration (otherwise the first paint stores an empty icon)
 
 		// Parse books from BOOKS_SEED
 		books = [...BOOKS_SEED.matchAll(/\((\d+),'((?:[^']|'')*)','(?:[^']|'')*',(\d+|NULL),(?:\d+|NULL),(?:[\d.]+|NULL),'(\w+)',\d+\)/g)]
