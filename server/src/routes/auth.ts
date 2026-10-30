@@ -7,7 +7,7 @@
  */
 import type { FastifyPluginAsync } from 'fastify'
 import { z } from 'zod'
-import type { Db } from '../db.js'
+import { deleteTeacherQuizzes, type Db } from '../db.js'
 import type { MailSender } from '../mail.js'
 import { clientKey, type RateLimiters } from '../plugins/ratelimit.js'
 import { sendVerificationMail } from './email-verify.js'
@@ -442,6 +442,7 @@ const authRoutes: FastifyPluginAsync<AuthPluginOptions> = async (fastify, opts) 
            SELECT m.user_id FROM memberships m JOIN classes c ON c.id = m.class_id WHERE c.teacher_id = ?)`
       ).run(user.id)
       deleteAllSessions(db, user.id)
+      deleteTeacherQuizzes(db, user.id)
       db.prepare('DELETE FROM users WHERE id = ?').run(user.id)
     })()
 

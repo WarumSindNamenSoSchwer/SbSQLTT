@@ -140,6 +140,21 @@ describe('P10 Konto löschen', () => {
     expect((await del({ password: 'falsch' })).statusCode).toBe(403)
     expect((await del({ password: t.password })).statusCode).toBe(200)
   })
+
+  it('löscht auch eigene Fragensätze (Nutzungsbedingungen 9, Datenschutz K8)', async () => {
+    const t = await registerTeacher(app)
+    const mk = await app.inject({
+      method: 'POST', url: '/api/teacher/quizzes', headers: { cookie: t.cookie, 'content-type': 'application/json' },
+      payload: { title: 'Mein Quiz', questions: [{ question: 'Was ist SQL?', options: ['Sprache', 'Tier'], correct_idx: 0 }] },
+    })
+    expect(mk.statusCode).toBeLessThan(300)
+    const own = () => (db.prepare("SELECT COUNT(*) AS n FROM quiz_question_sets WHERE source = 'custom'").get() as { n: number }).n
+    expect(own()).toBe(1)
+    const res = await app.inject({ method: 'DELETE', url: '/api/me', headers: { cookie: t.cookie, 'content-type': 'application/json' }, payload: { password: t.password } })
+    expect(res.statusCode).toBe(200)
+    expect(own()).toBe(0)
+    expect((db.prepare('SELECT COUNT(*) AS n FROM quiz_questions').get() as { n: number }).n).toBe(0)
+  })
 })
 
 describe('P12 Quiz-WebSocket bleibt bei unerwarteten Nachrichten stabil', () => {

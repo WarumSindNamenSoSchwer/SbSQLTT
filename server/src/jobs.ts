@@ -5,7 +5,7 @@
  * - Abgelaufene Passwort-Reset-Token loeschen
  * - Quiz-Antworten 24h nach Quiz-Ende loeschen (K5)
  */
-import type { Db } from './db.js'
+import { deleteTeacherQuizzes, type Db } from './db.js'
 import type { MailSender } from './mail.js'
 import { buildSystemMail } from './mail-templates.js'
 import { deleteExpiredSessions } from './session.js'
@@ -114,6 +114,10 @@ export function runInactivityDeletionJob(db: Db, now?: number): number {
         JOIN users t ON t.id = c.teacher_id
         WHERE t.last_login_at IS NOT NULL AND t.last_login_at <= ?)
     `).run(threshold)
+    const stale = db.prepare(`
+      SELECT id FROM users WHERE role = 'teacher' AND last_login_at IS NOT NULL AND last_login_at <= ?
+    `).all(threshold) as { id: number }[]
+    for (const t of stale) deleteTeacherQuizzes(db, t.id)
     return db.prepare(`
       DELETE FROM users
       WHERE last_login_at IS NOT NULL AND last_login_at <= ?

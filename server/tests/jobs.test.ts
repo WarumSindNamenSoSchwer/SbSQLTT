@@ -116,10 +116,18 @@ describe('K8: Inaktivitaets-Loeschung', () => {
     const students = db.prepare("SELECT id FROM users WHERE role = 'student'").all() as { id: number }[]
     expect(students.length).toBeGreaterThanOrEqual(1)
 
+    // eigener Fragensatz der Lehrkraft (muss mitgelöscht werden, Nutzungsbedingungen 9)
+    const mk = await app.inject({
+      method: 'POST', url: '/api/teacher/quizzes', headers: { cookie: teacher.cookie, 'content-type': 'application/json' },
+      payload: { title: 'Altes Quiz', questions: [{ question: 'Frage?', options: ['a', 'b'], correct_idx: 0 }] },
+    })
+    expect(mk.statusCode).toBeLessThan(300)
+
     // Lehrkraft auf inaktiv setzen (13 Monate zurueck)
     db.prepare('UPDATE users SET last_login_at = ? WHERE id = ?').run(thirteenMonthsAgo, teacherRow.id)
 
     const deleted = runInactivityDeletionJob(db, now)
+    expect((db.prepare("SELECT COUNT(*) AS n FROM quiz_question_sets WHERE title = 'Altes Quiz'").get() as { n: number }).n).toBe(0)
 
     // Lehrkraft geloescht
     expect(db.prepare('SELECT id FROM users WHERE id = ?').get(teacherRow.id)).toBeUndefined()

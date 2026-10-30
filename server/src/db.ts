@@ -80,3 +80,19 @@ export function openDb(dbPath: string, migrationsDir?: string): Db {
 export function sha256hex(input: string): string {
   return createHash('sha256').update(input).digest('hex')
 }
+
+/**
+ * Löscht alle Fragensätze einer Lehrkraft samt Fragen, Quiz-Räumen, Teilnahmen, Antworten und Statistik.
+ * Aufruf beim Löschen des Kontos (DELETE /api/me) und bei der Löschung nach Inaktivität (jobs.ts).
+ * Nötig, weil quiz_question_sets.teacher_id beim Löschen der Lehrkraft nur auf NULL gesetzt würde
+ * und quiz_rooms.set_id kein ON DELETE CASCADE hat. Automatische Sätze aus der Quiz-Bank
+ * (source = 'auto') gehören der Lehrkraft ebenfalls und werden mitgelöscht.
+ */
+export function deleteTeacherQuizzes(db: Db, teacherId: number): void {
+  const sets = db.prepare('SELECT id FROM quiz_question_sets WHERE teacher_id = ?').all(teacherId) as { id: number }[]
+  for (const { id } of sets) {
+    // Räume zuerst: Teilnahmen, Antworten und Statistik hängen per CASCADE an quiz_rooms
+    db.prepare('DELETE FROM quiz_rooms WHERE set_id = ?').run(id)
+    db.prepare('DELETE FROM quiz_question_sets WHERE id = ?').run(id)
+  }
+}
