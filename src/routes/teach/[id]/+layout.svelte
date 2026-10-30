@@ -31,15 +31,6 @@
 	let classSwitcherOpen = $state(false);
 	let avatarMenuOpen = $state(false);
 
-	/** Schuljahr berechnen: ab 1. August neues Schuljahr (z.B. 2026/27). */
-	function schuljahr(): string {
-		const now = new Date();
-		const year = now.getFullYear();
-		const month = now.getMonth() + 1; // 1-12
-		const startYear = month >= 8 ? year : year - 1;
-		return `${startYear}/${String(startYear + 1).slice(-2)}`;
-	}
-
 	/** Avatar-Initialen aus display_name */
 	const navInitials = $derived(() => {
 		const u = session.teacher;
