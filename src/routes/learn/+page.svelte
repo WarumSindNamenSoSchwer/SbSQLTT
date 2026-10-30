@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SiteFooter from '$lib/tabula/SiteFooter.svelte';
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
 	import TopNav from '$lib/tabula/TopNav.svelte';
@@ -224,6 +225,7 @@
 			{/each}
 		</div>
 	</main>
+	<SiteFooter />
 </div>
 
 <style>

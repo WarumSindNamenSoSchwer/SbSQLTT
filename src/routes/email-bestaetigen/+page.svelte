@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SiteFooter from '$lib/tabula/SiteFooter.svelte';
 	// Bestätigung der E-Mail-Adresse (Lehrkraft, K7). Link aus der Mail: /email-bestaetigen?token=…
 	import '$lib/tabula/theme.css';
 	import { onMount } from 'svelte';
@@ -63,6 +64,7 @@
 			{/if}
 		</div>
 	</main>
+	<SiteFooter />
 </div>
 
 <style>

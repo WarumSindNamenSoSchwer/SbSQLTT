@@ -626,7 +626,7 @@
       </a>
       <!-- Desktop nav -->
       <nav aria-label="Hauptnavigation" class="lp-nav-desktop" style="display:flex;gap:26px;flex:1;font-size:14px">
-        <a href="https://app.tabulasql.de/learn" style="color:var(--muted);text-decoration:none" data-hv="1">Lernen</a>
+        <a href="/learn" style="color:var(--muted);text-decoration:none" data-hv="1">Lernen</a>
         <a href="/datasets" style="color:var(--muted);text-decoration:none" data-hv="2">Datensätze</a>
         <a href="#lernpfad" style="color:var(--muted);text-decoration:none" data-hv="3">Lernpfad</a>
         <a href="#lehrkraefte" style="color:var(--muted);text-decoration:none" data-hv="4">Für Lehrkräfte</a>
@@ -635,7 +635,7 @@
         <button type="button" onclick={toggleTheme} aria-label="Hell/Dunkel umschalten" class="lp-nav-desktop" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer" data-hv="5">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 2.5v11A5.5 5.5 0 0 0 8 2.5Z" fill="currentColor"></path></svg>
         </button>
-        <a href="https://app.tabulasql.de/login" style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap" data-hv="6">Anmelden</a>
+        <a href="/login" style="display:inline-flex;align-items:center;height:36px;padding:0 14px;border:1px solid var(--line);border-radius:8px;color:var(--text);text-decoration:none;font-size:14px;font-weight:500;white-space:nowrap" data-hv="6">Anmelden</a>
         <!-- Mobile hamburger -->
         <button type="button" onclick={() => menuOpen = !menuOpen} aria-label="Menü" aria-expanded={menuOpen} class="lp-nav-mobile" style="width:36px;height:36px;display:grid;place-items:center;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer">
           {#if menuOpen}
@@ -649,7 +649,7 @@
     <!-- Mobile dropdown -->
     {#if menuOpen}
       <nav aria-label="Hauptnavigation mobil" style="border-top:1px solid var(--line);background:var(--bg);padding:12px clamp(16px,4vw,64px);display:flex;flex-direction:column;gap:0">
-        <a href="https://app.tabulasql.de/learn" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px;border-bottom:1px solid var(--line)">Lernen</a>
+        <a href="/learn" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px;border-bottom:1px solid var(--line)">Lernen</a>
         <a href="/datasets" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px;border-bottom:1px solid var(--line)">Datensätze</a>
         <a href="#lernpfad" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px;border-bottom:1px solid var(--line)">Lernpfad</a>
         <a href="#lehrkraefte" onclick={() => menuOpen=false} style="padding:12px 0;color:var(--muted);text-decoration:none;font-size:15px">Für Lehrkräfte</a>
@@ -676,14 +676,14 @@
       <div style="display:flex;flex-wrap:wrap;gap:24px 64px;align-items:flex-end;justify-content:space-between;margin-top:clamp(28px,4vh,56px)">
         <p style="margin:0;max-width:600px;font-size:clamp(16px,1.25vw,21px);line-height:1.6;color:var(--muted);text-wrap:pretty;flex:1 1 340px">Tabula bringt SQL in den Informatikunterricht. Schüler schreiben Abfragen an echte Daten direkt im Browser und bekommen Hinweise, die weiterhelfen. Lehrkräfte sehen, wo ihre Klasse steht. Kostenlos und Open Source.</p>
         <div style="flex:1 1 100%;display:flex;flex-wrap:wrap;gap:0 clamp(24px,4vw,72px);margin-top:clamp(8px,2vh,24px)">
-          <a href="https://app.tabulasql.de/learn" style="flex:1 1 380px;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:clamp(18px,2.2vw,28px) 4px clamp(18px,2.2vw,28px) 0;border-top:2px solid var(--text);color:var(--blue);text-decoration:none;transition:padding .35s cubic-bezier(.16,1,.3,1),background .25s" data-hv="7">
+          <a href="/learn" style="flex:1 1 380px;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:clamp(18px,2.2vw,28px) 4px clamp(18px,2.2vw,28px) 0;border-top:2px solid var(--text);color:var(--blue);text-decoration:none;transition:padding .35s cubic-bezier(.16,1,.3,1),background .25s" data-hv="7">
             <span style="display:flex;flex-direction:column;gap:6px;min-width:0">
               <span style="font-size:14px;font-weight:500;color:var(--muted)">Für Schüler</span>
               <span style="font-size:clamp(28px,3.4vw,64px);line-height:1;font-weight:700;letter-spacing:-.045em">Erste Lektion starten</span>
             </span>
             <span style="flex:none;width:clamp(48px,4vw,68px);height:clamp(48px,4vw,68px);border-radius:50%;display:grid;place-items:center;border:2px solid var(--blue);color:var(--blue);transition:transform .4s cubic-bezier(.16,1,.3,1),background .25s,color .25s"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg></span>
           </a>
-          <a href="https://app.tabulasql.de/login?rolle=lehrkraft" style="flex:1 1 380px;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:clamp(18px,2.2vw,28px) 4px clamp(18px,2.2vw,28px) 0;border-top:2px solid var(--text);color:var(--text);text-decoration:none;transition:padding .35s cubic-bezier(.16,1,.3,1),background .25s" data-hv="8">
+          <a href="/login?rolle=lehrkraft" style="flex:1 1 380px;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:clamp(18px,2.2vw,28px) 4px clamp(18px,2.2vw,28px) 0;border-top:2px solid var(--text);color:var(--text);text-decoration:none;transition:padding .35s cubic-bezier(.16,1,.3,1),background .25s" data-hv="8">
             <span style="display:flex;flex-direction:column;gap:6px;min-width:0">
               <span style="font-size:14px;font-weight:500;color:var(--muted)">Für Lehrkräfte</span>
               <span style="font-size:clamp(28px,3.4vw,64px);line-height:1;font-weight:700;letter-spacing:-.045em">Lehrer-Konto erstellen</span>
@@ -794,7 +794,7 @@
           <div style="padding:4px 24px 4px 20px;border-left:1px solid var(--line)"><dt style="font-size:17px;font-weight:600">Datenschutz</dt><dd style="margin:6px 0 0;font-size:15px;line-height:1.55;color:var(--muted)">Server in Deutschland (Hetzner, Nürnberg). Kein Tracking.</dd></div>
         </dl>
         <div style="flex:1 1 100%;display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding-top:24px;border-top:1px solid var(--line)">
-          <a href="https://app.tabulasql.de/login?rolle=lehrkraft" style="display:inline-flex;align-items:center;gap:14px;color:var(--text);text-decoration:none;font-size:clamp(22px,2vw,32px);font-weight:700;letter-spacing:-.035em;margin-right:auto" data-hv="12">Lehrer-Konto erstellen<span style="width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:2px solid currentColor"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg></span></a>
+          <a href="/login?rolle=lehrkraft" style="display:inline-flex;align-items:center;gap:14px;color:var(--text);text-decoration:none;font-size:clamp(22px,2vw,32px);font-weight:700;letter-spacing:-.035em;margin-right:auto" data-hv="12">Lehrer-Konto erstellen<span style="width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:2px solid currentColor"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg></span></a>
           <a href="#stunde" style="font-size:15px;font-weight:500;color:var(--blue);text-decoration:none" data-hv="13">So sieht eine Doppelstunde aus</a>
           <a href="#lernpfad" style="font-size:15px;font-weight:500;color:var(--blue);text-decoration:none" data-hv="14">Was der Lernpfad abdeckt</a>
         </div>
@@ -959,7 +959,7 @@
             <p style="margin:10px 0 0;font-size:16px;line-height:1.6;color:var(--muted);max-width:56ch">{TRACK_DESC[selEntry.track ?? 1] ?? ''}</p>
           </div>
           <div style="display:flex;flex-direction:column;gap:14px;align-items:flex-start">
-            <a href={selEntry.id === 'where-filters' ? 'https://app.tabulasql.de/learn/beginner/where-filters' : 'https://app.tabulasql.de/learn'} style="display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:500;color:var(--blue);text-decoration:none" data-hv="17">
+            <a href={selEntry.id === 'where-filters' ? '/learn/beginner/where-filters' : '/learn'} style="display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:500;color:var(--blue);text-decoration:none" data-hv="17">
               {selEntry.id === 'where-filters' ? 'Diese Lektion öffnen' : 'Zum Lernpfad'}
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg>
             </a>
@@ -1108,8 +1108,8 @@
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <a href="/kontakt" style="display:inline-flex;align-items:center;font-size:16px;font-weight:500;color:#fff;text-underline-offset:4px;white-space:nowrap" data-hv="18">Demo anfragen</a>
-          <a href="https://app.tabulasql.de/beitreten" style="display:inline-flex;align-items:center;font-size:16px;font-weight:500;color:#fff;text-underline-offset:4px;white-space:nowrap" data-hv="19">Klasse beitreten</a>
-          <a href="https://app.tabulasql.de/login?rolle=lehrkraft" style="display:inline-flex;align-items:center;gap:14px;color:#fff;text-decoration:none;font-size:clamp(22px,2vw,32px);font-weight:700;letter-spacing:-.035em;white-space:nowrap" data-hv="20">Lehrer-Konto erstellen<span style="width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#2563eb"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg></span></a>
+          <a href="/beitreten" style="display:inline-flex;align-items:center;font-size:16px;font-weight:500;color:#fff;text-underline-offset:4px;white-space:nowrap" data-hv="19">Klasse beitreten</a>
+          <a href="/login?rolle=lehrkraft" style="display:inline-flex;align-items:center;gap:14px;color:#fff;text-decoration:none;font-size:clamp(22px,2vw,32px);font-weight:700;letter-spacing:-.035em;white-space:nowrap" data-hv="20">Lehrer-Konto erstellen<span style="width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#2563eb"><svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8h10.5M8.5 3.5 13 8l-4.5 4.5"></path></svg></span></a>
         </div>
       </div>
     </section>
@@ -1125,7 +1125,7 @@
       </div>
       <nav aria-label="Produkt" style="flex:0 0 160px;display:flex;flex-direction:column;gap:10px;font-size:14px">
         <span style="font-weight:600">Tabula</span>
-        <a href="https://app.tabulasql.de/learn" style="color:var(--muted);text-decoration:none" data-hv="21">Lernen</a>
+        <a href="/learn" style="color:var(--muted);text-decoration:none" data-hv="21">Lernen</a>
         <a href="#lernpfad" style="color:var(--muted);text-decoration:none" data-hv="22">Lernpfad</a>
         <a href="/datasets" style="color:var(--muted);text-decoration:none" data-hv="23">Datensätze</a>
         <a href="#lehrkraefte" style="color:var(--muted);text-decoration:none" data-hv="24">Für Lehrkräfte</a>
