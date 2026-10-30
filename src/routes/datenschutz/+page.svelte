@@ -86,10 +86,15 @@
 
 		</main>
 	</div>
+	<footer style="border-top:1px solid var(--line);padding:20px clamp(16px,3vw,48px);display:flex;gap:20px;flex-wrap:wrap;font-size:14px;color:var(--ink-3)">
+		<span style="margin-right:auto">Kostenlos und Open Source unter AGPL-3.0.</span>
+		<a href="/impressum" style="color:var(--ink-3)">Impressum</a>
+		<a href="/datenschutz" style="color:var(--ink-3)">Datenschutzerklärung</a>
+	</footer>
 </div>
 
 <style>
-	.page { min-height: 100dvh; background: var(--bg); color: var(--ink); }
+	.page { min-height: 100dvh; background: var(--bg); color: var(--ink); display: flex; flex-direction: column; }
 	.wrap { display: flex; justify-content: center; gap: 72px; padding: 48px 40px 96px; }
 	.toc { width: 240px; flex: none; display: flex; flex-direction: column; gap: 2px; padding-top: 8px; position: sticky; top: 24px; align-self: flex-start; max-height: calc(100dvh - 48px); overflow: auto; }
 	.toc .lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); padding: 0 10px 10px; }
