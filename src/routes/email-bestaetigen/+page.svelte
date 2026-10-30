@@ -69,7 +69,7 @@
 	.page { min-height: 100dvh; display: flex; flex-direction: column; }
 	.center { flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: clamp(32px,7vh,96px) 20px 64px; }
 	.form-wrap { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 20px; animation: tbIn .3s ease-out; }
-	@keyframes tbIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+	@keyframes tbIn { from { transform: translateY(6px); } to { transform: none; } }
 	@media (prefers-reduced-motion: reduce) { .form-wrap { animation: none; } }
 	:global(.owl) { width: 88px; height: 79px; display: block; }
 	.title-block { display: flex; flex-direction: column; gap: 6px; }

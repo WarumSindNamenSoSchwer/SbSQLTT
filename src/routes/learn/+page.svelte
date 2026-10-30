@@ -228,7 +228,7 @@
 
 <style>
 	.page { min-height: 100dvh; display: flex; flex-direction: column; }
-	.wrap { max-width: 1680px; margin: 0 auto; width: 100%; padding: 32px clamp(16px, 3vw, 48px) 80px; display: flex; flex-direction: column; gap: 24px; }
+	.wrap { max-width: 1680px; margin: 0 auto; width: 100%; box-sizing: border-box; padding: 32px clamp(16px, 3vw, 48px) 80px; display: flex; flex-direction: column; gap: 24px; }
 	.mono { font-family: var(--mono); }
 
 	/* Fokus-Banner */
@@ -270,7 +270,7 @@
 	.lesson-list { list-style: none; margin: 0; padding: 0; }
 	.lesson-item { border-bottom: 1px solid var(--line); position: relative; }
 	.lesson-item:last-child { border-bottom: 0; }
-	.lesson-row { width: 100%; display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 10px 12px; border: 0; background: transparent; text-align: left; cursor: pointer; border-radius: 8px; margin: 2px 0; }
+	.lesson-row { width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 16px; min-height: 60px; padding: 10px 12px; border: 0; background: transparent; text-align: left; cursor: pointer; border-radius: 8px; margin: 2px 0; }
 	.lesson-row:not(.locked):hover { background: var(--subtle); }
 	.lesson-row.locked { cursor: default; }
 

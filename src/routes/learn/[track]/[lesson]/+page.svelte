@@ -1008,7 +1008,7 @@
 	.s-ins { color: var(--accent-strong); font-family: var(--sans); font-size: 13px; font-weight: 500; width: 52px; text-align: right; }
 	.sheet-hint { padding: 10px 20px 24px; font-size: 13px; color: var(--ink-3); }
 
-	@keyframes tbIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+	@keyframes tbIn { from { transform: translateY(4px); } to { transform: none; } }
 	@keyframes tbSpin { to { transform: rotate(360deg); } }
 	@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 	:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

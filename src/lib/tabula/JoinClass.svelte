@@ -225,7 +225,7 @@
 		animation: tbIn .3s ease-out;
 	}
 
-	@keyframes tbIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+	@keyframes tbIn { from { transform: translateY(6px); } to { transform: none; } }
 	@media (prefers-reduced-motion: reduce) { .wrap { animation: none; } }
 
 	/* Hero */

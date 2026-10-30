@@ -573,7 +573,7 @@
 	.lp summary::-webkit-details-marker { display: none; }
 	.lp details[open] .tb-chev { transform: rotate(90deg); }
 	.lp :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
-	@keyframes tbIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+	@keyframes tbIn { from { transform: translateY(8px); } to { transform: none; } }
 	@keyframes tbBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 	@media (prefers-reduced-motion: reduce) {
 		.lp * { animation: none !important; transition: none !important; }
