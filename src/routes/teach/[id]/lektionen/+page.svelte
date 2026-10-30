@@ -208,48 +208,47 @@
 {/if}
 
 <style>
-	.lektionen-wrap { padding: 28px 40px 96px; display: flex; flex-direction: column; gap: 24px; justify-content: flex-start; align-items: center; }
-	@media (max-width: 767px) { .lektionen-wrap { padding: 16px 16px 80px; } }
+	.lektionen-wrap { padding: 20px clamp(16px,3vw,40px) 80px; display: flex; flex-direction: column; gap: 20px; }
 
-	.toolbar { width: 100%; max-width: 1100px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-	.search-field { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; color: var(--ink-3); max-width: 360px; flex: 1; }
+	.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+	.search-field { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; color: var(--ink-3); max-width: 320px; flex: 1; }
 	.search-field input { background: none; border: none; outline: none; font: inherit; color: var(--ink); flex: 1; }
 	.search-ico { flex: none; }
-	.toolbar-hint { flex: 1; font-size: 13px; color: var(--ink-3); text-align: right; }
-	.btn-secondary { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+	.toolbar-hint { flex: 1; font-size: 13px; color: var(--ink-3); }
+	.btn-secondary { display: inline-flex; align-items: center; height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; }
 	.btn-secondary:hover { background: var(--subtle); }
 
-	.track-section { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 10px; }
-	.track-header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-	.track-num { font-family: var(--mono); font-size: 13px; color: var(--accent-strong); }
-	.track-name { font-size: 20px; font-weight: 600; }
+	.track-section { display: flex; flex-direction: column; gap: 8px; }
+	.track-header { display: flex; align-items: center; gap: 12px; padding: 0 0 8px; border-bottom: 1px solid var(--line-strong); flex-wrap: wrap; }
+	.track-num { font-family: var(--mono); font-size: 13px; color: var(--accent-ink); }
+	.track-name { font-size: 17px; font-weight: 600; flex: 1; }
 	.track-status { font-size: 13px; color: var(--ink-3); }
 	.flex-1 { flex: 1; }
-	.track-unlock-all { font-size: 14px; font-weight: 500; color: var(--accent-strong); cursor: pointer; background: none; border: none; padding: 0; }
+	.track-unlock-all { font-size: 13px; font-weight: 500; color: var(--accent-ink); cursor: pointer; background: none; border: none; padding: 0; }
 	.track-unlock-all:hover { text-decoration: underline; }
 
-	.lessons-table { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
-	.lesson-row { display: grid; grid-template-columns: 28px 36px minmax(0,1fr) 72px 1fr 96px 160px; align-items: center; gap: 8px; min-height: 56px; padding: 0 16px; border-bottom: 1px solid var(--line); }
-	@media (max-width: 900px) { .lesson-row { grid-template-columns: minmax(0,1fr) 96px 140px; } }
+	.lessons-table { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+	.lesson-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-height: 52px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
 	.lesson-row:last-child { border-bottom: none; }
 
-	.drag-handle { color: var(--ink-3); font-size: 14px; letter-spacing: -2px; cursor: grab; }
-	.lesson-num { font-family: var(--mono); font-size: 13px; color: var(--ink-3); }
-	.lesson-title { font-size: 15px; font-weight: 500; }
-	.lesson-dur { font-size: 13px; color: var(--ink-3); }
+	.drag-handle { color: var(--ink-3); font-size: 14px; letter-spacing: -2px; cursor: grab; flex: none; }
+	.lesson-num { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--line-strong); font: 600 12px/1 var(--mono); color: var(--ink-2); flex: none; }
+	.lesson-title { flex: 1; min-width: 160px; font-size: 15px; font-weight: 500; }
+	.lesson-dur { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
 	.lesson-prog { flex: 1; }
-	.focus-cell { display: flex; justify-content: center; }
-	.badge-focus { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; }
-	.focus-set-btn { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px; color: var(--ink-3); font-size: 12px; cursor: pointer; }
-	.focus-set-btn:hover { background: var(--subtle); color: var(--ink); }
+	.focus-cell { display: flex; justify-content: center; flex: none; }
+	.badge-focus { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--accent); border-radius: 7px; background: var(--accent-soft); color: var(--accent-ink); font-size: 13px; cursor: pointer; }
+	.focus-set-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink-3); font-size: 13px; cursor: pointer; }
+	.focus-set-btn:hover { background: var(--subtle); color: var(--ink); border-color: var(--accent); }
 
-	.toggle-cell { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
-	.toggle-label { font-size: 12px; color: var(--ink-2); width: 52px; text-align: right; }
-	.toggle-switch { width: 40px; height: 22px; border-radius: 999px; background: var(--line-strong); position: relative; cursor: pointer; flex: none; transition: background 0.15s; }
+	.toggle-cell { display: flex; align-items: center; gap: 8px; flex: none; }
+	.toggle-label { font-size: 13px; color: var(--ink-2); min-width: 44px; text-align: right; }
+	.toggle-switch { width: 38px; height: 22px; border-radius: 999px; background: var(--line-strong); position: relative; cursor: pointer; flex: none; transition: background 0.2s; }
 	.toggle-switch.on { background: var(--accent); }
 	.toggle-switch:disabled { opacity: 0.5; cursor: default; }
-	.toggle-knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 999px; background: #fff; transition: left 0.15s; }
-	.toggle-switch.on .toggle-knob { left: 21px; }
+	.toggle-knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 999px; background: #fff; transition: left 0.2s; }
+	.toggle-switch.on .toggle-knob { left: 19px; }
+	@media (prefers-reduced-motion: reduce) { .toggle-switch, .toggle-knob { transition: none; } }
 
 	.spinner-wrap { display: grid; place-items: center; padding: 80px; }
 	.spinner { width: 28px; height: 28px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: tb-spin 0.8s linear infinite; }

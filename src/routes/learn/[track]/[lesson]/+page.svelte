@@ -760,6 +760,8 @@
 </div>
 
 <style>
+	/* Global box-sizing: theme.css uses content-box, override for our components */
+	*, *::before, *::after { box-sizing: border-box; }
 	.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 	.mono { font-family: var(--mono); }
 	.muted { color: var(--ink-3); }
@@ -779,10 +781,14 @@
 	.segs { display: flex; gap: 4px; flex: 1; max-width: 420px; }
 	.seg-btn { flex: 1; height: 24px; padding: 0; border: 0; background: transparent; display: flex; align-items: center; cursor: pointer; }
 	.seg-btn:disabled { cursor: default; }
-	.seg-bar { display: block; width: 100%; height: 4px; border-radius: 3px; background: var(--line-strong); transition: background 0.2s, height 0.2s; }
-	.seg-bar.seg-done { background: var(--accent); }
-	.seg-bar.seg-cur { height: 8px; background: var(--accent); }
+	/* Base: upcoming (not done, not cur, not locked) */
+	.seg-bar { display: block; width: 100%; height: 4px; border-radius: 3px; background: var(--line-strong); transition: background 0.2s, height 0.15s; }
+	/* Locked: explicitly lighter */
 	.seg-bar.seg-locked { background: var(--line); }
+	/* Done: accent color — must come after locked to win */
+	.seg-bar.seg-done { background: var(--accent) !important; height: 4px; }
+	/* Current: taller accent — must be last */
+	.seg-bar.seg-cur { background: var(--accent) !important; height: 8px; }
 	.steplbl { font-size: 12px; letter-spacing: 0.06em; color: var(--ink-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 	.top-actions { display: flex; align-items: center; gap: 6px; }
@@ -802,7 +808,7 @@
 	.hide-sm { /* shown by default */ }
 
 	/* Leseansicht */
-	.read-main { flex: 1; min-height: 0; overflow-y: auto; display: flex; justify-content: center; padding: 48px clamp(16px, 3vw, 48px) 40px; }
+	.read-main { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; justify-content: center; padding: 48px clamp(16px, 3vw, 48px) 40px; }
 	.col { width: 680px; max-width: 100%; display: flex; flex-direction: column; gap: 20px; }
 	.h1 { margin: 0; font-size: 30px; line-height: 38px; font-weight: 600; letter-spacing: -0.015em; }
 	.lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink-3); }
@@ -832,9 +838,9 @@
 	.real-b { margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2); text-wrap: pretty; }
 
 	/* Aufgabe/Beispiel: zwei-Spalten-Layout */
-	.work-main { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; gap: 16px; padding: 16px clamp(16px, 2vw, 32px); align-items: flex-start; max-width: 2200px; width: 100%; margin: 0 auto; overflow-y: auto; }
-	.left-col { flex: 1 1 340px; max-width: 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-	.right-col { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+	.work-main { flex: 1; min-height: 0; display: flex; flex-wrap: wrap; gap: 16px; padding: 16px clamp(16px, 2vw, 32px); align-items: flex-start; max-width: 100%; width: 100%; margin: 0 auto; overflow-y: auto; overflow-x: hidden; }
+	.left-col { flex: 1 1 300px; max-width: 480px; min-width: 0; width: 0; display: flex; flex-direction: column; gap: 16px; }
+	.right-col { flex: 999 1 460px; min-width: 0; width: 0; display: flex; flex-direction: column; gap: 16px; }
 
 	/* Aufgaben-Karte */
 	.task-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px 22px 20px; }
@@ -931,6 +937,9 @@
 	.tip-card { display: flex; gap: 10px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font-size: 14px; line-height: 1.55; }
 	.tip-lbl { font-weight: 600; flex: none; }
 	.tip-txt { color: var(--ink); }
+
+	/* Prevent inner elements from blowing past flex container */
+	.editor-card, .task-card, .schema-card, .fb-card, .tip-card, .guest-card, .result-card { min-width: 0; max-width: 100%; }
 
 	/* Ergebnis-Karte */
 	.result-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; min-height: 160px; }
