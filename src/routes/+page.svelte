@@ -677,9 +677,10 @@
 		// ResizeObserver for tile box
 		let ro: ResizeObserver;
 		if (tileBox) {
+			// Erst im nächsten Frame setzen, sonst meldet Safari eine ResizeObserver-Schleife
 			ro = new ResizeObserver((es) => {
 				const w = Math.round(es[0].contentRect.width);
-				if (w && w !== boxW) boxW = w;
+				if (w && w !== boxW) requestAnimationFrame(() => { boxW = w; });
 			});
 			ro.observe(tileBox);
 		}
