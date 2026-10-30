@@ -556,7 +556,9 @@
 		margin: 16px;
 		animation: tb-in .3s ease-out;
 	}
-	@keyframes tb-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+	/* Nur verschieben, nie ausblenden: Inhalt bleibt sichtbar, auch wenn Animationen nicht laufen */
+	@keyframes tb-in { from { transform: translateY(8px); } to { transform: none; } }
+	@media (prefers-reduced-motion: reduce) { .result-card { animation: none; } }
 	.result-ok { background: var(--ok-soft); }
 	.result-bad { background: var(--danger-soft); }
 	.result-title { font-size: 28px; font-weight: 700; letter-spacing: -.02em; margin: 0; }
